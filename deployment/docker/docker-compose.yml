@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: ./docker/app/Dockerfile
+    environment:
+      - FLASK_APP=app
+      - FLASK_ENV=production
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
+      - FACE_RECOGNITION_THRESHOLD=${FACE_RECOGNITION_THRESHOLD}
+      - FACE_DETECTION_SIZE=${FACE_DETECTION_SIZE}
+      - FACE_CACHE_SIZE=${FACE_CACHE_SIZE}
+      - FRAME_SKIP=${FRAME_SKIP}
+      - USE_GPU=${USE_GPU}
+      - VERIFICATION_THRESHOLD=${VERIFICATION_THRESHOLD}
+      - ATTENDANCE_TIME_WINDOW=${ATTENDANCE_TIME_WINDOW}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+    volumes:
+      - ../logs:/app/logs
+      - ../uploads:/app/uploads
+      - ../dataset:/app/dataset
+      - ../training:/app/training
+      - ../temp:/app/temp
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  webrtc:
+    build:
+      context: ..
+      dockerfile: ./docker/webrtc/Dockerfile
+    environment:
+      - FLASK_API_URL=http://web:5000
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - FACE_RECOGNITION_THRESHOLD=${FACE_RECOGNITION_THRESHOLD}
+      - FRAME_SKIP=${FRAME_SKIP}
+      - USE_GPU=${USE_GPU}
+      - VERIFICATION_THRESHOLD=${VERIFICATION_THRESHOLD}
+      - ATTENDANCE_TIME_WINDOW=${ATTENDANCE_TIME_WINDOW}
+    volumes:
+      - ../logs:/app/logs
+      - ../models:/app/models
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+      - PGADMIN_LISTEN_PORT=5050
+      # Add server configuration for automatic connection to PostgreSQL
+      - PGADMIN_SERVER_JSON_FILE=/pgadmin4/servers.json
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ../static:/app/static
+      - ../uploads:/app/uploads:ro
+    depends_on:
+      - web
+      - webrtc
+      - pgadmin
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  app-network:
+    driver: bridge

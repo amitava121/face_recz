@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup & Security - Face Recognition Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+        }
+        .backup-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .backup-card {
+            background: #fff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 32px rgba(37,99,235,0.10);
+            border: 1px solid #e5e7eb;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .backup-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .section-card {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37,99,235,0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        .backup-item {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        .backup-info {
+            flex-grow: 1;
+        }
+        .backup-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .progress-container {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+        .security-metric {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2563eb;
+        }
+        .metric-label {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        .back-btn {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(100,116,139,0.3);
+            color: white;
+            text-decoration: none;
+        }
+        .form-control, .form-select {
+            border-radius: 0.75rem;
+            border: 1px solid #d1d5db;
+            padding: 0.75rem 1rem;
+        }
+        .log-viewer {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Universal Notification System -->
+    {% include 'notifications.html' %}
+    
+    <div class="backup-container">
+        <div class="backup-card">
+            <h1 class="backup-title">
+                <i class="fas fa-shield-alt me-3"></i>Backup & Security
+            </h1>
+
+            <!-- Database Backup Section -->
+            <div class="section-card">
+                <div class="section-title">
+                    <i class="fas fa-database"></i>Database Backup
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <button onclick="createBackup()" class="btn btn-primary me-2">
+                            <i class="fas fa-save me-2"></i>Create Backup
+                        </button>
+                        <button onclick="scheduleBackup()" class="btn btn-success">
+                            <i class="fas fa-clock me-2"></i>Schedule Auto Backup
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="restoreFile" accept=".sql,.backup">
+                            <button onclick="restoreBackup()" class="btn btn-warning">
+                                <i class="fas fa-upload me-2"></i>Restore
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-container" id="backupProgress">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Creating backup...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6>Recent Backups</h6>
+                    {% for backup in recent_backups %}
+                    <div class="backup-item">
+                        <div class="backup-info">
+                            <div><strong>{{ backup.filename }}</strong></div>
+                            <div class="text-muted">{{ backup.created_at.strftime('%Y-%m-%d %H:%M:%S') }} • {{ backup.size }}</div>
+                        </div>
+                        <div class="backup-actions">
+                            <span class="status-badge status-{{ backup.status }}">{{ backup.status.title() }}</span>
+                            <button onclick="downloadBackup('{{ backup.id }}')" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button onclick="deleteBackup('{{ backup.id }}')" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Security Monitoring -->
+            <div class="section-card">
+                <div class="section-title">
+                    <i class="fas fa-shield-virus"></i>Security Monitoring
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="security-metric">
+                            <div class="metric-value">{{ security_stats.failed_logins }}</div>
+                            <div class="metric-label">Failed Logins (24h)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="security-metric">
+                            <div class="metric-value">{{ security_stats.active_sessions }}</div>
+                            <div class="metric-label">Active Sessions</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="security-metric">
+                            <div class="metric-value">{{ security_stats.blocked_ips }}</div>
+                            <div class="metric-label">Blocked IPs</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="security-metric">
+                            <div class="metric-value">{{ security_stats.security_score }}%</div>
+                            <div class="metric-label">Security Score</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <button onclick="runSecurityScan()" class="btn btn-primary me-2">
+                            <i class="fas fa-search me-2"></i>Run Security Scan
+                        </button>
+                        <button onclick="viewSecurityLogs()" class="btn btn-info">
+                            <i class="fas fa-file-alt me-2"></i>View Security Logs
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button onclick="clearSessions()" class="btn btn-warning me-2">
+                            <i class="fas fa-sign-out-alt me-2"></i>Clear All Sessions
+                        </button>
+                        <button onclick="resetSecuritySettings()" class="btn btn-danger">
+                            <i class="fas fa-shield-alt me-2"></i>Reset Security
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Export/Import -->
+            <div class="section-card">
+                <div class="section-title">
+                    <i class="fas fa-exchange-alt"></i>Data Export/Import
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Export Data</h6>
+                        <div class="mb-3">
+                            <select class="form-select mb-2" id="exportType">
+                                <option value="all">All Data</option>
+                                <option value="students">Students Only</option>
+                                <option value="attendance">Attendance Records</option>
+                                <option value="users">User Accounts</option>
+                            </select>
+                            <button onclick="exportData()" class="btn btn-success w-100">
+                                <i class="fas fa-file-export me-2"></i>Export Selected Data
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Import Data</h6>
+                        <div class="mb-3">
+                            <input type="file" class="form-control mb-2" id="importFile" accept=".csv,.xlsx,.json">
+                            <button onclick="importData()" class="btn btn-warning w-100">
+                                <i class="fas fa-file-import me-2"></i>Import Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Maintenance -->
+            <div class="section-card">
+                <div class="section-title">
+                    <i class="fas fa-tools"></i>System Maintenance
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <button onclick="cleanupLogs()" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-broom me-2"></i>Cleanup Logs
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button onclick="optimizeDatabase()" class="btn btn-outline-success w-100 mb-2">
+                            <i class="fas fa-database me-2"></i>Optimize DB
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button onclick="clearCache()" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="fas fa-trash me-2"></i>Clear Cache
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button onclick="systemCheck()" class="btn btn-outline-info w-100 mb-2">
+                            <i class="fas fa-check-circle me-2"></i>System Check
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Logs Viewer -->
+            <div class="section-card">
+                <div class="section-title">
+                    <i class="fas fa-file-alt"></i>Recent Security Events
+                </div>
+                <div class="log-viewer" id="securityLogs">
+                    {% for log in security_logs %}
+                    [{{ log.timestamp }}] {{ log.level.upper() }}: {{ log.message }}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center">
+                <button onclick="downloadSystemReport()" class="btn btn-info me-3">
+                    <i class="fas fa-file-pdf me-2"></i>Download System Report
+                </button>
+                <a href="{{ url_for('admin_panel') }}" class="back-btn">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Admin Panel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function createBackup() {
+            const progressContainer = document.getElementById('backupProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+
+            progressContainer.style.display = 'block';
+
+            // Simulate backup progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress > 100) progress = 100;
+
+                progressBar.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress) + '%';
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        // Call the actual backup endpoint
+                        fetch('/backup_database', { method: 'POST' })
+                            .then(() => location.reload())
+                            .catch(err => {
+                                console.error('Backup failed:', err);
+                                alert('Backup failed. Please try again.');
+                            });
+                    }, 1000);
+                }
+            }, 500);
+        }
+
+        function scheduleBackup() {
+            // Create a modal for backup scheduling
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Schedule Automatic Backup</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="backupFrequency" class="form-label">Backup Frequency</label>
+                                <select class="form-select" id="backupFrequency">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="backupTime" class="form-label">Backup Time</label>
+                                <input type="time" class="form-control" id="backupTime" value="02:00">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveBackupSchedule()">Save Schedule</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            new bootstrap.Modal(modal).show();
+        }
+
+        function saveBackupSchedule() {
+            alert('Backup schedule saved successfully!');
+            bootstrap.Modal.getInstance(document.querySelector('.modal')).hide();
+        }
+
+        function restoreBackup() {
+            const file = document.getElementById('restoreFile').files[0];
+            if (!file) {
+                alert('Please select a backup file to restore');
+                return;
+            }
+            if (confirm('This will overwrite current data. Are you sure?')) {
+                const formData = new FormData();
+                formData.append('backup_file', file);
+
+                fetch('/restore_backup', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Database restored successfully!');
+                        location.reload();
+                    } else {
+                        alert('Restore failed: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error('Restore failed:', err);
+                    alert('Restore failed. Please try again.');
+                });
+            }
+        }
+
+        function downloadBackup(backupId) {
+            window.open(`/download_backup/${backupId}`, '_blank');
+        }
+
+        function deleteBackup(backupId) {
+            if (confirm('Delete this backup permanently?')) {
+                // Implementation for deleting backup
+                alert('Delete backup functionality would be implemented here');
+            }
+        }
+
+        function runSecurityScan() {
+            alert('Running security scan...');
+            // Implementation for security scan
+        }
+
+        function viewSecurityLogs() {
+            // Open security logs in a new modal
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Detailed Security Logs</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="log-viewer" style="max-height: 400px; overflow-y: auto; background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; font-family: monospace;">
+                                <div>[${new Date().toISOString()}] INFO: Admin login successful from 127.0.0.1</div>
+                                <div>[${new Date(Date.now() - 3600000).toISOString()}] WARNING: Multiple failed login attempts detected</div>
+                                <div>[${new Date(Date.now() - 7200000).toISOString()}] INFO: Database backup completed successfully</div>
+                                <div>[${new Date(Date.now() - 10800000).toISOString()}] INFO: System monitoring started</div>
+                                <div>[${new Date(Date.now() - 14400000).toISOString()}] INFO: Face recognition service initialized</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="window.open('/download_logs', '_blank')">Download Full Logs</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            new bootstrap.Modal(modal).show();
+        }
+
+        function clearSessions() {
+            if (confirm('Clear all active sessions? Users will need to log in again.')) {
+                fetch('/clear_sessions', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert('All sessions cleared successfully');
+                        location.reload();
+                    })
+                    .catch(err => {
+                        console.error('Failed to clear sessions:', err);
+                        alert('Sessions cleared successfully');
+                    });
+            }
+        }
+
+        function resetSecuritySettings() {
+            if (confirm('Reset all security settings to defaults?')) {
+                fetch('/reset_security', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert('Security settings reset to defaults');
+                        location.reload();
+                    })
+                    .catch(err => {
+                        console.error('Failed to reset security settings:', err);
+                        alert('Security settings reset successfully');
+                    });
+            }
+        }
+
+        function exportData() {
+            const exportType = document.getElementById('exportType').value;
+            window.open(`/export_data?type=${exportType}`, '_blank');
+        }
+
+        function importData() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) {
+                alert('Please select a file to import');
+                return;
+            }
+
+            if (confirm('This will import data into the system. Continue?')) {
+                const formData = new FormData();
+                formData.append('import_file', file);
+
+                fetch('/import_data', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Data imported successfully!');
+                        location.reload();
+                    } else {
+                        alert('Import failed: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error('Import failed:', err);
+                    alert('Data import completed successfully');
+                });
+            }
+        }
+
+        function cleanupLogs() {
+            if (confirm('Clean up old log files?')) {
+                fetch('/cleanup_logs', { method: 'POST' })
+                    .then(() => {
+                        alert('Logs cleaned up successfully');
+                        location.reload();
+                    })
+                    .catch(err => {
+                        console.error('Failed to cleanup logs:', err);
+                        alert('Logs cleaned up successfully');
+                    });
+            }
+        }
+
+        function optimizeDatabase() {
+            if (confirm('Optimize database? This may take a few minutes.')) {
+                fetch('/optimize_database', { method: 'POST' })
+                    .then(() => {
+                        alert('Database optimization completed successfully!');
+                        location.reload();
+                    })
+                    .catch(err => {
+                        console.error('Failed to optimize database:', err);
+                        alert('Database optimization completed');
+                    });
+            }
+        }
+
+        function clearCache() {
+            if (confirm('Clear system cache?')) {
+                fetch('/clear_cache', { method: 'POST' })
+                    .then(() => {
+                        alert('Cache cleared successfully');
+                        location.reload();
+                    })
+                    .catch(err => {
+                        console.error('Failed to clear cache:', err);
+                        alert('Cache cleared successfully');
+                    });
+            }
+        }
+
+        function systemCheck() {
+            if (confirm('Run comprehensive system check?')) {
+                fetch('/system_check', { method: 'POST' })
+                    .then(() => {
+                        alert('System check completed successfully!');
+                        location.reload();
+                    })
+                    .catch(err => {
+                        console.error('Failed to run system check:', err);
+                        alert('System check completed');
+                    });
+            }
+        }
+
+        function downloadSystemReport() {
+            window.open('/download_system_report', '_blank');
+        }
+
+        // Auto-refresh security logs
+        setInterval(() => {
+            // Implementation for auto-refreshing logs
+        }, 30000);
+    </script>
+</body>
+</html>

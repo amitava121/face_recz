@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sleep Mode</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            /* Simplified gradient with fewer color stops */
+            background: linear-gradient(120deg, #e0e7ff, #f3f4f6);
+            background-size: 200% 200%;
+            animation: gradientBG 8s ease-in-out infinite;
+            /* Hardware acceleration */
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000;
+        }
+        @keyframes gradientBG {
+            0% {background-position: 0% 50%;}
+            100% {background-position: 100% 50%;}
+        }
+        .sleep-card {
+            background: white;
+            border-radius: 1rem;
+            /* Simplified shadow */
+            box-shadow: 0 4px 16px rgba(37,99,235,0.08);
+            padding: 2.5rem 2rem 2rem 2rem;
+            text-align: center;
+            min-width: 340px;
+            /* Faster entrance animation */
+            animation: cardIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+            /* Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .sleep-icon {
+            color: #2563eb;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            /* Slower pulse for better performance */
+            animation: pulse 2s infinite;
+            /* Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        h1 { color: #2563eb; margin-bottom: 0.5rem; font-size: 2rem; }
+        .desc {
+            color: #222;
+            margin-bottom: 1.5rem;
+            font-size: 1.08rem;
+            opacity: 0.92;
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            /* Simplified transitions */
+            transition: transform 0.15s ease;
+            /* Hardware acceleration */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        .btn:hover, .btn:focus {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: scale(0.98);
+        }
+        @media (max-width: 500px) {
+            .sleep-card { min-width: 90vw; padding: 1.2rem 0.5rem; }
+            h1 { font-size: 1.3rem; }
+            .sleep-icon { font-size: 2rem; }
+            .btn { font-size: 1rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="sleep-card">
+        <div class="sleep-icon"><i class="fas fa-moon"></i></div>
+        <h1>Sleep Mode</h1>
+        <div class="desc">The system has entered sleep mode due to inactivity.</div>
+        {% if session.get('viewer_logged_in') %}
+        <button class="btn" onclick="window.location.href='{{ url_for('viewer_dashboard') }}'">
+            <i class="fas fa-home"></i> Return to Dashboard
+        </button>
+        {% else %}
+        <button class="btn" onclick="window.location.href='{{ url_for('index') }}'">
+            <i class="fas fa-home"></i> Return to Home
+        </button>
+        {% endif %}
+    </div>
+</body>
+</html> 

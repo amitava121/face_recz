@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings - Face Recognition Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+        }
+        .settings-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .settings-card {
+            background: #fff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 32px rgba(37,99,235,0.10);
+            border: 1px solid #e5e7eb;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .settings-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .setting-section {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .setting-section h5 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        .form-control, .form-select {
+            border-radius: 0.75rem;
+            border: 1px solid #d1d5db;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37,99,235,0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+        .back-btn {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(100,116,139,0.3);
+            color: white;
+            text-decoration: none;
+        }
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+        }
+        .status-online {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .range-input {
+            width: 100%;
+        }
+        .range-value {
+            background: #2563eb;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Universal Notification System -->
+    {% include 'notifications.html' %}
+    
+    <div class="settings-container">
+        <div class="settings-card">
+            <h1 class="settings-title">
+                <i class="fas fa-cogs me-3"></i>System Settings
+            </h1>
+
+            <form method="POST">
+                <!-- Face Recognition Settings -->
+                <div class="setting-section">
+                    <h5><i class="fas fa-user-check"></i>Face Recognition Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="face_threshold" class="form-label">Recognition Threshold</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="range" class="range-input" id="face_threshold" name="face_threshold"
+                                       min="0.1" max="1.0" step="0.05" value="{{ settings.face_threshold }}"
+                                       oninput="updateRangeValue('face_threshold', this.value)">
+                                <span class="range-value" id="face_threshold_value">{{ settings.face_threshold }}</span>
+                            </div>
+                            <small class="text-muted">Lower values = more lenient recognition</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="verification_threshold" class="form-label">Verification Threshold</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="range" class="range-input" id="verification_threshold" name="verification_threshold"
+                                       min="0.1" max="1.0" step="0.05" value="{{ settings.verification_threshold }}"
+                                       oninput="updateRangeValue('verification_threshold', this.value)">
+                                <span class="range-value" id="verification_threshold_value">{{ settings.verification_threshold }}</span>
+                            </div>
+                            <small class="text-muted">Prevents false positives</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Settings -->
+                <div class="setting-section">
+                    <h5><i class="fas fa-camera"></i>Camera Settings</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="detection_scale" class="form-label">Detection Scale</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="range" class="range-input" id="detection_scale" name="detection_scale"
+                                       min="0.1" max="1.0" step="0.1" value="{{ settings.detection_scale }}"
+                                       oninput="updateRangeValue('detection_scale', this.value)">
+                                <span class="range-value" id="detection_scale_value">{{ settings.detection_scale }}</span>
+                            </div>
+                            <small class="text-muted">Lower = faster processing</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="frame_skip" class="form-label">Frame Skip</label>
+                            <input type="number" class="form-control" id="frame_skip" name="frame_skip"
+                                   value="{{ settings.frame_skip }}" min="1" max="10">
+                            <small class="text-muted">Process every Nth frame</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="use_gpu" class="form-label">GPU Acceleration</label>
+                            <select class="form-select" id="use_gpu" name="use_gpu">
+                                <option value="true" {% if settings.use_gpu %}selected{% endif %}>Enabled</option>
+                                <option value="false" {% if not settings.use_gpu %}selected{% endif %}>Disabled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Settings -->
+                <div class="setting-section">
+                    <h5><i class="fas fa-clock"></i>Attendance Settings</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="attendance_window" class="form-label">Time Window (minutes)</label>
+                            <input type="number" class="form-control" id="attendance_window" name="attendance_window"
+                                   value="{{ settings.attendance_window }}" min="1" max="60">
+                            <small class="text-muted">Minimum time between attendance marks</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_reset_time" class="form-label">Auto Reset Time</label>
+                            <input type="time" class="form-control" id="auto_reset_time" name="auto_reset_time"
+                                   value="{{ settings.auto_reset_time }}">
+                            <small class="text-muted">Daily attendance reset time</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Performance -->
+                <div class="setting-section">
+                    <h5><i class="fas fa-tachometer-alt"></i>System Performance</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="max_fps" class="form-label">Maximum FPS</label>
+                            <input type="number" class="form-control" id="max_fps" name="max_fps"
+                                   value="{{ settings.max_fps }}" min="10" max="60">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="queue_size" class="form-label">Processing Queue Size</label>
+                            <input type="number" class="form-control" id="queue_size" name="queue_size"
+                                   value="{{ settings.queue_size }}" min="5" max="50">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="cache_size" class="form-label">Face Cache Size</label>
+                            <input type="number" class="form-control" id="cache_size" name="cache_size"
+                                   value="{{ settings.cache_size }}" min="100" max="5000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="setting-section">
+                    <h5><i class="fas fa-info-circle"></i>System Status</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">Database</label>
+                            <div class="status-indicator {{ 'status-online' if system_status.database else 'status-offline' }}">
+                                <i class="fas fa-circle"></i>
+                                {{ 'Online' if system_status.database else 'Offline' }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Camera</label>
+                            <div class="status-indicator {{ 'status-online' if system_status.camera else 'status-offline' }}">
+                                <i class="fas fa-circle"></i>
+                                {{ 'Connected' if system_status.camera else 'Disconnected' }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Face Recognition</label>
+                            <div class="status-indicator {{ 'status-online' if system_status.face_recognition else 'status-offline' }}">
+                                <i class="fas fa-circle"></i>
+                                {{ 'Ready' if system_status.face_recognition else 'Error' }}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">GPU Status</label>
+                            <div class="status-indicator {{ 'status-online' if system_status.gpu else 'status-offline' }}">
+                                <i class="fas fa-circle"></i>
+                                {{ 'Available' if system_status.gpu else 'Unavailable' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="text-center">
+                    <button type="submit" name="action" value="save" class="btn btn-primary me-3">
+                        <i class="fas fa-save me-2"></i>Save Settings
+                    </button>
+                    <button type="submit" name="action" value="test" class="btn btn-success me-3">
+                        <i class="fas fa-vial me-2"></i>Test Configuration
+                    </button>
+                    <button type="button" onclick="applySettings()" class="btn btn-info me-3">
+                        <i class="fas fa-play me-2"></i>Apply Now
+                    </button>
+                    <button type="button" onclick="getCurrentSettings()" class="btn btn-secondary me-3">
+                        <i class="fas fa-eye me-2"></i>View Current
+                    </button>
+                    <button type="button" onclick="resetToDefaults()" class="btn btn-warning me-3">
+                        <i class="fas fa-undo me-2"></i>Reset to Defaults
+                    </button>
+                    <a href="{{ url_for('admin_panel') }}" class="back-btn">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Admin Panel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateRangeValue(id, value) {
+            document.getElementById(id + '_value').textContent = value;
+        }
+
+        // Auto-save settings on change
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('change', function() {
+                // Add visual feedback for unsaved changes
+                this.style.borderColor = '#d97706';
+                showUnsavedChanges();
+            });
+        });
+
+        function showUnsavedChanges() {
+            // Show indicator that there are unsaved changes
+            const saveButton = document.querySelector('button[value="save"]');
+            if (saveButton) {
+                saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Settings *';
+                saveButton.classList.add('btn-warning');
+                saveButton.classList.remove('btn-primary');
+            }
+        }
+
+        function hideUnsavedChanges() {
+            // Hide indicator when changes are saved
+            const saveButton = document.querySelector('button[value="save"]');
+            if (saveButton) {
+                saveButton.innerHTML = '<i class="fas fa-save me-2"></i>Save Settings';
+                saveButton.classList.add('btn-primary');
+                saveButton.classList.remove('btn-warning');
+            }
+
+            // Reset border colors
+            document.querySelectorAll('input, select').forEach(element => {
+                element.style.borderColor = '';
+            });
+        }
+
+        // Test configuration function
+        function testConfiguration() {
+            fetch('/api/test_configuration')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✓ Configuration test passed!\n\n' + data.details.join('\n'));
+                    } else {
+                        alert('✗ Configuration test failed!\n\n' + data.message + '\n\n' + data.details.join('\n'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Test failed:', error);
+                    alert('Configuration test failed: ' + error.message);
+                });
+        }
+
+        // Apply settings immediately
+        function applySettings() {
+            fetch('/api/apply_settings', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Settings applied successfully to running system!');
+                        hideUnsavedChanges();
+                    } else {
+                        alert('Failed to apply some settings: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Apply failed:', error);
+                    alert('Failed to apply settings: ' + error.message);
+                });
+        }
+
+        // Get current applied settings
+        function getCurrentSettings() {
+            fetch('/api/get_current_settings')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const settings = data.settings;
+                        let settingsText = 'Current Applied Settings:\n\n';
+                        for (const [key, value] of Object.entries(settings)) {
+                            settingsText += `${key}: ${value}\n`;
+                        }
+                        alert(settingsText);
+                    } else {
+                        alert('Failed to get current settings: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Get settings failed:', error);
+                    alert('Failed to get settings: ' + error.message);
+                });
+        }
+
+        // Reset settings to defaults
+        function resetToDefaults() {
+            if (confirm('Are you sure you want to reset all settings to default values? This will overwrite all current settings.')) {
+                fetch('/api/reset_settings', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('✓ Settings reset to defaults successfully!\n\nThe page will reload to show the default values.');
+                            location.reload(); // Reload to show default values in the form
+                        } else {
+                            alert('✗ Failed to reset settings: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Reset failed:', error);
+                        alert('Failed to reset settings: ' + error.message);
+                    });
+            }
+        }
+
+        // Override form submission to provide better feedback
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const action = e.submitter.value;
+
+            if (action === 'test') {
+                e.preventDefault();
+                testConfiguration();
+            } else if (action === 'reset') {
+                e.preventDefault();
+                resetToDefaults();
+            } else if (action === 'save') {
+                // Let the form submit normally, but hide unsaved changes indicator after
+                setTimeout(hideUnsavedChanges, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

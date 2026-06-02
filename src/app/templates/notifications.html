@@ -1,0 +1,368 @@
+<!-- Universal Notification System -->
+<style>
+    /* Notification Container - Fixed position in upper right */
+    #notification-container {
+        position: fixed;
+        top: 20px; /* 20px from top of browser (approximately 0.2 inch) */
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 400px;
+        pointer-events: none; /* Allow clicks through container */
+    }
+    
+    /* Adjust position when navbar is present */
+    body:has(.navbar) #notification-container,
+    body:has(.top-navbar) #notification-container {
+        top: 80px; /* Below navbar when it exists */
+    }
+
+    /* Individual Notification */
+    .notification-toast {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        padding: 16px 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-width: 320px;
+        max-width: 400px;
+        pointer-events: auto; /* Allow interaction with individual toasts */
+        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Slide in animation */
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* Slide out animation */
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+
+    .notification-toast.removing {
+        animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    /* Progress bar */
+    .notification-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: rgba(0, 0, 0, 0.1);
+        transition: width linear;
+    }
+
+    /* Icon styling */
+    .notification-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 14px;
+    }
+
+    /* Content styling */
+    .notification-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .notification-title {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 1.4;
+        margin: 0;
+    }
+
+    .notification-message {
+        font-size: 13px;
+        line-height: 1.4;
+        opacity: 0.8;
+        margin: 0;
+    }
+
+    /* Close button */
+    .notification-close {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        opacity: 0.5;
+        transition: all 0.2s;
+        color: inherit;
+        font-size: 18px;
+        line-height: 1;
+        width: 24px;
+        height: 24px;
+    }
+
+    .notification-close:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Success notification */
+    .notification-toast.success {
+        border-left: 4px solid #10b981;
+    }
+
+    .notification-toast.success .notification-icon {
+        background: #d1fae5;
+        color: #10b981;
+    }
+
+    .notification-toast.success .notification-progress {
+        background: #10b981;
+    }
+
+    .notification-toast.success .notification-title {
+        color: #065f46;
+    }
+
+    /* Error notification */
+    .notification-toast.error {
+        border-left: 4px solid #ef4444;
+    }
+
+    .notification-toast.error .notification-icon {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .notification-toast.error .notification-progress {
+        background: #ef4444;
+    }
+
+    .notification-toast.error .notification-title {
+        color: #991b1b;
+    }
+
+    /* Warning notification */
+    .notification-toast.warning {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .notification-toast.warning .notification-icon {
+        background: #fef3c7;
+        color: #f59e0b;
+    }
+
+    .notification-toast.warning .notification-progress {
+        background: #f59e0b;
+    }
+
+    .notification-toast.warning .notification-title {
+        color: #92400e;
+    }
+
+    /* Info notification */
+    .notification-toast.info {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .notification-toast.info .notification-icon {
+        background: #dbeafe;
+        color: #3b82f6;
+    }
+
+    .notification-toast.info .notification-progress {
+        background: #3b82f6;
+    }
+
+    .notification-toast.info .notification-title {
+        color: #1e40af;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        #notification-container {
+            top: 70px;
+            right: 10px;
+            left: 10px;
+            max-width: none;
+        }
+
+        .notification-toast {
+            min-width: auto;
+            max-width: none;
+        }
+    }
+</style>
+
+<!-- Notification Container -->
+<div id="notification-container"></div>
+
+<script>
+/**
+ * Universal Notification System
+ * Usage: showNotification(message, type, duration, title)
+ * Types: 'success', 'error', 'warning', 'info'
+ */
+
+// Store active notifications
+let activeNotifications = new Set();
+
+/**
+ * Show a notification toast
+ * @param {string} message - The notification message
+ * @param {string} type - Type of notification ('success', 'error', 'warning', 'info')
+ * @param {number} duration - Duration in milliseconds (default: 5000, 0 for persistent)
+ * @param {string} title - Optional title for the notification
+ */
+function showNotification(message, type = 'info', duration = 5000, title = null) {
+    const container = document.getElementById('notification-container');
+    if (!container) {
+        console.error('Notification container not found');
+        return;
+    }
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification-toast ${type}`;
+    
+    // Generate unique ID
+    const notificationId = 'notification-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    notification.id = notificationId;
+    activeNotifications.add(notificationId);
+
+    // Icon based on type
+    const icons = {
+        success: '<i class="fas fa-check-circle"></i>',
+        error: '<i class="fas fa-times-circle"></i>',
+        warning: '<i class="fas fa-exclamation-triangle"></i>',
+        info: '<i class="fas fa-info-circle"></i>'
+    };
+
+    // Default titles
+    const defaultTitles = {
+        success: 'Success',
+        error: 'Error',
+        warning: 'Warning',
+        info: 'Information'
+    };
+
+    const notificationTitle = title || defaultTitles[type] || 'Notification';
+
+    // Build notification HTML
+    notification.innerHTML = `
+        <div class="notification-icon">${icons[type] || icons.info}</div>
+        <div class="notification-content">
+            <div class="notification-title">${notificationTitle}</div>
+            ${message ? `<div class="notification-message">${message}</div>` : ''}
+        </div>
+        <button class="notification-close" onclick="closeNotification('${notificationId}')" title="Close">
+            <i class="fas fa-times"></i>
+        </button>
+        ${duration > 0 ? '<div class="notification-progress"></div>' : ''}
+    `;
+
+    // Add to container
+    container.appendChild(notification);
+
+    // Auto-dismiss with progress bar
+    if (duration > 0) {
+        const progressBar = notification.querySelector('.notification-progress');
+        if (progressBar) {
+            // Animate progress bar
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressBar.style.transition = `width ${duration}ms linear`;
+                progressBar.style.width = '0%';
+            }, 10);
+        }
+
+        // Remove notification after duration
+        setTimeout(() => {
+            closeNotification(notificationId);
+        }, duration);
+    }
+
+    // Limit number of notifications (max 5)
+    const notifications = container.querySelectorAll('.notification-toast');
+    if (notifications.length > 5) {
+        closeNotification(notifications[0].id);
+    }
+}
+
+/**
+ * Close a specific notification
+ * @param {string} notificationId - The ID of the notification to close
+ */
+function closeNotification(notificationId) {
+    const notification = document.getElementById(notificationId);
+    if (!notification || !activeNotifications.has(notificationId)) return;
+
+    // Add removing class for animation
+    notification.classList.add('removing');
+    activeNotifications.delete(notificationId);
+
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (notification && notification.parentElement) {
+            notification.parentElement.removeChild(notification);
+        }
+    }, 300);
+}
+
+/**
+ * Close all notifications
+ */
+function closeAllNotifications() {
+    const notifications = document.querySelectorAll('.notification-toast');
+    notifications.forEach(notification => {
+        closeNotification(notification.id);
+    });
+}
+
+/**
+ * Convert backend flash messages to notifications
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle backend flash messages
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                // Map flash categories to notification types
+                let type = '{{ category }}';
+                if (type === 'danger') type = 'error';
+                if (type === 'message') type = 'info';
+                
+                // Show notification
+                showNotification('{{ message | safe }}', type, 5000);
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+});
+</script>

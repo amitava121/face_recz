@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/animations.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/fast-response.css') }}" rel="stylesheet">
+    <style>
+        /* iPhone-Style Smooth Animations */
+        * {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transform-style: preserve-3d;
+            will-change: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* iOS-style spring animations */
+        :root {
+            --spring-easing: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --smooth-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --ios-easing: cubic-bezier(0.4, 0.0, 0.2, 1);
+            --bounce-easing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        body {
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.08) 0%, transparent 50%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            contain: layout style paint;
+            transition: all 0.6s var(--ios-easing);
+            animation: fadeInBody 0.8s var(--smooth-easing) forwards;
+        }
+
+        @keyframes fadeInBody {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .attendance-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            animation: slideInContainer 0.9s var(--spring-easing) forwards;
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+
+        @keyframes slideInContainer {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .attendance-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInHeader 1s var(--smooth-easing) 0.2s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInHeader {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .attendance-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-radius: 1.5rem;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.12),
+                0 2px 8px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            overflow: hidden;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s var(--spring-easing);
+            transform: translateZ(0) translateY(20px) scale(0.98);
+            will-change: transform, box-shadow, opacity;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideInCard 0.8s var(--spring-easing) 0.4s forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideInCard {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98) translateZ(0);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) translateZ(0);
+            }
+        }
+
+        .attendance-card:hover {
+            transform: translateY(-12px) scale(1.02) translateZ(0);
+            box-shadow:
+                0 25px 50px rgba(0, 0, 0, 0.18),
+                0 12px 24px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            transition: all 0.3s var(--ios-easing);
+        }
+
+        .attendance-card:active {
+            transform: translateY(-8px) scale(0.98) translateZ(0);
+            transition: all 0.1s var(--ios-easing);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 550px;
+            margin: 0 auto;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow:
+                0 12px 24px rgba(0, 0, 0, 0.15),
+                0 4px 8px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(240, 240, 240, 0.8));
+            transition: all 0.4s var(--spring-easing);
+            aspect-ratio: 4/3;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(15px) saturate(150%);
+            -webkit-backdrop-filter: blur(15px) saturate(150%);
+            transform: translateZ(0) translateY(15px) scale(0.96);
+            will-change: transform, box-shadow, opacity;
+            height: 420px;
+            animation: slideInVideo 1s var(--spring-easing) 0.6s forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideInVideo {
+            from {
+                opacity: 0;
+                transform: translateY(15px) scale(0.96) translateZ(0);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) translateZ(0);
+            }
+        }
+
+        .video-container:hover {
+            transform: scale(1.03) translateZ(0);
+            box-shadow:
+                0 20px 40px rgba(37, 99, 235, 0.2),
+                0 8px 16px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            border-color: rgba(37, 99, 235, 0.4);
+            transition: all 0.3s var(--ios-easing);
+        }
+
+        .video-container:active {
+            transform: scale(0.98) translateZ(0);
+            transition: all 0.1s var(--ios-easing);
+        }
+
+        #localVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #e5e7eb;
+        }
+
+        .status-header {
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(37, 99, 235, 0.2);
+            border-radius: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.4s var(--spring-easing);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(4px);
+            min-width: 280px;
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            animation: slideInStatus 0.8s var(--spring-easing) 0.8s forwards;
+            opacity: 0;
+            transform: translateY(10px) scale(0.95);
+        }
+
+        @keyframes slideInStatus {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: 1.5rem 0 1rem 0;
+            flex-wrap: wrap;
+            animation: slideInControls 0.8s var(--spring-easing) 1s forwards;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        @keyframes slideInControls {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .control-btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 1rem;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 220px;
+            justify-content: center;
+            transition: all 0.3s var(--spring-easing);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.15),
+                0 2px 6px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            transform: translateZ(0) scale(1);
+            will-change: transform, opacity, box-shadow;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-100%);
+            transition: transform 0.4s var(--ios-easing);
+            z-index: -1;
+        }
+
+        .control-btn:hover::before {
+            transform: translateX(0);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-6px) scale(1.05) translateZ(0);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.25),
+                0 8px 16px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            transition: all 0.3s var(--spring-easing);
+        }
+
+        .control-btn:active {
+            transform: translateY(-2px) scale(0.95) translateZ(0);
+            transition: all 0.1s var(--ios-easing);
+            box-shadow:
+                0 8px 20px rgba(0, 0, 0, 0.2),
+                0 3px 8px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .control-btn i {
+            font-size: 1.2rem;
+            transition: all 0.3s var(--spring-easing);
+        }
+
+        .control-btn:hover i {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .control-btn:active i {
+            transform: scale(1.1) rotate(-2deg);
+        }
+
+        .start-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .start-btn:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .stop-btn {
+            background: var(--danger-gradient);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .stop-btn:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px) saturate(150%);
+            -webkit-backdrop-filter: blur(12px) saturate(150%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s var(--ios-easing);
+            border-radius: 1.5rem;
+            transform: scale(0.9);
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            animation: fadeInLoading 0.4s var(--spring-easing) forwards;
+        }
+
+        @keyframes fadeInLoading {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+                backdrop-filter: blur(0px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+                backdrop-filter: blur(12px) saturate(150%);
+            }
+        }
+
+        .loading-spinner {
+            width: 70px;
+            height: 70px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top: 5px solid var(--primary-color);
+            border-right: 5px solid rgba(37, 99, 235, 0.7);
+            border-radius: 50%;
+            animation: iosSpinner 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+            margin-bottom: 1.5rem;
+            box-shadow:
+                0 0 30px rgba(37, 99, 235, 0.5),
+                inset 0 0 15px rgba(37, 99, 235, 0.3),
+                0 0 60px rgba(37, 99, 235, 0.2);
+            transform: translateZ(0) scale(0);
+            will-change: transform;
+            backdrop-filter: blur(3px);
+            animation: iosSpinner 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) infinite,
+                       scaleInSpinner 0.5s var(--spring-easing) forwards;
+        }
+
+        @keyframes iosSpinner {
+            0% {
+                transform: rotate(0deg) translateZ(0);
+                border-top-color: var(--primary-color);
+                border-right-color: rgba(37, 99, 235, 0.7);
+            }
+            50% {
+                transform: rotate(180deg) translateZ(0);
+                border-top-color: rgba(37, 99, 235, 0.7);
+                border-right-color: var(--primary-color);
+            }
+            100% {
+                transform: rotate(360deg) translateZ(0);
+                border-top-color: var(--primary-color);
+                border-right-color: rgba(37, 99, 235, 0.7);
+            }
+        }
+
+        @keyframes scaleInSpinner {
+            from {
+                transform: scale(0) translateZ(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateZ(0);
+                opacity: 1;
+            }
+        }
+
+        .loading-text {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            background: rgba(37, 99, 235, 0.2);
+            padding: 0.5rem 1.5rem;
+            border-radius: 1rem;
+            backdrop-filter: blur(4px);
+            animation: fadeInText 0.6s var(--spring-easing) 0.2s forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes fadeInText {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .retry-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-gradient);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: none;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .retry-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+            z-index: -1;
+        }
+
+        .retry-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .retry-btn:hover::before {
+            transform: translateX(0);
+        }
+
+        .attendance-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-normal);
+            border-radius: 1.5rem;
+        }
+
+        .attendance-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            animation: fadeInCheck 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .checkmark-circle {
+            width: 90px;
+            height: 90px;
+            background: var(--success-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.5), 0 0 0 10px rgba(5, 150, 105, 0.2);
+            margin-bottom: 1.5rem;
+            transform: scale(0);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .checkmark-circle::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            opacity: 0;
+            animation: pulse 2s ease-out infinite;
+        }
+
+        .checkmark-circle i {
+            color: white;
+            font-size: 2.8rem;
+            animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: 0.2s;
+            transform: scale(0);
+        }
+
+        .student-name-overlay {
+            color: white;
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            background: rgba(5, 150, 105, 0.8);
+            padding: 0.6rem 2rem;
+            border-radius: 1rem;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.5s ease forwards;
+            animation-delay: 0.3s;
+            box-shadow: 0 5px 15px -5px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 0.5; }
+            100% { opacity: 0; transform: scale(1.2); }
+        }
+
+        @keyframes fadeInCheck {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Performance optimizations */
+        .control-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            transform: none !important;
+        }
+
+        .control-btn:disabled:hover {
+            transform: none !important;
+            box-shadow: var(--shadow-md) !important;
+        }
+
+        /* Faster animations for better responsiveness */
+        .animate-fade-in-up {
+            animation: fadeInUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .attendance-container {
+                padding: 1rem;
+            }
+
+            .attendance-card {
+                padding: 1rem;
+            }
+
+            .video-container {
+                height: 350px;
+                max-width: 450px;
+            }
+
+            .controls {
+                margin: 1rem 0 0.5rem 0;
+            }
+
+            .control-btn {
+                padding: 0.75rem 1.5rem;
+                font-size: 1rem;
+                min-width: 180px;
+            }
+
+            .checkmark-circle {
+                width: 60px;
+                height: 60px;
+            }
+
+            .checkmark-circle i {
+                font-size: 2rem;
+            }
+
+            .student-name-overlay {
+                font-size: 1.2rem;
+                padding: 0.4rem 1.2rem;
+            }
+        }
+
+        /* Ensure button visibility on smaller screens */
+        @media (max-height: 700px) {
+            .video-container {
+                height: 200px;
+            }
+
+            .attendance-card {
+                padding: 1rem;
+            }
+
+            .controls {
+                margin: 1rem 0 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="attendance-container">
+        <div class="attendance-header animate-fade-in-up" data-aos="fade-down">
+            <h1 class="text-gradient">Face Recognition Attendance</h1>
+            <div class="d-flex justify-content-center mb-4">
+                <div class="badge-primary px-4 py-2 rounded-pill animate-fade-in" data-aos="fade-up" data-aos-delay="150" style="backdrop-filter: blur(4px); border: 1px solid rgba(37, 99, 235, 0.3); background-color: rgba(37, 99, 235, 0.2); color: #000; font-weight: 600; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Position your face in front of the camera for automatic attendance marking
+                </div>
+            </div>
+            <div class="status-header animate-pulse" id="cameraStatusHeader">
+                <i class="fas fa-circle-notch me-2 animate-spin"></i>
+                Waiting for Face Detection...
+            </div>
+        </div>
+
+        <div class="attendance-card animate-fade-in-up" data-aos="zoom-in" data-aos-delay="100">
+            <div class="video-container" id="videoContainer">
+                <img id="localVideo" alt="Camera feed" />
+
+                <div id="loading" class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" id="loadingText">Starting camera...</div>
+                    <button id="retryBtn" class="retry-btn">
+                        <i class="fas fa-redo me-2"></i> Retry
+                    </button>
+                </div>
+
+                <div id="attendanceOverlay" class="attendance-overlay">
+                    <div class="checkmark-circle">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="student-name-overlay" id="studentNameOverlay"></div>
+                </div>
+            </div>
+
+            <div class="controls" data-aos="fade-up" data-aos-delay="200">
+                <button id="startBtn" class="control-btn start-btn animate-fade-in-up">
+                    <i class="fas fa-play"></i>
+                    <span>Start Attendance</span>
+                </button>
+                <button id="stopBtn" class="control-btn stop-btn animate-fade-in-up" style="display: none;">
+                    <i class="fas fa-stop"></i>
+                    <span>Stop Attendance</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="text-center mt-4" data-aos="fade-up" data-aos-delay="300">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary animate-fade-in-up" style="border-radius: 1rem; padding: 0.75rem 2rem; box-shadow: var(--shadow-sm); backdrop-filter: blur(4px); border: 2px solid rgba(37, 99, 235, 0.3);">
+                <i class="fas fa-home me-2"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
+    <!-- Camera client scripts -->
+    <script src="{{ url_for('static', filename='js/unified-webrtc-client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mac-camera-client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/simple-reliable-camera.js') }}"></script>
+    <script>
+    AOS.init({
+        duration: 250,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        once: true,
+        offset: 30,
+        delay: 0,
+        disable: 'mobile'
+    });
+
+    let isStreaming = false;
+    let startBtn = document.getElementById('startBtn');
+    let stopBtn = document.getElementById('stopBtn');
+    const statusHeader = document.getElementById('cameraStatusHeader');
+    let popupTimeout = null;
+    let lastMarkedStudentId = null;
+    let greenBoxShown = false;
+    let isCooldown = false;
+    let lastFaceId = null;
+
+    function showLoading() {
+        document.getElementById('loading').style.display = 'flex';
+        document.getElementById('retryBtn').style.display = 'none';
+        document.getElementById('loadingText').textContent = 'Starting camera...';
+    }
+
+    function hideLoading() {
+        document.getElementById('loading').style.display = 'none';
+    }
+
+    function showError(message) {
+        document.getElementById('loading').style.display = 'flex';
+        document.getElementById('loadingText').textContent = message;
+        document.getElementById('retryBtn').style.display = 'block';
+    }
+
+    // Enhanced diagnostic function to check system status
+    async function checkSystemStatus() {
+        console.log('🔍 === ENHANCED SYSTEM DIAGNOSTIC ===');
+        console.log('📅 Timestamp:', new Date().toISOString());
+        console.log('🌐 URL:', window.location.href);
+        console.log('🔒 Secure context:', window.isSecureContext);
+        console.log('📱 User agent:', navigator.userAgent);
+
+        // Check script availability
+        console.log('📜 Script availability:');
+        console.log('  - SimpleReliableCamera:', typeof SimpleReliableCamera !== 'undefined');
+        console.log('  - SimpleCameraClient:', typeof SimpleCameraClient !== 'undefined');
+        console.log('  - MacCameraClient:', typeof MacCameraClient !== 'undefined');
+
+        // Check DOM elements
+        console.log('🎯 DOM elements:');
+        console.log('  - Start button:', !!startBtn, startBtn?.style.display);
+        console.log('  - Stop button:', !!stopBtn, stopBtn?.style.display);
+        console.log('  - Video element:', !!document.getElementById('video-feed'));
+        console.log('  - Local video:', !!document.getElementById('localVideo'));
+        console.log('  - Video container:', !!document.getElementById('videoContainer'));
+        console.log('  - Overlay canvas:', !!document.getElementById('multi-face-overlay'));
+        console.log('  - Status header:', !!statusHeader);
+
+        // Check application state
+        console.log('📊 Application state:');
+        console.log('  - Is streaming:', isStreaming);
+        console.log('  - Is cooldown:', isCooldown);
+        console.log('  - Camera client exists:', !!window.cameraClient);
+        console.log('  - Socket exists:', !!window.socket);
+
+        // Check camera API availability (without requesting permission)
+        console.log('🎥 Camera system check:');
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            console.log('  - Camera API: AVAILABLE');
+            console.log('  - Secure context:', window.isSecureContext);
+            console.log('  - Protocol:', location.protocol);
+            console.log('  - Hostname:', location.hostname);
+        } else {
+            console.log('  - Camera API: NOT AVAILABLE');
+        }
+
+        // Check network connectivity
+        console.log('🌐 Network check:');
+        try {
+            const response = await fetch('/get_sleep_timer', { method: 'GET' });
+            console.log('  - Server connectivity:', response.ok ? 'OK' : 'FAILED');
+        } catch (err) {
+            console.log('  - Server connectivity: ERROR -', err.message);
+        }
+
+        console.log('✅ === DIAGNOSTIC COMPLETE ===');
+
+        // Return summary for programmatic use
+        return {
+            scriptsLoaded: typeof SimpleReliableCamera !== 'undefined',
+            domReady: !!startBtn && !!stopBtn,
+            isStreaming: isStreaming,
+            cameraClientExists: !!window.cameraClient,
+            secureContext: window.isSecureContext
+        };
+    }
+
+    // Add diagnostic functions to window for console access
+    window.checkSystemStatus = checkSystemStatus;
+    window.testCameraAccess = checkCameraPermission;
+
+    // Note: Camera permission is only checked when explicitly starting attendance
+    // This prevents the camera from turning on when just loading the page
+
+    function showAttendanceOverlay(name, type = 'success') {
+        const overlay = document.getElementById('attendanceOverlay');
+        const nameDiv = document.getElementById('studentNameOverlay');
+        const checkmarkCircle = document.querySelector('.checkmark-circle');
+
+        // Reset styles
+        checkmarkCircle.style.backgroundColor = '#4ade80'; // Default green
+        nameDiv.style.color = '#111827'; // Default text color
+
+        // Apply different styles based on type
+        if (type === 'error') {
+            checkmarkCircle.style.backgroundColor = '#ef4444'; // Red for error
+            nameDiv.style.color = '#ef4444'; // Red text for error
+            // Change checkmark to X
+            const icon = checkmarkCircle.querySelector('i');
+            icon.className = 'fas fa-times';
+        } else {
+            // Reset to checkmark
+            const icon = checkmarkCircle.querySelector('i');
+            icon.className = 'fas fa-check';
+        }
+
+        nameDiv.textContent = name;
+        overlay.style.display = 'flex';
+        clearTimeout(popupTimeout);
+        popupTimeout = setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 1500); // 1.5 seconds
+    }
+
+    async function checkCameraPermission() {
+        try {
+            console.log('🎥 Checking camera permissions...');
+            console.log('🌐 Browser:', navigator.userAgent);
+
+            // Check if we're on a secure context (HTTPS or localhost)
+            const isSecureContext = window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost';
+            console.log('🔒 Secure context:', isSecureContext);
+
+            if (!isSecureContext) {
+                return {
+                    granted: false,
+                    error: 'Camera access requires a secure connection (HTTPS).',
+                    errorDetails: 'Please access the application via HTTPS or localhost.',
+                    errorName: 'InsecureContext'
+                };
+            }
+
+            // More permissive browser detection for modern browsers
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+            const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+            const isFirefox = /Firefox/.test(navigator.userAgent);
+            const isEdge = /Edg/.test(navigator.userAgent);
+            const isModernBrowser = isChrome || isSafari || isFirefox || isEdge;
+
+            console.log('🔍 Browser detection:', { isChrome, isSafari, isFirefox, isEdge });
+
+            // First check if mediaDevices is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.error('❌ MediaDevices API not supported in this browser');
+
+                // For modern browsers, try to work around the issue
+                if (isModernBrowser) {
+                    console.warn('⚠️ Modern browser detected but MediaDevices API not found. Attempting polyfill...');
+
+                    // Create a placeholder if needed
+                    if (!window.navigator.mediaDevices) {
+                        window.navigator.mediaDevices = {};
+                    }
+
+                    // Polyfill getUserMedia
+                    if (!navigator.mediaDevices.getUserMedia) {
+                        const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+                        if (!getUserMedia) {
+                            return {
+                                granted: false,
+                                error: 'Your browser does not support camera access. Please try a different browser like Chrome or Firefox.',
+                                errorName: 'MediaDevicesNotSupported'
+                            };
+                        }
+
+                        navigator.mediaDevices.getUserMedia = function(constraints) {
+                            console.warn('🔧 Using polyfill for getUserMedia');
+                            return new Promise(function(resolve, reject) {
+                                getUserMedia.call(navigator, constraints, resolve, reject);
+                            });
+                        };
+                    }
+                } else {
+                    return {
+                        granted: false,
+                        error: 'Your browser does not support camera access. Please try a different browser like Chrome or Firefox.',
+                        errorName: 'MediaDevicesNotSupported'
+                    };
+                }
+            }
+
+            // Try to get camera permission with multiple constraint sets
+            let stream = null;
+            const constraintSets = [
+                // Basic constraints
+                { video: true },
+                // More specific constraints
+                { video: { width: 320, height: 240 } },
+                // Fallback constraints
+                { video: { facingMode: 'user' } }
+            ];
+
+            for (let i = 0; i < constraintSets.length; i++) {
+                try {
+                    console.log(`🎯 Trying constraint set ${i + 1}:`, constraintSets[i]);
+                    stream = await navigator.mediaDevices.getUserMedia(constraintSets[i]);
+                    console.log('✅ Camera permission granted with constraint set', i + 1);
+                    break;
+                } catch (constraintError) {
+                    console.warn(`❌ Constraint set ${i + 1} failed:`, constraintError);
+                    if (i === constraintSets.length - 1) {
+                        throw constraintError; // Re-throw the last error
+                    }
+                }
+            }
+
+            if (!stream) {
+                throw new Error('Failed to get camera stream with any constraint set');
+            }
+
+            // If we get here, permission was granted
+            // Stop all tracks to release the camera
+            stream.getTracks().forEach(track => {
+                track.stop();
+                console.log('🛑 Stopped track:', track.kind);
+            });
+
+            console.log('✅ Camera permission check successful');
+            return { granted: true };
+        } catch (error) {
+            console.error('❌ Camera permission check failed:', error);
+
+            let errorMessage = 'Could not access camera. ';
+            let errorDetails = '';
+
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                errorMessage += 'Camera access was denied.';
+                errorDetails = 'Please click "Allow" when prompted for camera access, or check your browser settings to enable camera access for this site.';
+            } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                errorMessage += 'No camera was found on your device.';
+                errorDetails = 'Please connect a camera and reload the page.';
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                errorMessage += 'Your camera may be in use by another application.';
+                errorDetails = 'Please close other applications that might be using your camera (like Zoom, Teams, or other video apps) and try again.';
+            } else if (error.name === 'AbortError') {
+                errorMessage += 'Camera access request was aborted.';
+                errorDetails = 'Please try again or use a different browser.';
+            } else if (error.name === 'SecurityError') {
+                errorMessage += 'Camera access was blocked due to security restrictions.';
+                errorDetails = 'Please use a secure connection (HTTPS) or try a different browser.';
+            } else if (error.name === 'OverconstrainedError') {
+                errorMessage += 'Camera constraints could not be satisfied.';
+                errorDetails = 'Your camera may not support the required settings. Please try a different camera or browser.';
+            } else {
+                errorMessage += 'An unknown error occurred.';
+                errorDetails = 'Please try refreshing the page or using a different browser like Chrome or Firefox.';
+            }
+
+            return {
+                granted: false,
+                error: errorMessage,
+                errorDetails: errorDetails,
+                errorName: error.name || 'UnknownError'
+            };
+        }
+    }
+
+    async function startAttendance() {
+        console.log('🎬 Starting attendance function...');
+        console.log('📊 System status check:');
+        console.log('  - isStreaming:', isStreaming);
+        console.log('  - startBtn.disabled:', startBtn.disabled);
+        console.log('  - SimpleReliableCamera available:', typeof SimpleReliableCamera !== 'undefined');
+
+        showLoading();
+        const localVideo = document.getElementById('localVideo');
+        const videoContainer = document.getElementById('videoContainer');
+
+        // Dispatch attendance start event
+        document.dispatchEvent(new CustomEvent('attendance:start', {
+            detail: { processId: 'attendance-' + Date.now() }
+        }));
+
+        try {
+            console.log('🖼️ Setting placeholder image...');
+            // Set a placeholder image while loading
+            localVideo.src = '/static/img/camera-placeholder.jpg';
+
+            // First check camera permissions
+            console.log('🎥 Checking camera permissions...');
+            const permissionCheck = await checkCameraPermission();
+            if (!permissionCheck.granted) {
+                throw new Error(permissionCheck.error + (permissionCheck.errorDetails ? '\n\n' + permissionCheck.errorDetails : ''));
+            }
+            console.log('✅ Camera permission granted');
+
+            // Call the application backend to start attendance
+            console.log('🌐 Calling backend /start_attendance...');
+            const response = await fetch('/start_attendance', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response ok:', response.ok);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Start attendance response:', data);
+
+            if (data.success) {
+                isStreaming = true;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'flex';
+                // Reset button state
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+
+                // Create a video element for camera
+                const videoElement = document.createElement('video');
+                videoElement.id = 'video-feed';
+                videoElement.autoplay = true;
+                videoElement.playsInline = true;
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                videoElement.style.objectFit = 'cover';
+                videoElement.style.display = 'block';
+                videoElement.style.borderRadius = '1.5rem';
+                videoElement.muted = true;
+                videoElement.setAttribute('muted', '');
+
+                // Create the overlay canvas for face detection boxes
+                const overlayCanvas = document.createElement('canvas');
+                overlayCanvas.id = 'multi-face-overlay';
+                overlayCanvas.style.position = 'absolute';
+                overlayCanvas.style.top = '0';
+                overlayCanvas.style.left = '0';
+                overlayCanvas.style.width = '100%';
+                overlayCanvas.style.height = '100%';
+                overlayCanvas.style.pointerEvents = 'none';
+                overlayCanvas.style.zIndex = '10';
+                overlayCanvas.style.borderRadius = '1.5rem';
+
+                // Replace the image with the video element and add the overlay canvas
+                localVideo.style.display = 'none';
+                videoContainer.appendChild(videoElement);
+                videoContainer.appendChild(overlayCanvas);
+
+                console.log('Video element and overlay canvas created');
+
+                // Check if SimpleReliableCamera is available
+                if (typeof SimpleReliableCamera === 'undefined') {
+                    throw new Error('SimpleReliableCamera class not found. Please check if the script is loaded.');
+                }
+
+                console.log('Using SimpleReliableCamera for all browsers');
+
+                // Create the camera client
+                const cameraClient = new SimpleReliableCamera({
+                    videoElement: videoElement,
+                    mode: 'attendance',
+                    onStatusChange: function(status, message) {
+                        console.log('Camera status changed:', status, message);
+                        if (statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
+                            statusHeader.textContent = "Waiting for Face Detection...";
+                            statusHeader.style.color = "#2563eb";
+                        }
+                    },
+                    onAttendanceMarked: function(data) {
+                        console.log('Attendance marked:', data);
+                        handleAttendanceResponse(data);
+                    },
+                    onFaceDetected: function(data) {
+                        console.log('Face detected callback:', data);
+
+                        if (isCooldown) {
+                            return;
+                        }
+
+                        // Update status header
+                        if (statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
+                            statusHeader.textContent = "Detecting Face...";
+                            statusHeader.style.color = "#2563eb";
+                        }
+
+                        // Always clear the canvas first to ensure boxes disappear when faces leave
+                        const videoElement = document.getElementById('video-feed');
+                        if (videoElement) {
+                            const canvasId = 'multi-face-overlay';
+                            let overlayCanvas = document.getElementById(canvasId);
+                            if (overlayCanvas) {
+                                const ctx = overlayCanvas.getContext('2d');
+                                // Make sure canvas dimensions match the video element
+                                overlayCanvas.width = videoElement.clientWidth;
+                                overlayCanvas.height = videoElement.clientHeight;
+                                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                            }
+                        }
+
+                        console.log('Face detection data received:', data);
+
+                        // Check if there are any faces detected
+                        const hasFaces = (data && data.faces && Array.isArray(data.faces) && data.faces.length > 0) ||
+                                        (data && data.face_rect);
+
+                        // Update the last face detection time if faces are detected
+                        if (hasFaces) {
+                            lastFaceDetectionTime = Date.now();
+                        }
+
+                        // If no faces are detected, update the status header
+                        if (!hasFaces && statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
+                            statusHeader.textContent = "Waiting for Face Detection...";
+                            statusHeader.style.color = "#2563eb";
+                            console.log('No faces detected, cleared canvas');
+                            return; // Exit early if no faces detected
+                        }
+
+                        // Handle multiple faces if available
+                        if (data && data.faces && Array.isArray(data.faces) && data.faces.length > 0) {
+                            console.log('Multiple faces detected:', data.faces.length);
+
+                            // Use the drawMultipleFaceResults function to draw all faces
+                            drawMultipleFaceResults(data.faces);
+
+                            // Check if any face has a student_id for cooldown
+                            const recognizedFace = data.faces.find(face => face.student_id !== undefined);
+                            if (recognizedFace && lastFaceId !== null && recognizedFace.student_id === lastFaceId) {
+                                return;
+                            }
+                        }
+                        // Handle single face in the response
+                        else if (data && data.face_rect) {
+                            console.log('Single face detected:', data.face_rect);
+
+                            // Create a faces array with the single face
+                            const faces = [{
+                                x: data.face_rect.x,
+                                y: data.face_rect.y,
+                                width: data.face_rect.width,
+                                height: data.face_rect.height,
+                                label: 'Face Detected',
+                                type: 'detected'
+                            }];
+                            drawMultipleFaceResults(faces);
+                        }
+                    },
+                    onError: function(error) {
+                        console.log('Error in camera client:', error);
+
+                        if (typeof error === 'string' && (error.includes('duplicate key value') || error.includes('already exists'))) {
+                            console.log('Duplicate attendance detected');
+
+                            // Create a face box for the duplicate attendance
+                            const videoElement = document.getElementById('video-feed');
+                            if (videoElement) {
+                                const canvasId = 'multi-face-overlay';
+                                let overlayCanvas = document.getElementById(canvasId);
+                                if (overlayCanvas) {
+                                    // If we have the last face rect from the camera client, use it
+                                    if (window.cameraClient && window.cameraClient.lastFaceRect) {
+                                        const { x, y, width, height } = window.cameraClient.lastFaceRect;
+                                        const faces = [{
+                                            x: x,
+                                            y: y,
+                                            width: width,
+                                            height: height,
+                                            label: 'Already Marked Today',
+                                            type: 'already_marked_today'
+                                        }];
+                                        drawMultipleFaceResults(faces);
+                                    }
+                                }
+                            }
+
+                            // Update status header
+                            statusHeader.textContent = "Already Marked Today";
+                            statusHeader.style.color = "#b91c1c";
+                            clearTimeout(popupTimeout);
+                            statusHeader.dataset.locked = "true";
+                            isCooldown = true;
+                            popupTimeout = setTimeout(() => {
+                                statusHeader.textContent = "Waiting for Face Detection...";
+                                statusHeader.style.color = "#2563eb";
+                                statusHeader.dataset.locked = "false";
+                                isCooldown = false;
+                            }, 2000);
+                        }
+                    }
+                });
+
+                console.log('Camera client created, attempting to start...');
+
+                // Start camera client with timeout and retry logic
+                let cameraStarted = false;
+                let attempts = 0;
+                const maxAttempts = 3;
+
+                while (!cameraStarted && attempts < maxAttempts) {
+                    attempts++;
+                    console.log(`🎥 Camera start attempt ${attempts}/${maxAttempts}`);
+
+                    try {
+                        await cameraClient.start();
+                        cameraStarted = true;
+                        console.log('✅ Camera client started successfully');
+                    } catch (cameraError) {
+                        console.warn(`❌ Camera start attempt ${attempts} failed:`, cameraError);
+
+                        if (attempts < maxAttempts) {
+                            console.log('⏳ Waiting 1 second before retry...');
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        } else {
+                            throw new Error(`Camera failed to start after ${maxAttempts} attempts: ${cameraError.message}`);
+                        }
+                    }
+                }
+
+                // Store the camera client globally
+                window.cameraClient = cameraClient;
+
+                // Hide loading overlay
+                hideLoading();
+
+                // Set up a socket connection to receive attendance events
+                setupSocketConnection();
+
+                console.log('🎉 Attendance system started successfully');
+            } else {
+                throw new Error(data.message || 'Failed to start attendance');
+            }
+        } catch (err) {
+            console.error('❌ Error starting attendance:', err);
+            // Dispatch attendance stop event on error
+            document.dispatchEvent(new CustomEvent('attendance:stop', {
+                detail: { processId: 'attendance-' + Date.now() }
+            }));
+
+            let errorMessage = 'Failed to start camera: ' + err.message;
+            if (err.errorDetails) {
+                errorMessage += '\n\n' + err.errorDetails;
+            }
+
+            // Add specific error handling for common camera issues
+            if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
+                errorMessage = 'Camera access denied. Please allow camera access in your browser and try again.';
+            } else if (err.message.includes('NotFoundError') || err.message.includes('No camera')) {
+                errorMessage = 'No camera found. Please connect a camera and try again.';
+            } else if (err.message.includes('NotReadableError') || err.message.includes('in use')) {
+                errorMessage = 'Camera is in use by another application. Please close other apps using the camera and try again.';
+            }
+
+            showError(errorMessage);
+            isStreaming = false;
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            // Reset button state on error
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.transform = 'scale(1)';
+        }
+    }
+
+    async function stopAttendance() {
+        console.log('Stop Attendance button clicked');
+
+        // Dispatch attendance stop event
+        document.dispatchEvent(new CustomEvent('attendance:stop', {
+            detail: { processId: 'attendance-' + Date.now() }
+        }));
+
+        try {
+            // Show loading overlay while stopping
+            const overlay = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            loadingText.textContent = 'Stopping camera...';
+            overlay.style.display = 'flex';
+
+            // Stop camera client if it exists
+            if (window.cameraClient) {
+                try {
+                    console.log('Stopping camera client');
+                    window.cameraClient.stop();
+                    console.log('Camera client stopped successfully');
+                    window.cameraClient = null;
+                } catch (stopError) {
+                    console.error('Error stopping camera client:', stopError);
+                }
+            }
+
+            // Call the application backend to stop attendance
+            console.log('Calling server to stop attendance');
+            const response = await fetch('/stop_attendance', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            const data = await response.json();
+            console.log('Server response for stop attendance:', data);
+
+            // Reset the video display
+            const localVideo = document.getElementById('localVideo');
+            localVideo.style.display = 'block';
+            localVideo.src = '/static/img/camera-placeholder.jpg';
+
+            // Remove the video element if it exists
+            const videoElement = document.getElementById('video-feed');
+            if (videoElement) {
+                try {
+                    videoElement.srcObject = null;
+                    videoElement.parentNode.removeChild(videoElement);
+                    console.log('Removed video element');
+                } catch (removeError) {
+                    console.warn('Error removing video element:', removeError);
+                }
+            }
+
+            isStreaming = false;
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+
+            // Disconnect socket if connected
+            if (window.socket) {
+                try {
+                    window.socket.disconnect();
+                    window.socket = null;
+                } catch (socketError) {
+                    console.warn('Error disconnecting socket:', socketError);
+                }
+            }
+
+            // Clear face detection canvas and status
+            const canvasId = 'multi-face-overlay';
+            const overlayCanvas = document.getElementById(canvasId);
+            if (overlayCanvas) {
+                const ctx = overlayCanvas.getContext('2d');
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                console.log('Cleared face detection canvas');
+            }
+
+            // Reset status header to default state
+            const statusHeader = document.getElementById('status-header');
+            if (statusHeader) {
+                statusHeader.textContent = 'Position your face in front of the camera for automatic attendance marking';
+                statusHeader.style.color = '#1f2937';
+                statusHeader.dataset.locked = 'false';
+                console.log('Reset status header');
+            }
+
+            // Clear any pending canvas clear timeouts
+            if (clearCanvasTimeout) {
+                clearTimeout(clearCanvasTimeout);
+                clearCanvasTimeout = null;
+            }
+
+            // Update message and hide loading overlay
+            loadingText.textContent = 'Attendance stopped successfully';
+
+            // Hide loading overlay after a short delay
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 1000);
+        } catch (err) {
+            console.error('Error stopping attendance:', err);
+
+            // Show error message and hide loading overlay
+            const overlay = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            loadingText.textContent = 'Error stopping attendance';
+
+            // Hide loading overlay after showing error
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                showError('Error stopping attendance: ' + err.message);
+            }, 1500);
+        }
+    }
+
+    function setupSocketConnection() {
+        // Load Socket.IO script dynamically
+        if (!window.io) {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js';
+            script.onload = connectSocket;
+            document.head.appendChild(script);
+        } else {
+            connectSocket();
+        }
+    }
+
+    function connectSocket() {
+        // Connect to the Socket.IO server
+        window.socket = io();
+
+        // Listen for attendance events
+        window.socket.on('attendance_result', function(data) {
+            console.log('Attendance result received:', data);
+            if (data.status === 'present') {
+                showAttendanceOverlay(data.name);
+            }
+        });
+
+        // Listen for video frames
+        // Create an image element to preload frames
+        const frameImage = new Image();
+        let isFrameLoading = false;
+
+        window.socket.on('video_frame', function(data) {
+            if (data.frame && !isFrameLoading) {
+                isFrameLoading = true;
+
+                // Preload the image
+                frameImage.onload = function() {
+                    // Update the video element with the received frame
+                    const localVideo = document.getElementById('localVideo');
+                    localVideo.src = frameImage.src;
+                    isFrameLoading = false;
+                };
+
+                frameImage.onerror = function() {
+                    isFrameLoading = false;
+                };
+
+                // Set the source to load the image
+                frameImage.src = 'data:image/jpeg;base64,' + data.frame;
+            }
+        });
+
+        window.socket.on('connect', function() {
+            console.log('Socket connected');
+        });
+
+        window.socket.on('disconnect', function() {
+            console.log('Socket disconnected');
+        });
+    }
+
+    // Add event listeners with better error handling
+    startBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🚀 Start button clicked - Event triggered');
+
+        // Check if already processing
+        if (startBtn.disabled || isStreaming) {
+            console.log('⚠️ Button already processing or streaming active');
+            return;
+        }
+
+        // Immediate visual feedback
+        startBtn.style.opacity = '0.7';
+        startBtn.style.transform = 'scale(0.95)';
+        startBtn.disabled = true;
+
+        console.log('🎯 Calling startAttendance function...');
+
+        // Call start function with timeout
+        Promise.race([
+            startAttendance(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Start attendance timeout')), 30000)
+            )
+        ]).catch(error => {
+            console.error('❌ Start attendance failed:', error);
+            // Reset button state on error
+            startBtn.style.opacity = '1';
+            startBtn.style.transform = 'scale(1)';
+            startBtn.disabled = false;
+            showError('Failed to start: ' + error.message);
+        });
+    });
+
+    stopBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Stop button clicked');
+
+        // Immediate visual feedback
+        stopBtn.style.opacity = '0.7';
+        stopBtn.style.transform = 'scale(0.95)';
+
+        stopAttendance();
+    });
+
+    document.getElementById('retryBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        startAttendance();
+    });
+
+    // Add event listener for page unload
+    window.addEventListener('beforeunload', function() {
+        if (isStreaming) {
+            document.dispatchEvent(new CustomEvent('attendance:stop', {
+                detail: { processId: 'attendance-' + Date.now() }
+            }));
+        }
+    });
+
+    // Variable to track if we need to clear the canvas
+    let clearCanvasTimeout = null;
+
+    // Page load optimization
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Page loaded - Optimizing performance...');
+
+        // Preload critical resources
+        const preloadImage = new Image();
+        preloadImage.src = '/static/img/camera-placeholder.jpg';
+
+        // Add performance monitoring
+        if (window.performance && window.performance.mark) {
+            window.performance.mark('attendance-page-ready');
+        }
+
+        // Initialize button states
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.transform = 'scale(1)';
+            console.log('✅ Start button initialized');
+        }
+
+        // Check system readiness
+        setTimeout(checkSystemStatus, 1000);
+
+        // Scroll to ensure the Start Attendance button is visible
+        setTimeout(() => {
+            const startButton = document.getElementById('startBtn');
+            if (startButton) {
+                startButton.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'center'
+                });
+                console.log('📍 Scrolled to Start Attendance button');
+            }
+        }, 800); // Small delay to ensure page is fully loaded and AOS animations complete
+    });
+
+    // Add this helper to draw multiple face boxes and labels
+    function drawMultipleFaceResults(faceResults) {
+        const videoElement = document.getElementById('video-feed');
+        if (!videoElement) {
+            console.warn('Video element not found for drawing face boxes');
+            return;
+        }
+
+        // Get the overlay canvas
+        const canvasId = 'multi-face-overlay';
+        let overlayCanvas = document.getElementById(canvasId);
+        if (!overlayCanvas) {
+            console.warn('Overlay canvas not found, face boxes will not be drawn');
+            return;
+        }
+
+        // Make sure canvas dimensions match the video element
+        if (overlayCanvas.width !== videoElement.clientWidth ||
+            overlayCanvas.height !== videoElement.clientHeight) {
+            overlayCanvas.width = videoElement.clientWidth;
+            overlayCanvas.height = videoElement.clientHeight;
+        }
+
+        console.log('Drawing face boxes on canvas:', canvasId, 'Number of faces:', faceResults.length,
+                    'Canvas dimensions:', overlayCanvas.width, 'x', overlayCanvas.height);
+
+        // Set canvas dimensions to match video display size
+        overlayCanvas.width = videoElement.clientWidth;
+        overlayCanvas.height = videoElement.clientHeight;
+
+        const ctx = overlayCanvas.getContext('2d');
+
+        // Always clear the canvas before drawing new boxes
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+        // If no faces, set a timeout to clear the canvas after a short delay
+        // This ensures boxes disappear when faces leave the frame
+        if (!faceResults || faceResults.length === 0) {
+            // Clear any existing timeout
+            if (clearCanvasTimeout) {
+                clearTimeout(clearCanvasTimeout);
+            }
+
+            // Set a new timeout to clear the canvas after 500ms
+            clearCanvasTimeout = setTimeout(() => {
+                if (overlayCanvas) {
+                    const ctx = overlayCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                }
+            }, 500);
+
+            return;
+        }
+
+        // If we have faces, clear any pending timeout and update the last detection time
+        if (clearCanvasTimeout) {
+            clearTimeout(clearCanvasTimeout);
+            clearCanvasTimeout = null;
+        }
+
+        // Update the last time faces were detected
+        lastFaceDetectionTime = Date.now();
+
+        // Calculate scale factors between original image and display size
+        const videoWidth = videoElement.videoWidth || 320;
+        const videoHeight = videoElement.videoHeight || 240;
+        const displayWidth = videoElement.clientWidth;
+        const displayHeight = videoElement.clientHeight;
+
+        const scaleX = displayWidth / videoWidth;
+        const scaleY = displayHeight / videoHeight;
+
+        // Draw each face
+        faceResults.forEach(face => {
+            // Scale coordinates to match display size
+            const x = face.x * scaleX;
+            const y = face.y * scaleY;
+            const width = face.width * scaleX;
+            const height = face.height * scaleY;
+
+            // Draw green box for every face
+            ctx.strokeStyle = '#00FF00'; // Bright green
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, width, height);
+
+            // Draw label with appropriate color based on status - smaller font
+            ctx.font = 'bold 10px Arial'; // Reduced from 14px to 10px
+            let labelColor = 'rgba(34,197,94,0.85)'; // Default green
+            let textColor = 'white';
+
+            if (face.label === 'Already Marked Today') {
+                labelColor = 'rgba(220,38,38,0.85)'; // Red for already marked
+                // Shorten the label text
+                face.label = 'Already Marked';
+            } else if (face.type === 'challenge_required') {
+                labelColor = 'rgba(217,119,6,0.90)'; // Orange for active liveness challenge
+            } else if (face.label === 'Unknown Face') {
+                labelColor = 'rgba(234,179,8,0.85)'; // Yellow for unknown
+            }
+
+            // Draw label background - smaller height
+            const labelText = face.label || 'Face Detected';
+            const labelWidth = ctx.measureText(labelText).width + 8; // Reduced padding
+            ctx.fillStyle = labelColor;
+            ctx.fillRect(x, y - 16, labelWidth, 16); // Reduced height from 22 to 16
+
+            // Draw label text
+            ctx.fillStyle = textColor;
+            ctx.fillText(labelText, x + 4, y - 4); // Adjusted position
+        });
+    }
+
+    // Make the function available globally
+    window.drawMultipleFaceResults = drawMultipleFaceResults;
+
+    // Variable to track the last time faces were detected
+    let lastFaceDetectionTime = 0;
+
+    // Function to periodically check and clear the canvas if no faces have been detected for a while
+    function checkAndClearCanvas() {
+        const now = Date.now();
+
+        // If it's been more than 2 seconds since we last detected faces, clear the canvas
+        if (now - lastFaceDetectionTime > 2000) {
+            const videoElement = document.getElementById('video-feed');
+            if (videoElement) {
+                const canvasId = 'multi-face-overlay';
+                let overlayCanvas = document.getElementById(canvasId);
+                if (overlayCanvas) {
+                    // Make sure canvas dimensions match the video element
+                    if (overlayCanvas.width !== videoElement.clientWidth ||
+                        overlayCanvas.height !== videoElement.clientHeight) {
+                        overlayCanvas.width = videoElement.clientWidth;
+                        overlayCanvas.height = videoElement.clientHeight;
+                    }
+
+                    const ctx = overlayCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                    console.log('Auto-cleared canvas due to inactivity');
+
+                    // Update status header if not locked
+                    if (statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
+                        statusHeader.textContent = "Waiting for Face Detection...";
+                        statusHeader.style.color = "#2563eb";
+                    }
+                }
+            }
+        }
+
+        // Check again in 1 second
+        setTimeout(checkAndClearCanvas, 1000);
+    }
+
+    // Start the periodic check when the page loads
+    setTimeout(checkAndClearCanvas, 1000);
+
+    // Update handleAttendanceResponse to ensure boxes are drawn
+    function handleAttendanceResponse(data) {
+        console.log('Handling attendance response:', data);
+
+        // Check if we have faces data in the response
+        if (data && data.faces && Array.isArray(data.faces) && data.faces.length > 0) {
+            console.log('Drawing faces from attendance response:', data.faces);
+            drawMultipleFaceResults(data.faces);
+
+            // Update header status based on face types
+            if (data.faces.some(f => f.type === 'attendance_marked')) {
+                statusHeader.textContent = 'Attendance Marked';
+                statusHeader.style.color = '#059669';
+
+                // Show attendance overlay for the marked student
+                const markedFace = data.faces.find(f => f.type === 'attendance_marked');
+                if (markedFace && markedFace.name) {
+                    showAttendanceOverlay(markedFace.name);
+                }
+            } else if (data.faces.some(f => f.type === 'already_marked_today')) {
+                statusHeader.textContent = 'Already Marked Today';
+                statusHeader.style.color = '#b91c1c';
+            } else if (data.faces.some(f => f.type === 'challenge_required')) {
+                const challengeFace = data.faces.find(f => f.type === 'challenge_required');
+                const progressPercent = Math.round((challengeFace.challenge_progress || 0) * 100);
+                statusHeader.textContent = `${challengeFace.challenge_message || 'Turn your face slightly left or right'} (${progressPercent}%)`;
+                statusHeader.style.color = '#d97706';
+            } else if (data.faces.some(f => f.type === 'unknown_face')) {
+                statusHeader.textContent = 'Unknown Face';
+                statusHeader.style.color = '#dc2626';
+            } else {
+                statusHeader.textContent = 'Waiting for Face Detection...';
+                statusHeader.style.color = '#2563eb';
+            }
+        }
+        // Legacy support for old response format
+        else if (data && data.type) {
+            console.log('Legacy attendance response format:', data.type);
+
+            if (data.type === 'attendance_marked') {
+                statusHeader.textContent = `Attendance Marked: ${data.name || ''}`;
+                statusHeader.style.color = '#059669';
+                statusHeader.dataset.locked = 'true';
+
+                // Show attendance overlay
+                if (data.name) {
+                    showAttendanceOverlay(data.name);
+                }
+
+                // Add to attendance list if it exists
+                const attendanceList = document.getElementById('attendanceList');
+                if (attendanceList) {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'attendance-item';
+                    listItem.innerHTML = `
+                        <div class="attendance-name">${data.name || 'Unknown'}</div>
+                        <div class="attendance-time">${new Date().toLocaleTimeString()}</div>
+                    `;
+                    attendanceList.appendChild(listItem);
+
+                    // Scroll to bottom
+                    attendanceList.scrollTop = attendanceList.scrollHeight;
+                }
+
+                // Set cooldown
+                isCooldown = true;
+                lastFaceId = data.student_id;
+                setTimeout(() => {
+                    isCooldown = false;
+                    if (statusHeader) {
+                        statusHeader.dataset.locked = 'false';
+                    }
+                }, 3000);
+            }
+        } else {
+            // No faces data, clear overlay
+            console.log('No faces data in response, clearing overlay');
+            drawMultipleFaceResults([]);
+
+            // Reset status header
+            statusHeader.textContent = 'Waiting for Face Detection...';
+            statusHeader.style.color = '#2563eb';
+        }
+    }
+    </script>
+</body>
+</html>

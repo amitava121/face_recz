@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Locked</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Universal Notification System - Updated v2.0 -->
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/lock-screen.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Universal Notification System -->
+    {% include 'notifications.html' %}
+    <div class="lock-container animate-fade-in" data-aos="zoom-in">
+        <div class="lock-icon animate-pulse" data-aos="fade-down" data-aos-delay="100">
+            <i class="fas fa-lock"></i>
+        </div>
+
+        <h1 class="lock-title animate-slide-up" data-aos="fade-up" data-aos-delay="200">System Locked</h1>
+
+        <!-- Role Toggle Switch -->
+        <div class="role-toggle-container" data-aos="fade-up" data-aos-delay="250">
+            <div class="role-toggle">
+                <button type="button" class="role-btn active" id="adminToggle" data-role="admin">
+                    <i class="fas fa-user-shield me-2"></i>Admin
+                </button>
+                <button type="button" class="role-btn" id="viewerToggle" data-role="viewer">
+                    <i class="fas fa-user me-2"></i>Viewer
+                </button>
+            </div>
+        </div>
+
+        <p class="lock-message animate-slide-up" data-aos="fade-up" data-aos-delay="300" id="lockMessage">
+            The system is password protected. Please enter the admin password to unlock.
+        </p>
+
+        <!-- Admin Login Form (Quick unlock) -->
+        <form method="POST" class="lock-form w-100" id="adminForm" action="{{ url_for('unlock') }}" data-aos="fade-up" data-aos-delay="500">
+            <div class="input-container">
+                <input type="password" name="password" id="adminPassword" placeholder="Enter admin password" required autofocus>
+                <i class="fas fa-lock"></i>
+                <span class="toggle-password" id="toggleAdminPassword" tabindex="0" aria-label="Show password">
+                    <i class="fas fa-eye"></i>
+                </span>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100 py-3 mb-3">
+                <i class="fas fa-unlock me-2"></i> Unlock System
+            </button>
+
+            <a href="{{ url_for('reset_password') }}" class="btn btn-outline-primary w-100 py-3">
+                <i class="fas fa-key me-2"></i> Forgot Password?
+            </a>
+        </form>
+
+        <!-- Viewer Login Form (Full login) -->
+        <form method="POST" class="lock-form w-100" id="viewerForm" action="{{ url_for('unlock_viewer') }}" style="display: none;" data-aos="fade-up" data-aos-delay="500">
+            <div class="input-container mb-3">
+                <input type="text" name="username" id="viewerUsername" placeholder="Enter your student ID" required>
+                <i class="fas fa-user"></i>
+            </div>
+
+            <div class="input-container">
+                <input type="password" name="password" id="viewerPassword" placeholder="Enter your password" required>
+                <i class="fas fa-lock"></i>
+                <span class="toggle-password" id="toggleViewerPassword" tabindex="0" aria-label="Show password">
+                    <i class="fas fa-eye"></i>
+                </span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-3 mb-3">
+                <i class="fas fa-unlock me-2"></i> Unlock as Viewer
+            </button>
+
+            <div class="text-center">
+                <small class="text-muted">Use your Student ID and password</small>
+            </div>
+        </form>
+    </div>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            easing: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+            once: true,
+            offset: 50,
+            delay: 100
+        });
+
+        // Helper function to show error message using universal notification system
+        function showErrorMessage(message, isLockout = false, lockoutSeconds = 0) {
+            if (isLockout && lockoutSeconds > 0) {
+                // For lockout messages, add countdown to message
+                const lockoutMessage = `${message} - ${lockoutSeconds} seconds remaining`;
+                showNotification(lockoutMessage, 'error', lockoutSeconds * 1000, 'Account Locked');
+                
+                // Update countdown every second
+                let seconds = lockoutSeconds;
+                const countdownInterval = setInterval(() => {
+                    seconds--;
+                    if (seconds > 0) {
+                        const updatedMessage = `${message} - ${seconds} seconds remaining`;
+                        // Find and update the notification message
+                        const notifications = document.querySelectorAll('.notification-toast');
+                        notifications.forEach(notification => {
+                            const messageSpan = notification.querySelector('.notification-message');
+                            if (messageSpan && messageSpan.textContent.includes('seconds remaining')) {
+                                messageSpan.textContent = updatedMessage;
+                            }
+                        });
+                    } else {
+                        clearInterval(countdownInterval);
+                        closeAllNotifications();
+                        // Reload page to clear lockout
+                        window.location.reload();
+                    }
+                }, 1000);
+            } else {
+                // Regular error messages
+                showNotification(message, 'error', 5000);
+            }
+        }
+
+        // Role Toggle Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const adminToggle = document.getElementById('adminToggle');
+            const viewerToggle = document.getElementById('viewerToggle');
+            const adminForm = document.getElementById('adminForm');
+            const viewerForm = document.getElementById('viewerForm');
+            const lockMessage = document.getElementById('lockMessage');
+
+            // Role toggle handler
+            function switchRole(role) {
+                if (role === 'admin') {
+                    adminToggle.classList.add('active');
+                    viewerToggle.classList.remove('active');
+                    adminForm.style.display = 'block';
+                    viewerForm.style.display = 'none';
+                    lockMessage.textContent = 'The system is password protected. Please enter the admin password to unlock.';
+                    setTimeout(() => {
+                        const adminPasswordInput = document.getElementById('adminPassword');
+                        if (adminPasswordInput) adminPasswordInput.focus();
+                    }, 100);
+                } else {
+                    viewerToggle.classList.add('active');
+                    adminToggle.classList.remove('active');
+                    viewerForm.style.display = 'block';
+                    adminForm.style.display = 'none';
+                    lockMessage.textContent = 'Viewer Login - Enter your Student ID and password to access your attendance.';
+                    setTimeout(() => {
+                        const viewerUsernameInput = document.getElementById('viewerUsername');
+                        if (viewerUsernameInput) viewerUsernameInput.focus();
+                    }, 100);
+                }
+            }
+
+            adminToggle.addEventListener('click', () => switchRole('admin'));
+            viewerToggle.addEventListener('click', () => switchRole('viewer'));
+
+            // Password show/hide toggle for admin password
+            const toggleAdminPassword = document.getElementById('toggleAdminPassword');
+            const adminPasswordInput = document.getElementById('adminPassword');
+
+            if (toggleAdminPassword && adminPasswordInput) {
+                toggleAdminPassword.addEventListener('click', function() {
+                    const eyeIcon = this.querySelector('i');
+                    if (adminPasswordInput.type === 'password') {
+                        adminPasswordInput.type = 'text';
+                        eyeIcon.classList.remove('fa-eye');
+                        eyeIcon.classList.add('fa-eye-slash');
+                        this.setAttribute('aria-label', 'Hide password');
+                    } else {
+                        adminPasswordInput.type = 'password';
+                        eyeIcon.classList.remove('fa-eye-slash');
+                        eyeIcon.classList.add('fa-eye');
+                        this.setAttribute('aria-label', 'Show password');
+                    }
+                });
+            }
+
+            // Password show/hide toggle for viewer password
+            const toggleViewerPassword = document.getElementById('toggleViewerPassword');
+            const viewerPasswordInput = document.getElementById('viewerPassword');
+
+            if (toggleViewerPassword && viewerPasswordInput) {
+                toggleViewerPassword.addEventListener('click', function() {
+                    const eyeIcon = this.querySelector('i');
+                    if (viewerPasswordInput.type === 'password') {
+                        viewerPasswordInput.type = 'text';
+                        eyeIcon.classList.remove('fa-eye');
+                        eyeIcon.classList.add('fa-eye-slash');
+                        this.setAttribute('aria-label', 'Hide password');
+                    } else {
+                        viewerPasswordInput.type = 'password';
+                        eyeIcon.classList.remove('fa-eye-slash');
+                        eyeIcon.classList.add('fa-eye');
+                        this.setAttribute('aria-label', 'Show password');
+                    }
+                });
+            }
+
+            // AJAX form submission for admin unlock
+            adminForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(adminForm);
+                const submitButton = adminForm.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                
+                // Disable button and show loading state
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Unlocking...';
+                
+                fetch(adminForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Success - redirect
+                        window.location.href = data.redirect;
+                    } else {
+                        // Show error without page refresh
+                        showErrorMessage(data.message, data.lockout || false, data.lockout_remaining || 0);
+                        
+                        // Re-enable button
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        
+                        // Clear password field
+                        adminPasswordInput.value = '';
+                        adminPasswordInput.focus();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorMessage('An error occurred. Please try again.');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                });
+            });
+
+            // AJAX form submission for viewer unlock
+            viewerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(viewerForm);
+                const submitButton = viewerForm.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                
+                // Disable button and show loading state
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Unlocking...';
+                
+                fetch(viewerForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Success - redirect
+                        window.location.href = data.redirect;
+                    } else {
+                        // Show error without page refresh
+                        showErrorMessage(data.message, data.lockout || false, data.lockout_remaining || 0);
+                        
+                        // Re-enable button
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        
+                        // Clear password field
+                        viewerPasswordInput.value = '';
+                        document.getElementById('viewerUsername').focus();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorMessage('An error occurred. Please try again.');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                });
+            });
+
+            // Add smooth page transitions
+            document.body.classList.add('animate-fade-in');
+
+            // Focus on password field
+            setTimeout(() => {
+                if (adminPasswordInput) adminPasswordInput.focus();
+            }, 800);
+        });
+    </script>
+</body>
+</html>

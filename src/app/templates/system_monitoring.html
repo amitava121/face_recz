@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitoring - Face Recognition Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+        }
+        .monitoring-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .monitoring-card {
+            background: #fff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 32px rgba(37,99,235,0.10);
+            border: 1px solid #e5e7eb;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .monitoring-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid #cbd5e1;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .metric-card.critical {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #f87171;
+        }
+        .metric-card.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+        }
+        .metric-card.good {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-color: #34d399;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .metric-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .chart-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .log-container {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 2rem;
+        }
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+        }
+        .log-error {
+            color: #f87171;
+        }
+        .log-warning {
+            color: #fbbf24;
+        }
+        .log-info {
+            color: #60a5fa;
+        }
+        .log-success {
+            color: #34d399;
+        }
+        .refresh-btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37,99,235,0.3);
+        }
+        .back-btn {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(100,116,139,0.3);
+            color: white;
+            text-decoration: none;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .status-online {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status-offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(37, 99, 235, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Universal Notification System -->
+    {% include 'notifications.html' %}
+    
+    <div class="auto-refresh" id="autoRefresh">
+        <i class="fas fa-sync-alt"></i> Auto-refresh: <span id="countdown">30</span>s
+    </div>
+
+    <div class="monitoring-container">
+        <div class="monitoring-card">
+            <h1 class="monitoring-title">
+                <i class="fas fa-desktop me-3"></i>System Monitoring
+            </h1>
+
+            <!-- System Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card {{ 'critical' if system_metrics.cpu_usage > 80 else 'warning' if system_metrics.cpu_usage > 60 else 'good' }}">
+                    <div class="metric-value">{{ system_metrics.cpu_usage }}%</div>
+                    <div class="metric-label">CPU Usage</div>
+                </div>
+                <div class="metric-card {{ 'critical' if system_metrics.memory_usage > 80 else 'warning' if system_metrics.memory_usage > 60 else 'good' }}">
+                    <div class="metric-value">{{ system_metrics.memory_usage }}%</div>
+                    <div class="metric-label">Memory Usage</div>
+                </div>
+                <div class="metric-card {{ 'critical' if system_metrics.disk_usage > 90 else 'warning' if system_metrics.disk_usage > 75 else 'good' }}">
+                    <div class="metric-value">{{ system_metrics.disk_usage }}%</div>
+                    <div class="metric-label">Disk Usage</div>
+                </div>
+                <div class="metric-card good">
+                    <div class="metric-value">{{ system_metrics.uptime }}</div>
+                    <div class="metric-label">System Uptime</div>
+                </div>
+                <div class="metric-card {{ 'good' if system_metrics.active_connections > 0 else 'warning' }}">
+                    <div class="metric-value">{{ system_metrics.active_connections }}</div>
+                    <div class="metric-label">Active Connections</div>
+                </div>
+                <div class="metric-card good">
+                    <div class="metric-value">{{ system_metrics.fps }}</div>
+                    <div class="metric-label">Current FPS</div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <h6>Database Status</h6>
+                    <div class="status-badge {{ 'status-online' if system_status.database else 'status-offline' }}">
+                        <i class="fas fa-circle"></i>
+                        {{ 'Connected' if system_status.database else 'Disconnected' }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <h6>Camera Status</h6>
+                    <div class="status-badge {{ 'status-online' if system_status.camera else 'status-offline' }}">
+                        <i class="fas fa-circle"></i>
+                        {{ 'Active' if system_status.camera else 'Inactive' }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <h6>Face Recognition</h6>
+                    <div class="status-badge {{ 'status-online' if system_status.face_recognition else 'status-offline' }}">
+                        <i class="fas fa-circle"></i>
+                        {{ 'Running' if system_status.face_recognition else 'Stopped' }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <h6>GPU Acceleration</h6>
+                    <div class="status-badge {{ 'status-online' if system_status.gpu else 'status-warning' }}">
+                        <i class="fas fa-circle"></i>
+                        {{ 'Enabled' if system_status.gpu else 'Disabled' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Charts -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h5 class="mb-3">CPU & Memory Usage</h5>
+                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h5 class="mb-3">Recognition Performance</h5>
+                        <canvas id="recognitionChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Logs -->
+            <div class="chart-container">
+                <h5 class="mb-3">Recent System Logs</h5>
+                <div class="log-container" id="systemLogs">
+                    {% for log in recent_logs %}
+                    <div class="log-entry log-{{ log.level }}">
+                        [{{ log.timestamp }}] {{ log.level.upper() }}: {{ log.message }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center">
+                <button onclick="refreshData()" class="refresh-btn me-3">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                </button>
+                <button onclick="clearLogs()" class="btn btn-warning me-3">
+                    <i class="fas fa-trash me-2"></i>Clear Logs
+                </button>
+                <button onclick="downloadLogs()" class="btn btn-info me-3">
+                    <i class="fas fa-download me-2"></i>Download Logs
+                </button>
+                <a href="{{ url_for('admin_panel') }}" class="back-btn">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Admin Panel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Performance Chart
+        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        const performanceChart = new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: {{ performance_labels | safe }},
+                datasets: [{
+                    label: 'CPU Usage (%)',
+                    data: {{ cpu_data | safe }},
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    borderWidth: 2,
+                    fill: false
+                }, {
+                    label: 'Memory Usage (%)',
+                    data: {{ memory_data | safe }},
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Recognition Performance Chart
+        const recognitionCtx = document.getElementById('recognitionChart').getContext('2d');
+        const recognitionChart = new Chart(recognitionCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ recognition_labels | safe }},
+                datasets: [{
+                    label: 'Recognitions per Hour',
+                    data: {{ recognition_data | safe }},
+                    backgroundColor: '#059669',
+                    borderColor: '#047857',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Auto-refresh functionality with real-time data
+        let countdown = 30;
+        const countdownElement = document.getElementById('countdown');
+
+        function updateCountdown() {
+            countdown--;
+            countdownElement.textContent = countdown;
+
+            if (countdown <= 0) {
+                refreshData();
+                countdown = 30;
+            }
+        }
+
+        function refreshData() {
+            // Use AJAX to get real-time data instead of full page reload
+            fetch('/api/system_metrics')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateMetrics(data.metrics);
+                        updateStatus(data.status);
+                        updateLogs(data.logs);
+                    } else {
+                        console.error('Failed to fetch metrics:', data.error);
+                        // Fallback to page reload if API fails
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching metrics:', error);
+                    // Fallback to page reload if API fails
+                    location.reload();
+                });
+        }
+
+        function updateMetrics(metrics) {
+            // Update metric cards
+            document.querySelector('.metric-card:nth-child(1) .metric-value').textContent = metrics.cpu_usage + '%';
+            document.querySelector('.metric-card:nth-child(2) .metric-value').textContent = metrics.memory_usage + '%';
+            document.querySelector('.metric-card:nth-child(3) .metric-value').textContent = metrics.disk_usage + '%';
+            document.querySelector('.metric-card:nth-child(4) .metric-value').textContent = metrics.uptime;
+            document.querySelector('.metric-card:nth-child(5) .metric-value').textContent = metrics.active_connections;
+            document.querySelector('.metric-card:nth-child(6) .metric-value').textContent = metrics.fps;
+
+            // Update metric card colors based on values
+            updateMetricCardColor(1, metrics.cpu_usage);
+            updateMetricCardColor(2, metrics.memory_usage);
+            updateMetricCardColor(3, metrics.disk_usage);
+
+            // Update charts with new data point
+            updateCharts(metrics);
+        }
+
+        function updateMetricCardColor(cardIndex, value) {
+            const card = document.querySelector(`.metric-card:nth-child(${cardIndex})`);
+            card.classList.remove('critical', 'warning', 'good');
+
+            if (value > 80) {
+                card.classList.add('critical');
+            } else if (value > 60) {
+                card.classList.add('warning');
+            } else {
+                card.classList.add('good');
+            }
+        }
+
+        function updateStatus(status) {
+            // Update status badges
+            const statusElements = document.querySelectorAll('.status-badge');
+            const statusKeys = ['database', 'camera', 'face_recognition', 'gpu'];
+
+            statusKeys.forEach((key, index) => {
+                if (statusElements[index]) {
+                    const element = statusElements[index];
+                    element.classList.remove('status-online', 'status-offline', 'status-warning');
+
+                    if (status[key]) {
+                        element.classList.add('status-online');
+                        element.innerHTML = '<i class="fas fa-circle"></i> ' + getStatusText(key, true);
+                    } else {
+                        element.classList.add('status-offline');
+                        element.innerHTML = '<i class="fas fa-circle"></i> ' + getStatusText(key, false);
+                    }
+                }
+            });
+        }
+
+        function getStatusText(key, isOnline) {
+            const statusTexts = {
+                'database': isOnline ? 'Connected' : 'Disconnected',
+                'camera': isOnline ? 'Active' : 'Inactive',
+                'face_recognition': isOnline ? 'Running' : 'Stopped',
+                'gpu': isOnline ? 'Enabled' : 'Disabled'
+            };
+            return statusTexts[key] || (isOnline ? 'Online' : 'Offline');
+        }
+
+        function updateLogs(logs) {
+            const logsContainer = document.getElementById('systemLogs');
+            logsContainer.innerHTML = '';
+
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${log.level}`;
+                logEntry.textContent = `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`;
+                logsContainer.appendChild(logEntry);
+            });
+
+            // Auto-scroll to bottom
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        function updateCharts(metrics) {
+            // Add new data point to performance chart
+            const currentTime = new Date().toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Remove oldest data point and add new one
+            if (performanceChart.data.labels.length >= 24) {
+                performanceChart.data.labels.shift();
+                performanceChart.data.datasets[0].data.shift(); // CPU
+                performanceChart.data.datasets[1].data.shift(); // Memory
+            }
+
+            performanceChart.data.labels.push(currentTime);
+            performanceChart.data.datasets[0].data.push(metrics.cpu_usage);
+            performanceChart.data.datasets[1].data.push(metrics.memory_usage);
+            performanceChart.update('none'); // Update without animation for smoother real-time updates
+        }
+
+        function clearLogs() {
+            if (confirm('Are you sure you want to clear all system logs?')) {
+                fetch('/clear_logs', { method: 'POST' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function downloadLogs() {
+            window.open('/download_logs', '_blank');
+        }
+
+        // Start countdown
+        setInterval(updateCountdown, 1000);
+
+        // Auto-scroll logs to bottom
+        const logsContainer = document.getElementById('systemLogs');
+        logsContainer.scrollTop = logsContainer.scrollHeight;
+    </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}My Attendance Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-5">
+    <!-- Header -->
+    <div class="text-center mb-4">
+        <h2 class="mb-2"><i class="fas fa-user-circle me-2"></i>My Dashboard</h2>
+        {% if student %}
+        <p class="text-muted mb-4">Welcome, {{ student.name }}</p>
+        {% endif %}
+        
+        <!-- Main Action Buttons -->
+        <div class="d-flex justify-content-center gap-3 mb-4">
+            {% if student %}
+            <button type="button" class="btn btn-lg btn-primary" id="toggleAttendanceBtn" onclick="toggleAttendanceView(); return false;">
+                <i class="fas fa-calendar-check me-2"></i>View My Attendance
+            </button>
+            {% else %}
+            <button type="button" class="btn btn-lg btn-secondary" disabled title="No student record linked">
+                <i class="fas fa-calendar-check me-2"></i>View My Attendance
+            </button>
+            {% endif %}
+            <a href="{{ url_for('viewer_profile') }}" class="btn btn-lg btn-success">
+                <i class="fas fa-user-edit me-2"></i>Update My Details
+            </a>
+        </div>
+    </div>
+
+    {% if not student %}
+    <!-- No student record linked -->
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Account Setup Incomplete</strong>
+        <p class="mb-0 mt-2">Your account is not linked to a student record. Please contact the administrator to complete your account setup.</p>
+    </div>
+    {% else %}
+    
+    <!-- Attendance Details Section (Hidden by default) -->
+    <div id="attendanceSection" style="display: none;">
+    
+    <!-- Student Info Card -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-id-card me-2"></i>Student Information</h5>
+                    <hr>
+                    <p class="mb-2"><strong>Student Code:</strong> {{ student.student_code }}</p>
+                    <p class="mb-2"><strong>Name:</strong> {{ student.name }}</p>
+                    <p class="mb-2"><strong>Department:</strong> {{ student.department }}</p>
+                    <p class="mb-2"><strong>Email:</strong> {{ user.email or 'Not provided' }}</p>
+                    <p class="mb-0"><strong>Phone:</strong> {{ student.phone_number or 'Not provided' }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance Statistics -->
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Total Attendance</h6>
+                                    <h2 class="mb-0">{{ total_days }}</h2>
+                                </div>
+                                <div>
+                                    <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">This Month</h6>
+                                    <h2 class="mb-0">{{ attendance_this_month }}</h2>
+                                </div>
+                                <div>
+                                    <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Records Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>My Attendance Records</h5>
+        </div>
+        <div class="card-body">
+            {% if attendance_records %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Day</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in attendance_records %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ record.timestamp.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ record.timestamp.strftime('%I:%M %p') }}</td>
+                            <td>{{ record.timestamp.strftime('%A') }}</td>
+                            <td><span class="badge bg-success">Present</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-clipboard-list text-muted fa-3x mb-3"></i>
+                <p class="text-muted">No attendance records found</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    </div><!-- Close attendanceSection -->
+    {% endif %}
+</div>
+
+<script>
+function toggleAttendanceView(event) {
+    // Prevent any default button behavior
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    const section = document.getElementById('attendanceSection');
+    const btn = document.getElementById('toggleAttendanceBtn');
+    
+    // Immediately ensure button is not disabled or loading
+    if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('disabled');
+        btn.style.pointerEvents = 'auto';
+        btn.blur(); // Remove focus to prevent loading appearance
+    }
+    
+    // Check if section exists
+    if (!section) {
+        console.error('Attendance section not found');
+        alert('Unable to load attendance section. Please refresh the page.');
+        return false;
+    }
+    
+    // Check current display state
+    const isHidden = section.style.display === 'none' || section.style.display === '';
+    
+    if (isHidden) {
+        // Show attendance section
+        section.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-chevron-up me-2"></i>Hide My Attendance';
+        
+        // Scroll to section after a brief delay to ensure rendering
+        setTimeout(() => {
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    } else {
+        // Hide attendance section
+        section.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-calendar-check me-2"></i>View My Attendance';
+        
+        // Scroll to top
+        setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+    }
+    
+    // Final check to ensure button is released
+    setTimeout(() => {
+        if (btn) {
+            btn.disabled = false;
+            btn.style.pointerEvents = 'auto';
+        }
+    }, 50);
+    
+    return false; // Prevent any form submission or navigation
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const section = document.getElementById('attendanceSection');
+    if (section) {
+        // Ensure section starts hidden
+        section.style.display = 'none';
+    }
+    
+    // Add event listener to button for better control
+    const btn = document.getElementById('toggleAttendanceBtn');
+    if (btn) {
+        // Remove any existing onclick to prevent double-firing
+        btn.onclick = null;
+        
+        // Add new click handler
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleAttendanceView(e);
+            return false;
+        });
+    }
+});
+</script>
+
+<style>
+.card {
+    border-radius: 10px;
+    border: none;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.opacity-50 {
+    opacity: 0.5;
+}
+
+/* Button styling */
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border: none;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    border: none;
+}
+
+#attendanceSection {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+{% endblock %}

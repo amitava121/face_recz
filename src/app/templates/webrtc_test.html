@@ -1,0 +1,96 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .video-container { margin: 20px 0; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .status-connecting { background-color: #fff3cd; }
+        .status-connected { background-color: #d4edda; }
+        .status-error { background-color: #f8d7da; }
+        button { padding: 10px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebRTC Test</h1>
+        
+        <div class="video-container">
+            <video id="video-feed" autoplay playsinline width="640" height="480" style="border: 1px solid #ccc;"></video>
+            <div id="status-message" class="status status-connecting">Initializing...</div>
+        </div>
+        
+        <div class="controls">
+            <button id="start-btn">Start WebRTC</button>
+            <button id="stop-btn">Stop WebRTC</button>
+        </div>
+        
+        <div class="logs">
+            <h3>Logs</h3>
+            <pre id="log-output" style="height: 200px; overflow-y: scroll; background-color: #f5f5f5; padding: 10px;"></pre>
+        </div>
+    </div>
+    
+    <script src="/static/js/unified-webrtc-client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const videoElement = document.getElementById('video-feed');
+            const statusElement = document.getElementById('status-message');
+            const startButton = document.getElementById('start-btn');
+            const stopButton = document.getElementById('stop-btn');
+            const logOutput = document.getElementById('log-output');
+            let webrtcClient = null;
+            
+            function log(message) {
+                const timestamp = new Date().toISOString();
+                logOutput.textContent += `${timestamp}: ${message}\n`;
+                logOutput.scrollTop = logOutput.scrollHeight;
+                console.log(message);
+            }
+            
+            startButton.addEventListener('click', function() {
+                log('Starting WebRTC client...');
+                
+                webrtcClient = new UnifiedWebRTCClient({
+                    videoElement: videoElement,
+                    statusElement: statusElement,
+                    mode: 'test',
+                    studentId: 12345,
+                    onStatusChange: function(status, message) {
+                        log(`Status changed: ${status} - ${message}`);
+                    },
+                    onFaceDetected: function(data) {
+                        log(`Face detected: ${JSON.stringify(data)}`);
+                    }
+                });
+                
+                webrtcClient.start().catch(function(error) {
+                    log(`Error starting WebRTC: ${error.message}`);
+                });
+            });
+            
+            stopButton.addEventListener('click', function() {
+                log('Stopping WebRTC client...');
+                
+                if (webrtcClient) {
+                    webrtcClient.stop();
+                    webrtcClient = null;
+                }
+            });
+            
+            // Clean up when leaving the page
+            window.addEventListener('beforeunload', function() {
+                if (webrtcClient) {
+                    webrtcClient.stop();
+                }
+            });
+            
+            log('WebRTC test page loaded');
+        });
+    </script>
+</body>
+</html>
+            

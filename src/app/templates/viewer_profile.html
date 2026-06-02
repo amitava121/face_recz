@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user-edit me-2"></i>My Profile</h2>
+                <a href="{{ url_for('viewer_dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Profile Card -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('viewer_profile') }}" id="profileForm">
+                        <input type="hidden" name="action" value="update_profile">
+                        
+                        <!-- Student Information (Now Editable) -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Student Information <span class="badge bg-success">Editable</span></h5>
+                            
+                            <div class="mb-3">
+                                <label for="student_code" class="form-label"><strong>Student Code: <span class="text-danger">*</span></strong></label>
+                                <input type="text" class="form-control" id="student_code" name="student_code" 
+                                       value="{{ student.student_code }}" placeholder="Enter student code" required>
+                                <small class="form-text text-muted">Your unique student identifier</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="name" class="form-label"><strong>Full Name: <span class="text-danger">*</span></strong></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ student.name }}" placeholder="Enter your full name" required>
+                                <small class="form-text text-muted">Your complete name as registered</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="department" class="form-label"><strong>Department: <span class="text-danger">*</span></strong></label>
+                                <input type="text" class="form-control" id="department" name="department" 
+                                       value="{{ student.department }}" placeholder="Enter your department" required>
+                                <small class="form-text text-muted">Your academic department</small>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Contact Information</h5>
+                            
+                            <div class="mb-3">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                       value="{{ student.phone_number or '' }}" placeholder="Enter your phone number">
+                                <small class="form-text text-muted">Your contact number</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email }}" placeholder="Enter your email address" required>
+                                <small class="form-text text-muted">Your email for notifications</small>
+                            </div>
+                        </div>
+
+                        <!-- Account Information (Read-only) -->
+                        <div class="mb-4">
+                            <h5 class="border-bottom pb-2 mb-3">Account Information</h5>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label"><strong>Username:</strong></label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control-plaintext" readonly value="{{ user.username }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label"><strong>Role:</strong></label>
+                                <div class="col-sm-8">
+                                    <span class="badge bg-primary">Viewer</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label"><strong>Account Created:</strong></label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control-plaintext" readonly 
+                                           value="{{ user.created_at.strftime('%Y-%m-%d %I:%M %p') if user.created_at else 'N/A' }}">
+                                </div>
+                            </div>
+                            
+                            {% if user.last_login %}
+                            <div class="row mb-3">
+                                <label class="col-sm-4 col-form-label"><strong>Last Login:</strong></label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control-plaintext" readonly 
+                                           value="{{ user.last_login.strftime('%Y-%m-%d %I:%M %p') }}">
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Button for Profile -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>Save Profile Changes
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Password Change Section -->
+                    <hr class="my-4">
+                    
+                    <!-- Password Section Header with Toggle -->
+                    <div class="d-flex justify-content-between align-items-center mb-3" style="cursor: pointer;" onclick="togglePasswordSection()">
+                        <h5 class="mb-0">
+                            <i class="fas fa-lock me-2"></i>Change Password
+                        </h5>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="togglePasswordBtn">
+                            <i class="fas fa-chevron-down" id="togglePasswordIcon"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Collapsible Password Form -->
+                    <div id="passwordFormSection" style="display: none;">
+                        <form method="POST" action="{{ url_for('viewer_profile') }}" id="passwordForm" class="mt-3">
+                            <input type="hidden" name="action" value="change_password">
+                            
+                            <div class="mb-4">
+                            
+                            <div class="mb-3">
+                                <label for="old_password" class="form-label">Current Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="old_password" name="old_password" 
+                                           placeholder="Enter your current password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('old_password')">
+                                        <i class="fas fa-eye" id="old_password_icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">New Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="new_password" name="new_password" 
+                                           placeholder="Enter new password (min 6 characters)" required minlength="6">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('new_password')">
+                                        <i class="fas fa-eye" id="new_password_icon"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Must be at least 6 characters long</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm New Password <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                           placeholder="Re-enter new password" required minlength="6">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirm_password')">
+                                        <i class="fas fa-eye" id="confirm_password_icon"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Must match the new password</small>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Security Note:</strong> After changing your password, you will need to use the new password for your next login.
+                            </div>
+                        </div>
+
+                            <!-- Submit Button for Password -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-key me-2"></i>Change Password
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 10px;
+    border: none;
+}
+
+.form-control-plaintext {
+    background-color: #f8f9fa;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+}
+
+.input-group .btn-outline-secondary {
+    border-color: #ced4da;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+    color: #495057;
+}
+</style>
+
+<script>
+// Toggle password section visibility
+function togglePasswordSection() {
+    const section = document.getElementById('passwordFormSection');
+    const icon = document.getElementById('togglePasswordIcon');
+    
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        section.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
+}
+
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '_icon');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Password validation and submission handling
+const passwordForm = document.getElementById('passwordForm');
+const passwordSubmitBtn = passwordForm.querySelector('button[type="submit"]');
+const originalPasswordBtnText = passwordSubmitBtn.innerHTML;
+
+// Function to reset password button
+function resetPasswordButton() {
+    passwordSubmitBtn.disabled = false;
+    passwordSubmitBtn.innerHTML = originalPasswordBtnText;
+}
+
+// Prevent Enter key from submitting form in password fields
+// Instead, move to next field or stay in current field
+document.getElementById('old_password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('new_password').focus();
+    }
+});
+
+document.getElementById('new_password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('confirm_password').focus();
+    }
+});
+
+document.getElementById('confirm_password').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        // Optionally submit form when pressing Enter on last field
+        // Or just focus the submit button
+        passwordSubmitBtn.focus();
+    }
+});
+
+passwordForm.addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    const oldPassword = document.getElementById('old_password').value;
+    
+    // Client-side validation FIRST (before any UI changes)
+    if (!oldPassword) {
+        e.preventDefault();
+        alert('Please enter your current password!');
+        return false;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert('New password and confirm password do not match!');
+        return false;
+    }
+    
+    if (newPassword.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters long!');
+        return false;
+    }
+    
+    // Validation passed - NOW show loading state
+    passwordSubmitBtn.disabled = true;
+    passwordSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Changing Password...';
+    
+    // Form will submit and page will reload (button resets automatically)
+    return true;
+});
+
+// Profile form validation and submission handling
+const profileForm = document.getElementById('profileForm');
+const profileSubmitBtn = profileForm.querySelector('button[type="submit"]');
+const originalProfileBtnText = profileSubmitBtn.innerHTML;
+
+// Function to reset profile button
+function resetProfileButton() {
+    profileSubmitBtn.disabled = false;
+    profileSubmitBtn.innerHTML = originalProfileBtnText;
+}
+
+// Prevent Enter key from submitting profile form in input fields
+// Navigate through fields instead
+document.getElementById('student_code').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('name').focus();
+    }
+});
+
+document.getElementById('name').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('department').focus();
+    }
+});
+
+document.getElementById('department').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('phone_number').focus();
+    }
+});
+
+document.getElementById('phone_number').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('email').focus();
+    }
+});
+
+document.getElementById('email').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        profileSubmitBtn.focus();
+    }
+});
+
+profileForm.addEventListener('submit', function(e) {
+    const studentCode = document.getElementById('student_code').value.trim();
+    const name = document.getElementById('name').value.trim();
+    const department = document.getElementById('department').value.trim();
+    
+    // Client-side validation FIRST (before any UI changes)
+    if (!studentCode || !name || !department) {
+        e.preventDefault();
+        alert('Student Code, Name, and Department are required!');
+        return false;
+    }
+    
+    // Validation passed - NOW show loading state
+    profileSubmitBtn.disabled = true;
+    profileSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving Changes...';
+    
+    // Form will submit and page will reload (button resets automatically)
+    return true;
+});
+
+// Reset button states on page load (in case of browser back button or form resubmission)
+window.addEventListener('load', function() {
+    // Reset both buttons using the reset functions
+    if (typeof resetPasswordButton === 'function') {
+        resetPasswordButton();
+    }
+    if (typeof resetProfileButton === 'function') {
+        resetProfileButton();
+    }
+});
+
+// Also reset on page show (handles browser back/forward cache)
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        // Page was loaded from cache (back/forward button)
+        if (typeof resetPasswordButton === 'function') {
+            resetPasswordButton();
+        }
+        if (typeof resetProfileButton === 'function') {
+            resetProfileButton();
+        }
+    }
+});
+</script>
+{% endblock %}

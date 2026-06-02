@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="card p-5 animate-fade-in-up" data-aos="fade-up">
+    <div class="card-body text-center">
+        <div class="mb-4 animate-float">
+            <i class="fas fa-camera-retro fa-4x text-gradient"></i>
+        </div>
+        <h1 class="mb-4 text-gradient">Welcome to Face Recognition Attendance</h1>
+        <p class="mb-5 lead text-secondary">A modern solution for automated attendance tracking using facial recognition technology.</p>
+
+        <div class="row justify-content-center gap-4 mb-4">
+            <div class="col-md-5">
+                <a href="{{ url_for('register') }}" class="btn btn-primary w-100 py-3 animate-fade-in-up" data-aos="fade-up" data-aos-delay="200">
+                    <i class="fas fa-user-plus me-2"></i> Register New Student
+                </a>
+            </div>
+            <div class="col-md-5">
+                <a href="{{ url_for('attendance') }}" class="btn btn-success w-100 py-3 animate-fade-in-up" data-aos="fade-up" data-aos-delay="300">
+                    <i class="fas fa-camera me-2"></i> Take Attendance
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-5 pt-4 border-top">
+            <div class="row text-start">
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="400">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-shield-alt fa-2x text-primary"></i>
+                        </div>
+                        <h3 class="m-0">Secure</h3>
+                    </div>
+                    <p class="text-secondary">Advanced facial recognition ensures accurate and secure attendance tracking.</p>
+                </div>
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="500">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-bolt fa-2x text-primary"></i>
+                        </div>
+                        <h3 class="m-0">Fast</h3>
+                    </div>
+                    <p class="text-secondary">Real-time processing provides immediate attendance confirmation.</p>
+                </div>
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="600">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="fas fa-chart-line fa-2x text-primary"></i>
+                        </div>
+                        <h3 class="m-0">Efficient</h3>
+                    </div>
+                    <p class="text-secondary">Automated system eliminates manual attendance tracking errors.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

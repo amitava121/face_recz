@@ -12,8 +12,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.models.db import db, User, Admin, ensure_database_exists
-from flask import Flask
+from src.models.db import build_database_uri, db, User, Admin, ensure_database_exists
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 import logging
@@ -22,22 +21,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_app():
-    """Create Flask app for migration"""
+    """Initialize database bindings for the script runtime."""
     load_dotenv()
-    
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    db.init_app(app)
-    return app
+    db.init_app(type("ScriptApp", (), {"config": {"SQLALCHEMY_DATABASE_URI": build_database_uri()}})())
 
 def migrate_users_table():
     """Add users table and migrate existing admin"""
-    app = create_app()
-    
-    with app.app_context():
+    create_app()
+
+    with db.app_context():
         logger.info("🔄 Starting migration: Adding users table with role-based access")
         
         try:

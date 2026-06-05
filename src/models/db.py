@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from math import ceil
 from typing import Any, Optional
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import numpy as np
 import psycopg2
@@ -144,13 +145,24 @@ Base.query = QueryProperty()
 
 
 def build_database_uri() -> str:
+    def _normalize_database_url(database_url: str) -> str:
+        if database_url.startswith("postgresql+asyncpg://"):
+            database_url = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+        parsed = urlparse(database_url)
+        if parsed.hostname and parsed.hostname.endswith(".supabase.co"):
+            query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+            query.setdefault("sslmode", "require")
+            parsed = parsed._replace(query=urlencode(query))
+            return urlunparse(parsed)
+
+        return database_url
+
     database_url = os.getenv("DATABASE_URL")
     if database_url:
-        if database_url.startswith("postgresql+asyncpg://"):
-            return database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
-        if database_url.startswith("postgres://"):
-            return database_url.replace("postgres://", "postgresql://", 1)
-        return database_url
+        return _normalize_database_url(database_url)
 
     user = os.getenv("DB_USER", "postgres")
     password = os.getenv("DB_PASS", "")
@@ -455,6 +467,10 @@ class SystemSettings(db.Model):
 
 
 def _connection_params() -> dict[str, Any]:
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return {"dsn": build_database_uri()}
+
     return {
         "dbname": "postgres",
         "user": os.getenv("DB_USER", "postgres"),
@@ -476,6 +492,13 @@ def verify_postgres_connection() -> bool:
 
 
 def ensure_database_exists():
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        parsed = urlparse(build_database_uri())
+        if parsed.hostname and parsed.hostname.endswith(".supabase.co"):
+            logger.info("Skipping database creation for Supabase-hosted PostgreSQL")
+            return
+
     try:
         params = _connection_params()
         target_db = os.getenv("DB_NAME", "attendance_db")
@@ -496,18 +519,36 @@ def ensure_database_exists():
         raise
 
 
+def _is_hosted_postgres() -> bool:
+    database_url = os.getenv("DATABASE_URL", "")
+    if not database_url:
+        return False
+    parsed = urlparse(build_database_uri())
+    hostname = parsed.hostname or ""
+    return hostname.endswith(".supabase.co")
+
+
+def _startup_schema_migrations_enabled() -> bool:
+    override = os.getenv("ENABLE_STARTUP_SCHEMA_MIGRATIONS")
+    if override is not None:
+        return override.lower() in {"true", "1", "t", "yes", "on"}
+    return not _is_hosted_postgres()
+
+
 def create_tables_if_missing():
     try:
         engine = db.get_engine()
         inspector = inspect(engine)
         db.create_all()
+        run_startup_schema_migrations = _startup_schema_migrations_enabled()
 
         def run_migrations(conn, migrations, *, label: str) -> None:
             conn.execute(text("SET LOCAL lock_timeout = '2s'"))
             conn.execute(text("SET LOCAL statement_timeout = '15s'"))
             for migration in migrations:
                 try:
-                    conn.execute(text(migration))
+                    with conn.begin_nested():
+                        conn.execute(text(migration))
                 except Exception as e:
                     loguru_logger.warning(f"Skipping {label} migration due to database lock or error: {migration} ({e})")
 
@@ -537,7 +578,7 @@ def create_tables_if_missing():
                 )
                 return None
 
-        if "students" in inspector.get_table_names():
+        if run_startup_schema_migrations and "students" in inspector.get_table_names():
             with engine.begin() as conn:
                 migrations = [
                     "ALTER TABLE students ADD COLUMN IF NOT EXISTS department VARCHAR(100)",
@@ -574,7 +615,7 @@ def create_tables_if_missing():
                 except Exception as e:
                     loguru_logger.warning(f"Error migrating embeddings: {e}")
 
-        if "attendance" in inspector.get_table_names():
+        if run_startup_schema_migrations and "attendance" in inspector.get_table_names():
             with engine.begin() as conn:
                 migrations = [
                     "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS confidence_score FLOAT",
@@ -616,7 +657,7 @@ def create_tables_if_missing():
         # Its required columns are already present in current deployments, so
         # avoid DDL on every boot and let explicit migrations handle future changes.
 
-        if "users" in inspector.get_table_names():
+        if run_startup_schema_migrations and "users" in inspector.get_table_names():
             with engine.begin() as conn:
                 migrations = [
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'viewer'",
@@ -649,21 +690,22 @@ def create_tables_if_missing():
             db.session.add(default_admin)
             db.session.commit()
 
-        with engine.begin() as conn:
-            try:
-                conn.execute(
-                    text(
-                        """
-                        CREATE OR REPLACE FUNCTION check_db_health() RETURNS boolean AS $$
-                        BEGIN
-                            RETURN true;
-                        END;
-                        $$ LANGUAGE plpgsql;
-                        """
+        if run_startup_schema_migrations:
+            with engine.begin() as conn:
+                try:
+                    conn.execute(
+                        text(
+                            """
+                            CREATE OR REPLACE FUNCTION check_db_health() RETURNS boolean AS $$
+                            BEGIN
+                                RETURN true;
+                            END;
+                            $$ LANGUAGE plpgsql;
+                            """
+                        )
                     )
-                )
-            except Exception as e:
-                loguru_logger.warning(f"Error creating health check function: {e}")
+                except Exception as e:
+                    loguru_logger.warning(f"Error creating health check function: {e}")
 
         loguru_logger.info("Database tables and columns verified successfully")
     except OperationalError as e:

@@ -166,6 +166,7 @@ class PassiveLivenessEvaluator:
                 live_score >= self._profile.liveness_threshold
                 and live_score > max(print_score, replay_score)
             )
+            fallback_confidence = float(fallback.get("confidence", 0.0))
             soft_live_signal = fallback_live or (
                 bool(spoofing_detection.get("sufficient_motion", False))
                 and not heuristic_attack_detected
@@ -175,26 +176,32 @@ class PassiveLivenessEvaluator:
                 is_live = False
                 challenge_required = False
                 reason = "heuristic_replay_detected"
+                effective_confidence = live_score
             elif insufficient_motion:
                 is_live = False
                 challenge_required = False
                 reason = "motion_required_for_liveness"
+                effective_confidence = live_score
             elif model_supports_live:
                 is_live = True
                 challenge_required = self._profile.challenge_response_enabled and live_score < 0.9
                 reason = "passive_model_live"
+                effective_confidence = live_score
             elif soft_live_signal and not hard_model_spoof:
                 is_live = True
                 challenge_required = self._profile.challenge_response_enabled
                 reason = "heuristic_live_challenge_required"
+                effective_confidence = max(live_score, fallback_confidence)
             elif soft_live_signal and hard_model_spoof:
                 is_live = True
                 challenge_required = self._profile.challenge_response_enabled
                 reason = "model_spoof_but_heuristic_live_challenge_required"
+                effective_confidence = max(live_score, fallback_confidence)
             else:
                 is_live = False
                 challenge_required = False
                 reason = "passive_model_spoof"
+                effective_confidence = live_score
 
             logger.info(
                 "PAD fused decision: live={} challenge_required={} reason={} live={:.3f} print={:.3f} replay={:.3f} heuristic_live={} soft_live_signal={} heuristic_screen={} heuristic_photo={} sufficient_motion={}",
@@ -213,7 +220,7 @@ class PassiveLivenessEvaluator:
 
             return {
                 "is_live": is_live,
-                "confidence": live_score,
+                "confidence": effective_confidence,
                 "reason": reason,
                 "model_version": self._profile.liveness_version,
                 "challenge_required": challenge_required,
@@ -281,6 +288,9 @@ class UnifiedInferenceService:
 
     def _match_embedding(self, embedding: np.ndarray, students: Iterable[Student]) -> MatchDecision:
         profile = self.profile()
+        high_confidence_margin_bypass = float(
+            os.getenv("FACE_RECOGNITION_HIGH_CONFIDENCE_BYPASS", "0.10")
+        )
         best_student = None
         best_score = -1.0
         second_best = -1.0
@@ -304,6 +314,21 @@ class UnifiedInferenceService:
         if best_score < profile.recognizer_threshold:
             return MatchDecision(None, None, best_score, "unknown", "below_recognition_threshold")
         if (best_score - second_best) < profile.verification_margin:
+            if best_score >= (profile.recognizer_threshold + high_confidence_margin_bypass):
+                logger.info(
+                    "Recognition margin bypass applied: best={:.4f} second={:.4f} threshold={:.4f} margin={:.4f}",
+                    best_score,
+                    second_best,
+                    profile.recognizer_threshold,
+                    profile.verification_margin,
+                )
+                return MatchDecision(
+                    _coerce_optional_int(getattr(best_student, "id", None)),
+                    _coerce_optional_str(getattr(best_student, "name", None)),
+                    best_score,
+                    "matched",
+                    "recognized_high_confidence_margin_bypass",
+                )
             return MatchDecision(None, None, best_score, "uncertain", "verification_margin_too_small")
         return MatchDecision(
             _coerce_optional_int(getattr(best_student, "id", None)),

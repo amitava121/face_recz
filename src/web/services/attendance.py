@@ -254,6 +254,21 @@ def process_attendance_image(img, attendance_running: bool, active_challenges: d
         frame_history=None,
     )
 
+    if envelope["faces_detected"] > 1:
+        for face in envelope["faces"]:
+            if face.get("type") == "spoofing_detected":
+                continue
+            face["type"] = "multiple_faces_blocked"
+            face["decision"] = "blocked"
+            face["reason"] = "multiple_faces_detected"
+            face["challenge_required"] = False
+            face["challenge_message"] = ""
+            face["challenge_progress"] = 0.0
+            face["label"] = "Only one face allowed"
+        envelope["decision"] = "blocked"
+        envelope["reason"] = "multiple_faces_detected"
+        return envelope, 200
+
     if active_challenges is None:
         active_challenges = {}
 

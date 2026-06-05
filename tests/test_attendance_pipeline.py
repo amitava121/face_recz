@@ -47,6 +47,46 @@ def test_face_result_to_dict_normalizes_numpy_scalars():
     assert isinstance(payload["student_id"], int)
 
 
+def test_match_embedding_allows_high_confidence_margin_bypass(monkeypatch):
+    from src.services.inference_service import UnifiedInferenceService
+
+    monkeypatch.setenv("FACE_RECOGNITION_THRESHOLD", "0.50")
+    monkeypatch.setenv("VERIFICATION_THRESHOLD", "0.08")
+    monkeypatch.setenv("FACE_RECOGNITION_HIGH_CONFIDENCE_BYPASS", "0.10")
+
+    service = UnifiedInferenceService()
+    embedding = np.array([1.0, 0.0], dtype=np.float32)
+
+    student_a = type(
+        "StudentStub",
+        (),
+        {
+            "id": 1,
+            "name": "Amit",
+            "embedding_model_version": service.profile().recognizer_version,
+            "face_embedding_array": [0.62, 0.0],
+            "face_images": [],
+        },
+    )()
+    student_b = type(
+        "StudentStub",
+        (),
+        {
+            "id": 2,
+            "name": "Other",
+            "embedding_model_version": service.profile().recognizer_version,
+            "face_embedding_array": [0.57, 0.0],
+            "face_images": [],
+        },
+    )()
+
+    decision = service._match_embedding(embedding, [student_a, student_b])
+
+    assert decision.decision == "matched"
+    assert decision.student_id == 1
+    assert decision.reason == "recognized_high_confidence_margin_bypass"
+
+
 def test_passive_liveness_evaluator_uses_softmax_and_blocks_screen_replay(monkeypatch):
     import numpy as np
 
@@ -129,6 +169,7 @@ def test_passive_liveness_evaluator_prefers_challenge_over_hard_block_for_real_f
     assert result["is_live"] is True
     assert result["challenge_required"] is True
     assert result["reason"] == "model_spoof_but_heuristic_live_challenge_required"
+    assert result["confidence"] == pytest.approx(0.88)
 
 
 def test_passive_liveness_evaluator_allows_motion_signal_to_reach_challenge(monkeypatch):
@@ -171,6 +212,82 @@ def test_passive_liveness_evaluator_allows_motion_signal_to_reach_challenge(monk
     assert result["is_live"] is True
     assert result["challenge_required"] is True
     assert result["reason"] == "model_spoof_but_heuristic_live_challenge_required"
+    assert result["confidence"] == pytest.approx(0.30)
+
+
+def test_process_attendance_image_blocks_multi_face_scenes(monkeypatch):
+    from src.web.services import attendance as attendance_service
+
+    class StubQuery:
+        def filter(self, *_args, **_kwargs):
+            return self
+
+        def all(self):
+            return []
+
+        def first(self):
+            return None
+
+    monkeypatch.setattr(attendance_service.Student, "query", StubQuery())
+    monkeypatch.setattr(attendance_service.Attendance, "query", StubQuery())
+
+    class StubService:
+        def analyze_faces(self, img, *, students, attendance_running, frame_history):
+            return [], {
+                "faces": [
+                    {
+                        "student_id": 7,
+                        "name": "Amit",
+                        "type": "attendance_candidate",
+                        "decision": "matched",
+                        "reason": "recognized",
+                        "recognition_score": 0.93,
+                        "liveness_score": 0.84,
+                        "recognizer_version": "buffalo_l:recognizer",
+                        "liveness_version": "minifasnet_v2:onnx",
+                        "detector_version": "buffalo_l:detector",
+                        "challenge_required": False,
+                        "label": "Amit",
+                    },
+                    {
+                        "student_id": None,
+                        "name": None,
+                        "type": "spoofing_detected",
+                        "decision": "blocked",
+                        "reason": "heuristic_replay_detected",
+                        "recognition_score": 0.12,
+                        "liveness_score": 0.02,
+                        "recognizer_version": "buffalo_l:recognizer",
+                        "liveness_version": "minifasnet_v2:onnx",
+                        "detector_version": "buffalo_l:detector",
+                        "challenge_required": False,
+                        "label": "Spoofing detected",
+                    },
+                ],
+                "faces_detected": 2,
+                "recognition_score": 0.93,
+                "liveness_score": 0.84,
+                "recognizer_version": "buffalo_l:recognizer",
+                "liveness_version": "minifasnet_v2:onnx",
+                "detector_version": "buffalo_l:detector",
+                "decision": "matched",
+                "reason": "recognized",
+            }
+
+    monkeypatch.setattr(attendance_service, "get_inference_service", lambda: StubService())
+
+    body, status = attendance_service.process_attendance_image(
+        np.zeros((32, 32, 3), dtype=np.uint8),
+        True,
+        {},
+    )
+
+    assert status == 200
+    assert body["reason"] == "multiple_faces_detected"
+    assert body["decision"] == "blocked"
+    assert body["faces"][0]["type"] == "multiple_faces_blocked"
+    assert body["faces"][0]["label"] == "Only one face allowed"
+    assert body["faces"][1]["type"] == "spoofing_detected"
 
 
 def test_simple_anti_spoofing_detector_accepts_realistic_webcam_metrics(monkeypatch):

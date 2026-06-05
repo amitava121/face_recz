@@ -262,7 +262,107 @@
         </div>
         <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i> Apply Filters</button>
     </form>
-    {% if attendance_records %}
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:-0.8rem 0 1.6rem; color:#475569; font-size:0.95rem; flex-wrap:wrap;">
+        <span>Showing the latest attendance for the selected filters.</span>
+        <span id="dashboardLastUpdated">Last updated: {{ dashboard_last_updated }}</span>
+    </div>
+    <div id="attendanceResults">
+        {% if attendance_records %}
+            <div class="modern-table-container">
+                <form id="attendanceTableForm" method="POST" action="/delete_attendance_records">
+                    <div style="max-height: 350px; overflow-y: auto;">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" onclick="toggleAllAttendance(this)"></th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Department</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTableBody">
+                                {% for record in attendance_records %}
+                                <tr>
+                                    <td><input type="checkbox" name="attendance_ids" value="{{ record.id }}"></td>
+                                    <td>{{ record.timestamp.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ record.timestamp.strftime('%H:%M:%S') }}</td>
+                                    <td>{{ record.student.student_code if record.student else (record.student_code if record.student_code else '[Student Deleted]') }}</td>
+                                    <td>{{ record.student.name if record.student else (record.student_name if record.student_name else '[Student Deleted]') }}</td>
+                                    <td>{{ record.student.department if record.student else (record.student_department if record.student_department else '[Student Deleted]') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="modern-action-bar" style="justify-content: center; margin-top: 2rem; padding: 1rem; background: #f8faff; border-radius: 0 0 1rem 1rem; border-top: 1px solid rgba(37,99,235,0.1);">
+                        <button type="button" class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i> Export to Excel</button>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the selected attendance records? This action cannot be undone.')"><i class="fas fa-trash me-2"></i> Delete Selected Attendance</button>
+                        <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back to Admin
+                        </a>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="text-center py-8">
+                <i class="fas fa-clipboard-list text-4xl text-gray-400"></i>
+                <p class="mt-4 text-gray-600">No attendance records found for the selected criteria.</p>
+                <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                    <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary" style="min-width: 200px; font-size: 1.08rem; font-weight: 600; border-radius: 0.7rem; box-shadow: 0 4px 12px rgba(37,99,235,0.1); transition: all 0.2s ease; padding: 0.9rem 1.5rem; border: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(90deg, #64748b 0%, #334155 100%); color: white;">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to Admin
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+const ATTENDANCE_DASHBOARD_EVENT_KEY = 'attendance-dashboard-refresh';
+let attendanceDashboardChannel = null;
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function buildAttendanceResultsHtml(records) {
+    if (!records || records.length === 0) {
+        return `
+            <div class="text-center py-8">
+                <i class="fas fa-clipboard-list text-4xl text-gray-400"></i>
+                <p class="mt-4 text-gray-600">No attendance records found for the selected criteria.</p>
+                <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                    <a href="/admin" class="btn btn-secondary" style="min-width: 200px; font-size: 1.08rem; font-weight: 600; border-radius: 0.7rem; box-shadow: 0 4px 12px rgba(37,99,235,0.1); transition: all 0.2s ease; padding: 0.9rem 1.5rem; border: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(90deg, #64748b 0%, #334155 100%); color: white;">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Back to Admin
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    const rows = records.map((record) => `
+        <tr>
+            <td><input type="checkbox" name="attendance_ids" value="${escapeHtml(record.id)}"></td>
+            <td>${escapeHtml(record.date)}</td>
+            <td>${escapeHtml(record.time)}</td>
+            <td>${escapeHtml(record.student_code)}</td>
+            <td>${escapeHtml(record.student_name)}</td>
+            <td>${escapeHtml(record.student_department)}</td>
+        </tr>
+    `).join('');
+
+    return `
         <div class="modern-table-container">
             <form id="attendanceTableForm" method="POST" action="/delete_attendance_records">
                 <div style="max-height: 350px; overflow-y: auto;">
@@ -277,49 +377,39 @@
                                 <th>Department</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for record in attendance_records %}
-                            <tr>
-                                <td><input type="checkbox" name="attendance_ids" value="{{ record.id }}"></td>
-                                <td>{{ record.timestamp.strftime('%Y-%m-%d') }}</td>
-                                <td>{{ record.timestamp.strftime('%H:%M:%S') }}</td>
-                                <td>{{ record.student.student_code if record.student else (record.student_code if record.student_code else '[Student Deleted]') }}</td>
-                                <td>{{ record.student.name if record.student else (record.student_name if record.student_name else '[Student Deleted]') }}</td>
-                                <td>{{ record.student.department if record.student else (record.student_department if record.student_department else '[Student Deleted]') }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
+                        <tbody id="attendanceTableBody">${rows}</tbody>
                     </table>
                 </div>
-
-                <!-- Buttons moved below the table -->
                 <div class="modern-action-bar" style="justify-content: center; margin-top: 2rem; padding: 1rem; background: #f8faff; border-radius: 0 0 1rem 1rem; border-top: 1px solid rgba(37,99,235,0.1);">
                     <button type="button" class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i> Export to Excel</button>
                     <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the selected attendance records? This action cannot be undone.')"><i class="fas fa-trash me-2"></i> Delete Selected Attendance</button>
-                    <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
+                    <a href="/admin" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-2"></i>
                         Back to Admin
                     </a>
                 </div>
             </form>
         </div>
-    {% else %}
-        <div class="text-center py-8">
-            <i class="fas fa-clipboard-list text-4xl text-gray-400"></i>
-            <p class="mt-4 text-gray-600">No attendance records found for the selected criteria.</p>
+    `;
+}
 
-            <!-- Add Back to Admin button for empty state -->
-            <div style="margin-top: 2rem; display: flex; justify-content: center;">
-                <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary" style="min-width: 200px; font-size: 1.08rem; font-weight: 600; border-radius: 0.7rem; box-shadow: 0 4px 12px rgba(37,99,235,0.1); transition: all 0.2s ease; padding: 0.9rem 1.5rem; border: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(90deg, #64748b 0%, #334155 100%); color: white;">
-                    <i class="fas fa-arrow-left me-2"></i>
-                    Back to Admin
-                </a>
-            </div>
-        </div>
-    {% endif %}
-</div>
+function bindAttendanceTableForm() {
+    const attendanceTableForm = document.getElementById('attendanceTableForm');
+    if (!attendanceTableForm || attendanceTableForm.dataset.bound === 'true') {
+        return;
+    }
 
-<script>
+    attendanceTableForm.addEventListener('submit', function(e) {
+        var checkboxes = document.querySelectorAll('input[name="attendance_ids"]:checked');
+        if (checkboxes.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one attendance record to delete.');
+            return false;
+        }
+    });
+    attendanceTableForm.dataset.bound = 'true';
+}
+
 function toggleAllAttendance(source) {
     checkboxes = document.getElementsByName('attendance_ids');
     for(var i=0, n=checkboxes.length;i<n;i++) {
@@ -349,15 +439,89 @@ document.getElementById('attendanceSearchForm').addEventListener('submit', funct
     }
 });
 
-// Handle attendance deletion form submission
-document.getElementById('attendanceTableForm').addEventListener('submit', function(e) {
-    var checkboxes = document.querySelectorAll('input[name="attendance_ids"]:checked');
-    if (checkboxes.length === 0) {
-        e.preventDefault();
-        alert('Please select at least one attendance record to delete.');
-        return false;
+let dashboardRefreshTimer = null;
+let dashboardRefreshInFlight = false;
+
+async function refreshDashboardData() {
+    if (dashboardRefreshInFlight) {
+        return;
     }
+
+    const params = new URLSearchParams(window.location.search);
+    dashboardRefreshInFlight = true;
+
+    try {
+        const response = await fetch(`/dashboard/data?${params.toString()}`, {
+            headers: {
+                'X-Requested-With': 'fetch'
+            }
+        });
+
+        if (response.status === 401) {
+            window.location.href = '/login';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Dashboard refresh failed with ${response.status}`);
+        }
+
+        const data = await response.json();
+        const resultsContainer = document.getElementById('attendanceResults');
+        const lastUpdated = document.getElementById('dashboardLastUpdated');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = buildAttendanceResultsHtml(data.records || []);
+            bindAttendanceTableForm();
+        }
+        if (lastUpdated && data.last_updated) {
+            lastUpdated.textContent = `Last updated: ${data.last_updated}`;
+        }
+    } catch (error) {
+        console.error('Failed to refresh attendance dashboard:', error);
+    } finally {
+        dashboardRefreshInFlight = false;
+    }
+}
+
+function scheduleDashboardRefresh() {
+    if (dashboardRefreshTimer) {
+        clearTimeout(dashboardRefreshTimer);
+    }
+
+    dashboardRefreshTimer = setTimeout(() => {
+        if (document.hidden) {
+            scheduleDashboardRefresh();
+            return;
+        }
+
+        const activeElement = document.activeElement;
+        const isEditing = activeElement && ['INPUT', 'SELECT', 'TEXTAREA'].includes(activeElement.tagName);
+        if (isEditing) {
+            scheduleDashboardRefresh();
+            return;
+        }
+
+        refreshDashboardData().finally(scheduleDashboardRefresh);
+    }, 15000);
+}
+
+document.addEventListener('visibilitychange', scheduleDashboardRefresh);
+window.addEventListener('storage', function(event) {
+    if (event.key !== ATTENDANCE_DASHBOARD_EVENT_KEY || !event.newValue) {
+        return;
+    }
+    refreshDashboardData().finally(scheduleDashboardRefresh);
 });
+
+if ('BroadcastChannel' in window) {
+    attendanceDashboardChannel = new BroadcastChannel('attendance-dashboard');
+    attendanceDashboardChannel.addEventListener('message', function() {
+        refreshDashboardData().finally(scheduleDashboardRefresh);
+    });
+}
+
+bindAttendanceTableForm();
+scheduleDashboardRefresh();
 </script>
 <script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
 {% endblock %}

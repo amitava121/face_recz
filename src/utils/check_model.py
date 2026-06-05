@@ -8,11 +8,16 @@ import os
 import sys
 import logging
 import glob
+from urllib.parse import urlparse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 def check_dependencies():
     """Check if all required dependencies are available."""
@@ -133,9 +138,13 @@ def main():
         from dotenv import load_dotenv
         load_dotenv()
 
-        db_host = os.getenv('DB_HOST', 'localhost')
-        db_name = os.getenv('DB_NAME', 'attendance_db')
-        db_user = os.getenv('DB_USER', 'postgres')
+        from src.models.db import build_database_uri
+
+        database_uri = build_database_uri()
+        parsed = urlparse(database_uri)
+        db_host = parsed.hostname or os.getenv('DB_HOST', 'localhost')
+        db_name = parsed.path.lstrip('/') or os.getenv('DB_NAME', 'attendance_db')
+        db_user = parsed.username or os.getenv('DB_USER', 'postgres')
 
         logger.info(f"📊 Database configuration:")
         logger.info(f"  - Host: {db_host}")
@@ -145,12 +154,7 @@ def main():
         # Try to connect to database
         try:
             import psycopg2
-            conn = psycopg2.connect(
-                host=db_host,
-                database=db_name,
-                user=db_user,
-                password=os.getenv('DB_PASS')
-            )
+            conn = psycopg2.connect(database_uri)
             conn.close()
             logger.info("✅ Database connection successful")
         except Exception as e:

@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 from src.models.db import Student, Attendance
+from src.models.db import build_database_uri
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -38,21 +39,7 @@ def setup_video_logging():
 setup_video_logging()
 logger = logging.getLogger(__name__)
 
-# Database configuration from environment
-DB_USER = os.getenv('DB_USER')
-DB_PASS = os.getenv('DB_PASS')
-DB_NAME = os.getenv('DB_NAME')
-DB_HOST = os.getenv('DB_HOST')
-DB_PORT = os.getenv('DB_PORT')
-
-# Validate required environment variables
-required_vars = ['DB_USER', 'DB_PASS', 'DB_NAME', 'DB_HOST', 'DB_PORT']
-missing_vars = [var for var in required_vars if not os.getenv(var)]
-if missing_vars:
-    logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
-    raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
-
-DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URI = build_database_uri()
 
 class VideoService:
     def __init__(self, app=None, socketio=None):

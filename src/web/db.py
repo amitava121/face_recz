@@ -2,16 +2,27 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 
 def _to_asyncpg_url(database_url: str) -> str:
     if database_url.startswith("postgresql+asyncpg://"):
-        return database_url
-    if database_url.startswith("postgresql://"):
-        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    if database_url.startswith("postgres://"):
-        return database_url.replace("postgres://", "postgresql+asyncpg://", 1)
-    return database_url
+        normalized = database_url
+    elif database_url.startswith("postgresql://"):
+        normalized = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif database_url.startswith("postgres://"):
+        normalized = database_url.replace("postgres://", "postgresql+asyncpg://", 1)
+    else:
+        normalized = database_url
+
+    parsed = urlparse(normalized)
+    if parsed.hostname and parsed.hostname.endswith(".supabase.co"):
+        query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        query.setdefault("sslmode", "require")
+        parsed = parsed._replace(query=urlencode(query))
+        return urlunparse(parsed)
+
+    return normalized
 
 
 @dataclass(slots=True)

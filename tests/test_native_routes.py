@@ -10,6 +10,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
+@pytest.fixture(autouse=True)
+def disable_startup_db_bootstrap(monkeypatch):
+    import src.web.app as web_app
+
+    monkeypatch.setattr(web_app, "create_tables_if_missing", lambda: None)
+
+
 @pytest.mark.asyncio
 async def test_native_fastapi_root_redirects_to_locked_by_default():
     from src.web.app import create_app

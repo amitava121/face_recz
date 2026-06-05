@@ -19,6 +19,7 @@ class SimpleReliableCamera {
         this.stream = null;
         this.status = 'disconnected';
         this.captureInterval = null;
+        this.captureTimeout = null;
         this.processingImage = false;
         this.isCapturing = false;
         this.stopping = false;
@@ -27,6 +28,12 @@ class SimpleReliableCamera {
         this.lastSuccessfulCapture = Date.now();
         this.watchdogTimer = null;
         this.watchdogInterval = 10000; // 10 seconds
+        this.baseCaptureInterval = 180;
+        this.minCaptureInterval = 120;
+        this.maxCaptureInterval = 450;
+        this.adaptiveCaptureInterval = this.baseCaptureInterval;
+        this.targetProcessingWidth = options.targetProcessingWidth || 320;
+        this.jpegQuality = options.jpegQuality || 0.65;
 
         // Smart Face Tracking for Intelligent Rate Limiting
         this.faceTracker = {
@@ -44,6 +51,9 @@ class SimpleReliableCamera {
             consecutiveNoFaceFrames: 0, // Count frames with no faces
             resetAfterNoFaces: 5 // Reset tracking after N frames with no faces
         };
+
+        this.deviceTier = this.detectDeviceTier();
+        this.applyPerformanceProfile();
 
         // Canvas for capturing images
         this.canvas = document.createElement('canvas');
@@ -73,12 +83,57 @@ class SimpleReliableCamera {
         this.start = this.start.bind(this);
         this.stop = this.stop.bind(this);
         this.captureAndSendImage = this.captureAndSendImage.bind(this);
+        this.scheduleNextCapture = this.scheduleNextCapture.bind(this);
         this.updateStatus = this.updateStatus.bind(this);
         this.drawFaceDetectionBox = this.drawFaceDetectionBox.bind(this);
         this.shouldProcessFrame = this.shouldProcessFrame.bind(this);
         this.updateFaceTracker = this.updateFaceTracker.bind(this);
         this.calculateFaceDistance = this.calculateFaceDistance.bind(this);
         this.generateFaceHash = this.generateFaceHash.bind(this);
+        this.detectDeviceTier = this.detectDeviceTier.bind(this);
+        this.applyPerformanceProfile = this.applyPerformanceProfile.bind(this);
+    }
+
+    detectDeviceTier() {
+        const cores = navigator.hardwareConcurrency || 4;
+        const memory = navigator.deviceMemory || 4;
+        const ua = navigator.userAgent || '';
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+
+        if (cores <= 4 || memory <= 4 || isMobile) {
+            return 'low';
+        }
+
+        if (cores <= 8 || memory <= 8) {
+            return 'mid';
+        }
+
+        return 'high';
+    }
+
+    applyPerformanceProfile() {
+        if (this.deviceTier === 'low') {
+            this.baseCaptureInterval = 260;
+            this.minCaptureInterval = 180;
+            this.maxCaptureInterval = 700;
+            this.targetProcessingWidth = Math.min(this.targetProcessingWidth, 256);
+            this.jpegQuality = Math.min(this.jpegQuality, 0.55);
+            this.faceTracker.minProcessInterval = 2400;
+            this.faceTracker.newFaceProcessInterval = 420;
+            this.faceTracker.maxStableFrames = 5;
+            return;
+        }
+
+        if (this.deviceTier === 'mid') {
+            this.baseCaptureInterval = 200;
+            this.minCaptureInterval = 140;
+            this.maxCaptureInterval = 520;
+            this.targetProcessingWidth = Math.min(this.targetProcessingWidth, 320);
+            this.jpegQuality = Math.min(this.jpegQuality, 0.6);
+            this.faceTracker.minProcessInterval = 2200;
+            this.faceTracker.newFaceProcessInterval = 340;
+            this.faceTracker.maxStableFrames = 6;
+        }
     }
 
     /**
@@ -244,13 +299,16 @@ class SimpleReliableCamera {
             let stream = null;
             let error = null;
 
+            const prefersLowPowerProfile = this.deviceTier === 'low';
             const constraintSets = [
                 // Method 1: Standard constraints optimized for face detection
                 {
                     video: {
-                        width: { ideal: 640, min: 320 },
-                        height: { ideal: 480, min: 240 },
-                        frameRate: { ideal: 15, min: 10 },
+                        width: { ideal: prefersLowPowerProfile ? 480 : 640, min: 320 },
+                        height: { ideal: prefersLowPowerProfile ? 360 : 480, min: 240 },
+                        frameRate: prefersLowPowerProfile
+                            ? { ideal: 8, max: 10, min: 6 }
+                            : { ideal: 12, max: 15, min: 8 },
                         facingMode: 'user'
                     },
                     audio: false
@@ -258,9 +316,11 @@ class SimpleReliableCamera {
                 // Method 2: Simpler constraints
                 {
                     video: {
-                        width: { ideal: 320 },
-                        height: { ideal: 240 },
-                        frameRate: { ideal: 15 }
+                        width: { ideal: prefersLowPowerProfile ? 256 : 320 },
+                        height: { ideal: prefersLowPowerProfile ? 192 : 240 },
+                        frameRate: prefersLowPowerProfile
+                            ? { ideal: 7, max: 9 }
+                            : { ideal: 10, max: 12 }
                     },
                     audio: false
                 },
@@ -329,7 +389,8 @@ class SimpleReliableCamera {
             console.log('📊 Stream info:', {
                 active: stream.active,
                 tracks: stream.getTracks().length,
-                videoTracks: stream.getVideoTracks().length
+                videoTracks: stream.getVideoTracks().length,
+                deviceTier: this.deviceTier
             });
 
             // Store the stream
@@ -393,9 +454,15 @@ class SimpleReliableCamera {
             // Set canvas dimensions based on video
             const videoWidth = this.videoElement.videoWidth || 640;
             const videoHeight = this.videoElement.videoHeight || 480;
-            this.canvas.width = videoWidth;
-            this.canvas.height = videoHeight;
-            console.log('🎨 Canvas dimensions set:', { width: videoWidth, height: videoHeight });
+            const processingScale = Math.min(1, this.targetProcessingWidth / videoWidth);
+            this.canvas.width = Math.max(160, Math.round(videoWidth * processingScale));
+            this.canvas.height = Math.max(120, Math.round(videoHeight * processingScale));
+            console.log('🎨 Processing canvas dimensions set:', {
+                sourceWidth: videoWidth,
+                sourceHeight: videoHeight,
+                width: this.canvas.width,
+                height: this.canvas.height
+            });
 
             // Add overlay canvas
             if (this.videoElement.parentElement) {
@@ -418,10 +485,10 @@ class SimpleReliableCamera {
 
             this.updateStatus('connected', 'Connected to camera');
 
-            // Start capturing images - more frequent captures for better responsiveness
+            // Start adaptive capture loop optimized for lower-end devices.
             this.isCapturing = true;
-            this.captureInterval = setInterval(this.captureAndSendImage, 200); // Reduced from 500ms to 200ms for faster response
-            console.log('📸 Image capture started (200ms interval)');
+            this.scheduleNextCapture(0);
+            console.log('📸 Adaptive image capture started');
 
             // Start watchdog timer to detect and fix stalled face detection
             this.lastSuccessfulCapture = Date.now();
@@ -449,6 +516,10 @@ class SimpleReliableCamera {
         if (this.captureInterval) {
             clearInterval(this.captureInterval);
             this.captureInterval = null;
+        }
+        if (this.captureTimeout) {
+            clearTimeout(this.captureTimeout);
+            this.captureTimeout = null;
         }
 
         // Clear watchdog timer
@@ -494,6 +565,18 @@ class SimpleReliableCamera {
         if (this.resizeObserver) {
             this.resizeObserver.disconnect();
         }
+    }
+
+    scheduleNextCapture(delay = this.adaptiveCaptureInterval) {
+        if (this.captureTimeout) {
+            clearTimeout(this.captureTimeout);
+        }
+        if (!this.isCapturing || this.stopping) {
+            return;
+        }
+        this.captureTimeout = setTimeout(() => {
+            this.captureAndSendImage();
+        }, delay);
     }
 
     resizeOverlayCanvas() {
@@ -612,15 +695,21 @@ class SimpleReliableCamera {
             return;
         }
 
+        if (this.mode === 'attendance' && !this.shouldProcessFrame()) {
+            this.scheduleNextCapture(this.faceTracker.newFaceProcessInterval);
+            return;
+        }
+
         try {
             this.processingImage = true;
+            const captureStart = performance.now();
 
             // Draw video frame to canvas
             this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
 
             // Convert canvas to blob
             const blob = await new Promise(resolve => {
-                this.canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                this.canvas.toBlob(resolve, 'image/jpeg', this.jpegQuality);
             });
 
             // Create form data
@@ -648,14 +737,19 @@ class SimpleReliableCamera {
 
             // Update last successful capture time
             this.lastSuccessfulCapture = Date.now();
+            const captureDuration = performance.now() - captureStart;
+            this.adaptiveCaptureInterval = Math.max(
+                this.minCaptureInterval,
+                Math.min(this.maxCaptureInterval, Math.round(captureDuration * 0.35))
+            );
 
             // Handle face detection
             if (result.faces_detected) {
-                this.onFaceDetected({
-                    type: 'face_detected',
-                    count: result.faces_detected,
-                    capture_count: result.capture_count || 0
-                });
+                const detectedFaces = Array.isArray(result.faces)
+                    ? result.faces
+                    : (result.face_rect ? [result.face_rect] : []);
+                this.updateFaceTracker(detectedFaces);
+                this.faceTracker.lastProcessTime = Date.now();
 
                 // Handle face detection boxes
                 if (result.faces && Array.isArray(result.faces) && result.faces.length > 0) {
@@ -671,7 +765,6 @@ class SimpleReliableCamera {
                         this.drawMultipleFaceBoxes(result.faces);
                     }
 
-                    // Also pass the result to onFaceDetected with the faces array
                     this.onFaceDetected(result);
                 }
                 else if (result.face_rect) {
@@ -684,6 +777,7 @@ class SimpleReliableCamera {
 
                     // Draw the single face box
                     this.drawFaceDetectionBox(x, y, width, height);
+                    this.onFaceDetected(result);
                 }
 
                 // Handle registration
@@ -709,6 +803,8 @@ class SimpleReliableCamera {
                     }
                 }
             } else {
+                this.updateFaceTracker([]);
+                this.faceTracker.lastProcessTime = Date.now();
                 // Clear face detection box
                 if (this.overlayCtx) {
                     this.overlayCtx.clearRect(0, 0, this.overlayCanvas.width, this.overlayCanvas.height);
@@ -742,6 +838,7 @@ class SimpleReliableCamera {
             }
         } finally {
             this.processingImage = false;
+            this.scheduleNextCapture();
         }
     }
 
@@ -829,13 +926,18 @@ class SimpleReliableCamera {
                 clearInterval(this.captureInterval);
                 this.captureInterval = null;
             }
+            if (this.captureTimeout) {
+                clearTimeout(this.captureTimeout);
+                this.captureTimeout = null;
+            }
 
             // Reset processing flag
             this.processingImage = false;
+            this.adaptiveCaptureInterval = this.baseCaptureInterval;
 
-            // Restart the capture interval
+            // Restart the capture loop
             this.isCapturing = true;
-            this.captureInterval = setInterval(this.captureAndSendImage, 200);
+            this.scheduleNextCapture(0);
 
             // Reset the last successful capture time
             this.lastSuccessfulCapture = Date.now();

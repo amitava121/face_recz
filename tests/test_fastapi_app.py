@@ -12,6 +12,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
+@pytest.fixture(autouse=True)
+def disable_startup_db_bootstrap(monkeypatch):
+    import src.web.app as web_app
+
+    monkeypatch.setattr(web_app, "create_tables_if_missing", lambda: None)
+
+
 @pytest.mark.asyncio
 async def test_create_app_exposes_native_async_health_endpoint():
     from src.web.app import create_app

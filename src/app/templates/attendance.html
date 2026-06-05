@@ -793,6 +793,31 @@
         document.getElementById('retryBtn').style.display = 'block';
     }
 
+    const ATTENDANCE_DASHBOARD_EVENT_KEY = 'attendance-dashboard-refresh';
+
+    function notifyDashboardAttendanceUpdate(payload = {}) {
+        const eventPayload = {
+            ...payload,
+            emitted_at: new Date().toISOString()
+        };
+
+        try {
+            localStorage.setItem(ATTENDANCE_DASHBOARD_EVENT_KEY, JSON.stringify(eventPayload));
+        } catch (error) {
+            console.warn('Failed to notify dashboard via localStorage:', error);
+        }
+
+        if ('BroadcastChannel' in window) {
+            try {
+                const channel = new BroadcastChannel('attendance-dashboard');
+                channel.postMessage(eventPayload);
+                channel.close();
+            } catch (error) {
+                console.warn('Failed to notify dashboard via BroadcastChannel:', error);
+            }
+        }
+    }
+
     // Enhanced diagnostic function to check system status
     async function checkSystemStatus() {
         console.log('🔍 === ENHANCED SYSTEM DIAGNOSTIC ===');
@@ -1159,20 +1184,6 @@
                             statusHeader.style.color = "#2563eb";
                         }
 
-                        // Always clear the canvas first to ensure boxes disappear when faces leave
-                        const videoElement = document.getElementById('video-feed');
-                        if (videoElement) {
-                            const canvasId = 'multi-face-overlay';
-                            let overlayCanvas = document.getElementById(canvasId);
-                            if (overlayCanvas) {
-                                const ctx = overlayCanvas.getContext('2d');
-                                // Make sure canvas dimensions match the video element
-                                overlayCanvas.width = videoElement.clientWidth;
-                                overlayCanvas.height = videoElement.clientHeight;
-                                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                            }
-                        }
-
                         console.log('Face detection data received:', data);
 
                         // Check if there are any faces detected
@@ -1186,6 +1197,7 @@
 
                         // If no faces are detected, update the status header
                         if (!hasFaces && statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
+                            drawMultipleFaceResults([]);
                             statusHeader.textContent = "Waiting for Face Detection...";
                             statusHeader.style.color = "#2563eb";
                             console.log('No faces detected, cleared canvas');
@@ -1574,6 +1586,111 @@
 
     // Variable to track if we need to clear the canvas
     let clearCanvasTimeout = null;
+    let overlayAnimationFrame = null;
+    let animatedFaces = [];
+    let targetFaces = [];
+
+    function animateFaceOverlay() {
+        const videoElement = document.getElementById('video-feed');
+        const overlayCanvas = document.getElementById('multi-face-overlay');
+        if (!videoElement || !overlayCanvas) {
+            overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
+            return;
+        }
+
+        if (animatedFaces.length !== targetFaces.length) {
+            animatedFaces = targetFaces.map(face => ({ ...face }));
+        } else {
+            animatedFaces = targetFaces.map((targetFace, index) => {
+                const currentFace = animatedFaces[index] || targetFace;
+                const ease = 0.38;
+                return {
+                    ...targetFace,
+                    x: currentFace.x + ((targetFace.x ?? 0) - (currentFace.x ?? 0)) * ease,
+                    y: currentFace.y + ((targetFace.y ?? 0) - (currentFace.y ?? 0)) * ease,
+                    width: currentFace.width + ((targetFace.width ?? 0) - (currentFace.width ?? 0)) * ease,
+                    height: currentFace.height + ((targetFace.height ?? 0) - (currentFace.height ?? 0)) * ease,
+                };
+            });
+        }
+
+        renderFaceOverlay(animatedFaces, videoElement, overlayCanvas);
+        overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
+    }
+
+    function renderFaceOverlay(faceResults, videoElement, overlayCanvas) {
+        if (overlayCanvas.width !== videoElement.clientWidth ||
+            overlayCanvas.height !== videoElement.clientHeight) {
+            overlayCanvas.width = videoElement.clientWidth;
+            overlayCanvas.height = videoElement.clientHeight;
+        }
+
+        const ctx = overlayCanvas.getContext('2d');
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+        if (!faceResults || faceResults.length === 0) {
+            return;
+        }
+
+        const videoWidth = videoElement.videoWidth || 320;
+        const videoHeight = videoElement.videoHeight || 240;
+        const displayWidth = videoElement.clientWidth;
+        const displayHeight = videoElement.clientHeight;
+
+        const scaleX = displayWidth / videoWidth;
+        const scaleY = displayHeight / videoHeight;
+
+        faceResults.forEach(face => {
+            const x = (face.x || 0) * scaleX;
+            const y = (face.y || 0) * scaleY;
+            const width = (face.width || 0) * scaleX;
+            const height = (face.height || 0) * scaleY;
+
+            let strokeColor = '#00FF00';
+            if (face.type === 'spoofing_detected') {
+                strokeColor = '#ef4444';
+            } else if (face.type === 'multiple_faces_blocked') {
+                strokeColor = '#f59e0b';
+            } else if (face.type === 'uncertain_match') {
+                strokeColor = '#eab308';
+            } else if (face.type === 'challenge_required') {
+                strokeColor = '#f97316';
+            } else if (face.type === 'already_marked_today') {
+                strokeColor = '#dc2626';
+            }
+
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, width, height);
+
+            ctx.font = 'bold 10px Arial';
+            let labelColor = 'rgba(34,197,94,0.85)';
+            let textColor = 'white';
+            let labelText = face.label || 'Face Detected';
+
+            if (face.type === 'spoofing_detected') {
+                labelColor = 'rgba(239,68,68,0.90)';
+            } else if (face.type === 'multiple_faces_blocked') {
+                labelColor = 'rgba(245,158,11,0.92)';
+            } else if (face.type === 'uncertain_match') {
+                labelColor = 'rgba(234,179,8,0.90)';
+                textColor = '#111827';
+            } else if (labelText === 'Already Marked Today') {
+                labelColor = 'rgba(220,38,38,0.85)';
+                labelText = 'Already Marked';
+            } else if (face.type === 'challenge_required') {
+                labelColor = 'rgba(217,119,6,0.90)';
+            } else if (labelText === 'Unknown Face') {
+                labelColor = 'rgba(234,179,8,0.85)';
+            }
+
+            const labelWidth = ctx.measureText(labelText).width + 8;
+            ctx.fillStyle = labelColor;
+            ctx.fillRect(x, y - 16, labelWidth, 16);
+            ctx.fillStyle = textColor;
+            ctx.fillText(labelText, x + 4, y - 4);
+        });
+    }
 
     // Page load optimization
     document.addEventListener('DOMContentLoaded', function() {
@@ -1611,6 +1728,10 @@
                 console.log('📍 Scrolled to Start Attendance button');
             }
         }, 800); // Small delay to ensure page is fully loaded and AOS animations complete
+
+        if (!overlayAnimationFrame) {
+            overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
+        }
     });
 
     // Add this helper to draw multiple face boxes and labels
@@ -1629,25 +1750,6 @@
             return;
         }
 
-        // Make sure canvas dimensions match the video element
-        if (overlayCanvas.width !== videoElement.clientWidth ||
-            overlayCanvas.height !== videoElement.clientHeight) {
-            overlayCanvas.width = videoElement.clientWidth;
-            overlayCanvas.height = videoElement.clientHeight;
-        }
-
-        console.log('Drawing face boxes on canvas:', canvasId, 'Number of faces:', faceResults.length,
-                    'Canvas dimensions:', overlayCanvas.width, 'x', overlayCanvas.height);
-
-        // Set canvas dimensions to match video display size
-        overlayCanvas.width = videoElement.clientWidth;
-        overlayCanvas.height = videoElement.clientHeight;
-
-        const ctx = overlayCanvas.getContext('2d');
-
-        // Always clear the canvas before drawing new boxes
-        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
         // If no faces, set a timeout to clear the canvas after a short delay
         // This ensures boxes disappear when faces leave the frame
         if (!faceResults || faceResults.length === 0) {
@@ -1656,13 +1758,12 @@
                 clearTimeout(clearCanvasTimeout);
             }
 
-            // Set a new timeout to clear the canvas after 500ms
+            // Clear quickly so the overlay does not trail far behind the live preview.
             clearCanvasTimeout = setTimeout(() => {
                 if (overlayCanvas) {
-                    const ctx = overlayCanvas.getContext('2d');
-                    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                    targetFaces = [];
                 }
-            }, 500);
+            }, 180);
 
             return;
         }
@@ -1675,54 +1776,7 @@
 
         // Update the last time faces were detected
         lastFaceDetectionTime = Date.now();
-
-        // Calculate scale factors between original image and display size
-        const videoWidth = videoElement.videoWidth || 320;
-        const videoHeight = videoElement.videoHeight || 240;
-        const displayWidth = videoElement.clientWidth;
-        const displayHeight = videoElement.clientHeight;
-
-        const scaleX = displayWidth / videoWidth;
-        const scaleY = displayHeight / videoHeight;
-
-        // Draw each face
-        faceResults.forEach(face => {
-            // Scale coordinates to match display size
-            const x = face.x * scaleX;
-            const y = face.y * scaleY;
-            const width = face.width * scaleX;
-            const height = face.height * scaleY;
-
-            // Draw green box for every face
-            ctx.strokeStyle = '#00FF00'; // Bright green
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x, y, width, height);
-
-            // Draw label with appropriate color based on status - smaller font
-            ctx.font = 'bold 10px Arial'; // Reduced from 14px to 10px
-            let labelColor = 'rgba(34,197,94,0.85)'; // Default green
-            let textColor = 'white';
-
-            if (face.label === 'Already Marked Today') {
-                labelColor = 'rgba(220,38,38,0.85)'; // Red for already marked
-                // Shorten the label text
-                face.label = 'Already Marked';
-            } else if (face.type === 'challenge_required') {
-                labelColor = 'rgba(217,119,6,0.90)'; // Orange for active liveness challenge
-            } else if (face.label === 'Unknown Face') {
-                labelColor = 'rgba(234,179,8,0.85)'; // Yellow for unknown
-            }
-
-            // Draw label background - smaller height
-            const labelText = face.label || 'Face Detected';
-            const labelWidth = ctx.measureText(labelText).width + 8; // Reduced padding
-            ctx.fillStyle = labelColor;
-            ctx.fillRect(x, y - 16, labelWidth, 16); // Reduced height from 22 to 16
-
-            // Draw label text
-            ctx.fillStyle = textColor;
-            ctx.fillText(labelText, x + 4, y - 4); // Adjusted position
-        });
+        targetFaces = faceResults.map(face => ({ ...face }));
     }
 
     // Make the function available globally
@@ -1735,8 +1789,8 @@
     function checkAndClearCanvas() {
         const now = Date.now();
 
-        // If it's been more than 2 seconds since we last detected faces, clear the canvas
-        if (now - lastFaceDetectionTime > 2000) {
+        // Clear stale overlays aggressively so boxes don't drift long after the face moves.
+        if (now - lastFaceDetectionTime > 800) {
             const videoElement = document.getElementById('video-feed');
             if (videoElement) {
                 const canvasId = 'multi-face-overlay';
@@ -1785,6 +1839,11 @@
 
                 // Show attendance overlay for the marked student
                 const markedFace = data.faces.find(f => f.type === 'attendance_marked');
+                notifyDashboardAttendanceUpdate({
+                    student_id: markedFace?.student_id || null,
+                    student_name: markedFace?.name || markedFace?.label || null,
+                    source: 'attendance_faces'
+                });
                 if (markedFace && markedFace.name) {
                     showAttendanceOverlay(markedFace.name);
                 }
@@ -1812,6 +1871,11 @@
                 statusHeader.textContent = `Attendance Marked: ${data.name || ''}`;
                 statusHeader.style.color = '#059669';
                 statusHeader.dataset.locked = 'true';
+                notifyDashboardAttendanceUpdate({
+                    student_id: data.student_id || null,
+                    student_name: data.name || null,
+                    source: 'attendance_legacy'
+                });
 
                 // Show attendance overlay
                 if (data.name) {

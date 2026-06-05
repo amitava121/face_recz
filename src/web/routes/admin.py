@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta, timezone
 from io import BytesIO
 
 import pandas as pd
@@ -46,6 +46,46 @@ def _excel_response(df: pd.DataFrame, filename: str, sheet_name: str = "Data") -
     )
 
 
+def _local_day_bounds(date_str: str) -> tuple[datetime, datetime]:
+    local_tz = datetime.now().astimezone().tzinfo or timezone.utc
+    local_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    start_local = datetime.combine(local_date, time.min, tzinfo=local_tz)
+    end_local = datetime.combine(local_date, time.max, tzinfo=local_tz)
+    return start_local.astimezone(timezone.utc), end_local.astimezone(timezone.utc)
+
+
+def _load_dashboard_records(date: str, department: str, search: str):
+    departments = [d[0] for d in db.session.query(db.func.distinct(Student.department)).filter(Student.department.isnot(None)).limit(50).all() if d[0]]
+    query = Attendance.query.outerjoin(Student, Attendance.student_id == Student.id)
+    if date:
+        start_utc, end_utc = _local_day_bounds(date)
+        query = query.filter(
+            Attendance.timestamp >= start_utc,
+            Attendance.timestamp <= end_utc,
+        )
+    if department:
+        query = query.filter(Student.department == department)
+    if search.strip():
+        query = query.filter(
+            (Student.student_code.ilike(f"%{search.strip()}%")) |
+            (Student.name.ilike(f"%{search.strip()}%"))
+        )
+    records = query.order_by(Attendance.timestamp.desc()).limit(200).all()
+    return departments, records
+
+
+def _serialize_dashboard_record(record: Attendance) -> dict:
+    student = record.student
+    return {
+        "id": record.id,
+        "date": record.timestamp.strftime("%Y-%m-%d"),
+        "time": record.timestamp.strftime("%H:%M:%S"),
+        "student_code": student.student_code if student else (record.student_code or "[Student Deleted]"),
+        "student_name": student.name if student else (record.student_name or "[Student Deleted]"),
+        "student_department": student.department if student else (record.student_department or "[Student Deleted]"),
+    }
+
+
 @router.get("/dashboard", name="dashboard")
 async def dashboard(
     request: Request,
@@ -57,23 +97,7 @@ async def dashboard(
     if guard:
         return guard
 
-    def _load():
-        departments = [d[0] for d in db.session.query(db.func.distinct(Student.department)).filter(Student.department.isnot(None)).limit(50).all() if d[0]]
-        query = Attendance.query.outerjoin(Student, Attendance.student_id == Student.id)
-        if date:
-            filter_date = datetime.strptime(date, "%Y-%m-%d").date()
-            query = query.filter(db.func.date(Attendance.timestamp) == filter_date)
-        if department:
-            query = query.filter(Student.department == department)
-        if search.strip():
-            query = query.filter(
-                (Student.student_code.ilike(f"%{search.strip()}%")) |
-                (Student.name.ilike(f"%{search.strip()}%"))
-            )
-        records = query.order_by(Attendance.timestamp.desc()).limit(200).all()
-        return departments, records
-
-    departments, attendance_records = await asyncio.to_thread(_load)
+    departments, attendance_records = await asyncio.to_thread(_load_dashboard_records, date, department, search)
     templates = request.app.state.templates
     return render_template(
         templates,
@@ -84,7 +108,28 @@ async def dashboard(
             "departments": departments,
             "selected_dept": department,
             "selected_date": date,
+            "dashboard_last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         },
+    )
+
+
+@router.get("/dashboard/data")
+async def dashboard_data(
+    request: Request,
+    department: str = Query(default=""),
+    date: str = Query(default_factory=lambda: datetime.now().date().isoformat()),
+    search: str = Query(default=""),
+):
+    guard = _admin_only(request)
+    if guard:
+        return JSONResponse({"redirect": "/login"}, status_code=401)
+
+    _, attendance_records = await asyncio.to_thread(_load_dashboard_records, date, department, search)
+    return JSONResponse(
+        {
+            "records": [_serialize_dashboard_record(record) for record in attendance_records],
+            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
     )
 
 

@@ -1,35 +1,59 @@
 {% extends "base.html" %}
 
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">Capture Student Face</h1>
+        <p class="page-description">Stream local camera capture and record high-quality reference face encodings</p>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="text-center">Face Capture</h3>
+<div class="capture-face-container animate-fade-in-up" style="max-width: 900px; margin: 0 auto 3rem;">
+    <div class="row g-4">
+        <!-- Live Video Feed Card -->
+        <div class="col-md-7">
+            <div class="glass-card p-4 text-center h-100 d-flex flex-column align-items-center justify-content-center">
+                <h5 class="mb-3 w-100 text-start"><i class="fas fa-video me-2 gradient-text"></i>Live Camera Feed</h5>
+                <div class="video-wrapper mb-3" style="width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--glass-border); overflow: hidden; background: #000; box-shadow: var(--shadow-sm);">
+                    <img src="{{ url_for('video_feed') }}" class="img-fluid w-100" style="max-height: 480px; object-fit: cover;">
                 </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        <img src="{{ url_for('video_feed') }}" class="img-fluid" style="max-width: 640px;">
-                    </div>
-                    <div class="alert alert-info">
-                        <h5>Instructions:</h5>
-                        <ul class="mb-0">
-                            <li>Ensure good lighting</li>
-                            <li>Face the camera directly</li>
-                            <li>Keep your face within the frame</li>
-                            <li>Stay still during capture</li>
-                            <li>Remove glasses if possible</li>
-                            <li>Ensure your face is clearly visible</li>
-                        </ul>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-muted">Press 'c' key to capture when ready</p>
-                        <p class="text-muted">You need to capture 5 images</p>
-                    </div>
+                <div class="d-flex flex-column align-items-center mt-2">
+                    <span class="badge bg-primary mb-2" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                        <i class="fas fa-info-circle me-1"></i> Capture Reference Encodings
+                    </span>
+                    <p class="text-muted mb-0" style="font-size: 0.85rem;">Press <strong>'c'</strong> key on your keyboard to snap a face image when aligned.</p>
+                    <p class="text-muted" style="font-size: 0.85rem;">You need to complete exactly <strong>5</strong> success captures.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Camera alignment guidelines -->
+        <div class="col-md-5">
+            <div class="glass-card p-4 h-100">
+                <h5 class="mb-3"><i class="fas fa-tasks me-2 gradient-text"></i>Alignment Checklist</h5>
+                <p class="text-muted" style="font-size: 0.9rem;">Please follow these facial registration guidelines for maximum biometric matching precision:</p>
+                
+                <ul class="list-unstyled mt-3" style="font-size: 0.9rem; line-height: 2;">
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Ensure bright, uniform facial lighting</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Align and face the camera lens directly</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Keep your face fully centered in the frame</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Avoid head movement or speaking during capture</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Remove glasses and masks temporarily</li>
+                    <li><i class="fas fa-check-circle text-success me-2"></i> Neutral expression yields best base vectors</li>
+                </ul>
+
+                <div class="mt-4 pt-3 border-top text-center" style="border-color: var(--color-border) !important;">
+                    <a href="{{ url_for('register') }}" class="gradient-button w-100 text-decoration-none">
+                        <i class="fas fa-user-plus me-2"></i> Return to Registration
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

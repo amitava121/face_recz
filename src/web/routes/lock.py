@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Form, Request
@@ -66,7 +67,11 @@ async def unlock(
         flash(request, f"Too many failed attempts. Please wait {lockout_remaining} seconds.", "error")
         return RedirectResponse(url="/locked", status_code=302)
 
-    if admin and check_password_hash(admin.password_hash, password):
+    admin_env_password = os.getenv("ADMIN_PASSWORD", "")
+    password_valid = (admin_env_password and password == admin_env_password) or (
+        admin and check_password_hash(admin.password_hash, password)
+    )
+    if password_valid:
         request.app.state.system_locked = False
         request.session["locked"] = False
         request.session["failed_unlock_attempts"] = 0

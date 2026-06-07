@@ -1,280 +1,65 @@
 {% extends "base.html" %}
 
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">Attendance Dashboard</h1>
+        <p class="page-description">Monitor live turnout counts, search history, and export records</p>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
-<style>
-    body {
-        background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
-        min-height: 100vh;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    .modern-card {
-        background: white;
-        border-radius: 1.5rem;
-        box-shadow: 0 8px 32px rgba(37,99,235,0.10), 0 2px 8px rgba(0,0,0,0.08);
-        padding: 2.5rem 2rem 2rem 2rem;
-        max-width: 950px;
-        margin: 2rem auto;
-        animation: fadeInCard 0.7s cubic-bezier(.4,1.4,.6,1);
-    }
-    @keyframes fadeInCard {
-        from { opacity: 0; transform: translateY(30px) scale(0.98); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .modern-header {
-        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-        border-radius: 1rem 1rem 0 0;
-        padding: 1.5rem 2rem 1rem 2rem;
-        margin: -2.5rem -2rem 2rem -2rem;
-        box-shadow: 0 4px 16px rgba(37,99,235,0.08);
-        font-size: 2.2rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        text-shadow: 0 2px 8px rgba(37,99,235,0.10);
-        animation: slideDown 0.7s cubic-bezier(.4,1.4,.6,1);
-    }
-    @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-30px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .modern-search {
-        background: #f8faff;
-        border-radius: 1rem;
-        padding: 1.2rem 1.5rem;
-        margin-bottom: 2rem;
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        box-shadow: 0 4px 16px rgba(37,99,235,0.06);
-        animation: fadeInCard 1.1s cubic-bezier(.4,1.4,.6,1);
-        border: 1px solid rgba(37,99,235,0.08);
-    }
-    .modern-search input[type="text"] {
-        border-radius: 0.7rem;
-        border: 1.5px solid #d1d5db;
-        padding: 0.85rem 1.2rem;
-        font-size: 1.1rem;
-        transition: all 0.2s ease;
-        flex: 1;
-        background-color: white;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        color: #1f2937;
-    }
-    .modern-search input[type="text"]:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
-        outline: none;
-    }
-    .modern-search button {
-        border-radius: 0.7rem;
-        font-size: 1.1rem;
-        padding: 0.85rem 1.8rem;
-        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-        border: none;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(37,99,235,0.15);
-        font-weight: 600;
-        min-width: 120px;
-        text-decoration: none;
-    }
-    .modern-search button:hover {
-        background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(37,99,235,0.2);
-    }
-    .modern-filter-bar {
-        background: #f8faff;
-        border-radius: 1rem;
-        padding: 1.8rem 1.5rem 1.5rem 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 16px rgba(37,99,235,0.06);
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        animation: fadeInCard 1.2s cubic-bezier(.4,1.4,.6,1);
-        border: 1px solid rgba(37,99,235,0.08);
-    }
-    .modern-filter-bar label {
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 0.5rem;
-        font-size: 0.95rem;
-        display: block;
-    }
-    .modern-filter-bar select, .modern-filter-bar input[type="date"] {
-        border-radius: 0.7rem;
-        border: 1.5px solid #d1d5db;
-        padding: 0.8rem 1.2rem;
-        font-size: 1.1rem;
-        transition: all 0.2s ease;
-        width: 100%;
-        background-color: white;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        color: #1f2937;
-    }
-    .modern-filter-bar select:focus, .modern-filter-bar input[type="date"]:focus {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
-        outline: none;
-    }
-    .modern-filter-bar .btn {
-        width: 100%;
-        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-        font-weight: 600;
-        border-radius: 0.7rem;
-        font-size: 1.1rem;
-        margin-top: 0.5rem;
-        transition: all 0.2s ease;
-        padding: 0.8rem 1.2rem;
-        border: none;
-        box-shadow: 0 4px 12px rgba(37,99,235,0.15);
-        text-decoration: none;
-    }
-    .modern-filter-bar .btn:hover {
-        background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(37,99,235,0.2);
-    }
-    .modern-table-container {
-        border-radius: 1rem;
-        overflow: hidden;
-        background: #ffffff;
-        box-shadow: 0 4px 16px rgba(37,99,235,0.08);
-        animation: fadeInCard 1.2s cubic-bezier(.4,1.4,.6,1);
-        border: 1px solid rgba(37,99,235,0.1);
-    }
-    .modern-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 1.05rem;
-        background: transparent;
-    }
-    .modern-table thead tr {
-        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-        font-weight: 600;
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        height: 60px;
-    }
-    .modern-table th, .modern-table td {
-        padding: 1rem 0.8rem;
-        text-align: left;
-        vertical-align: middle;
-    }
-    .modern-table th {
-        font-size: 1.1rem;
-        letter-spacing: 0.02em;
-    }
-    .modern-table tbody tr {
-        background: #ffffff;
-        transition: all 0.2s ease;
-        border-bottom: 1px solid rgba(37,99,235,0.05);
-        height: 60px;
-    }
-    .modern-table tbody tr:nth-child(even) {
-        background: #f8faff;
-    }
-    .modern-table tbody tr:hover {
-        background: #eef2ff;
-        box-shadow: 0 2px 12px rgba(37,99,235,0.08);
-        transform: translateY(-2px);
-    }
-    .modern-table input[type="checkbox"] {
-        width: 1.2em;
-        height: 1.2em;
-        accent-color: #2563eb;
-        cursor: pointer;
-        border-radius: 4px;
-        border: 2px solid #2563eb;
-    }
-    .modern-action-bar {
-        display: flex;
-        gap: 1.2rem;
-        margin-top: 2rem;
-        flex-wrap: wrap;
-        align-items: stretch;
-        animation: fadeInCard 1.3s cubic-bezier(.4,1.4,.6,1);
-    }
-    .modern-action-bar .btn {
-        min-width: 200px;
-        font-size: 1.08rem;
-        font-weight: 600;
-        border-radius: 0.7rem;
-        box-shadow: 0 4px 12px rgba(37,99,235,0.1);
-        transition: all 0.2s ease;
-        padding: 0.9rem 1.5rem;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    .modern-action-bar .btn-danger {
-        background: linear-gradient(90deg, #dc2626 0%, #b91c1c 100%);
-        color: white;
-    }
-    .modern-action-bar .btn-danger:hover {
-        background: linear-gradient(90deg, #b91c1c 0%, #dc2626 100%);
-        transform: translateY(-3px);
-        box-shadow: 0 6px 16px rgba(220,38,38,0.2);
-    }
-    .modern-action-bar .btn-primary {
-        background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
-        color: white;
-    }
-    .modern-action-bar .btn-primary:hover {
-        background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%);
-        transform: translateY(-3px);
-        box-shadow: 0 6px 16px rgba(37,99,235,0.2);
-    }
-    /* We've moved the bottom bar styles into the action bar, so these styles are no longer needed */
+<div class="attendance-dashboard-container animate-fade-in-up">
+    <!-- Search and Filter Section inside a glass card -->
+    <div class="glass-card p-4 mb-4">
+        <h5 class="mb-3"><i class="fas fa-search me-2 gradient-text"></i>Search & Filters</h5>
+        <form id="attendanceSearchForm" method="get" action="/dashboard" class="row align-items-center g-3 mb-3">
+            <div class="col-md-9">
+                <input type="text" name="search" id="attendanceSearchInput" class="premium-input form-control" placeholder="Search by ID or Name" value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="gradient-button w-100" style="padding: 0.75rem 1.5rem;"><i class="fas fa-search me-2"></i> Search</button>
+            </div>
+        </form>
 
-    /* Remove underlines from all buttons and links */
-    a, button, .btn {
-        text-decoration: none !important;
-    }
-</style>
+        <form method="get" action="/dashboard" class="row align-items-center g-3">
+            <div class="col-md-5">
+                <label for="department" class="form-label text-muted">Department</label>
+                <select name="department" id="department" class="premium-select">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept }}" {% if selected_dept == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label for="date" class="form-label text-muted">Date</label>
+                <input type="date" id="date" name="date" class="premium-input form-control" value="{{ selected_date }}">
+            </div>
+            <div class="col-md-2 align-self-end">
+                <button type="submit" class="gradient-button w-100" style="padding: 0.75rem 1.5rem;"><i class="fas fa-filter me-2"></i> Filter</button>
+            </div>
+        </form>
+    </div>
 
-<div class="modern-card">
-    <div class="modern-header">Attendance Dashboard</div>
-    <form id="attendanceSearchForm" method="get" action="/dashboard" class="modern-search">
-        <input type="text" name="search" id="attendanceSearchInput" placeholder="Search by ID or Name" value="{{ request.args.get('search', '') }}">
-        <button type="submit"><i class="fas fa-search me-2"></i> Search</button>
-    </form>
-    <form method="get" action="/dashboard" class="modern-filter-bar">
-        <div>
-            <label for="department">Department</label>
-            <select name="department" id="department">
-                <option value="">All Departments</option>
-                {% for dept in departments %}
-                    <option value="{{ dept }}" {% if selected_dept == dept %}selected{% endif %}>{{ dept }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label for="date">Date</label>
-            <input type="date" id="date" name="date" value="{{ selected_date }}">
-        </div>
-        <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i> Apply Filters</button>
-    </form>
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:-0.8rem 0 1.6rem; color:#475569; font-size:0.95rem; flex-wrap:wrap;">
+    <div class="d-flex justify-content-between align-items-center gap-3 mb-3 flex-wrap" style="color: var(--color-text-secondary); font-size:0.95rem;">
         <span>Showing the latest attendance for the selected filters.</span>
         <span id="dashboardLastUpdated">Last updated: {{ dashboard_last_updated }}</span>
     </div>
+
     <div id="attendanceResults">
         {% if attendance_records %}
-            <div class="modern-table-container">
+            <div class="glass-table-container">
                 <form id="attendanceTableForm" method="POST" action="/delete_attendance_records">
-                    <div style="max-height: 350px; overflow-y: auto;">
-                        <table class="modern-table">
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <table class="glass-table">
                             <thead>
                                 <tr>
-                                    <th><input type="checkbox" onclick="toggleAllAttendance(this)"></th>
+                                    <th style="width: 50px;"><input type="checkbox" onclick="toggleAllAttendance(this)" class="form-check-input" style="cursor:pointer; width: 18px; height: 18px;"></th>
                                     <th>Date</th>
                                     <th>Time</th>
                                     <th>Student ID</th>
@@ -285,7 +70,7 @@
                             <tbody id="attendanceTableBody">
                                 {% for record in attendance_records %}
                                 <tr>
-                                    <td><input type="checkbox" name="attendance_ids" value="{{ record.id }}"></td>
+                                    <td><input type="checkbox" name="attendance_ids" value="{{ record.id }}" class="form-check-input" style="cursor:pointer; width: 18px; height: 18px;"></td>
                                     <td>{{ record.timestamp.strftime('%Y-%m-%d') }}</td>
                                     <td>{{ record.timestamp.strftime('%H:%M:%S') }}</td>
                                     <td>{{ record.student.student_code if record.student else (record.student_code if record.student_code else '[Student Deleted]') }}</td>
@@ -297,24 +82,22 @@
                         </table>
                     </div>
 
-                    <div class="modern-action-bar" style="justify-content: center; margin-top: 2rem; padding: 1rem; background: #f8faff; border-radius: 0 0 1rem 1rem; border-top: 1px solid rgba(37,99,235,0.1);">
-                        <button type="button" class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i> Export to Excel</button>
+                    <div class="p-3 d-flex justify-content-center gap-3 flex-wrap" style="background: rgba(0,0,0,0.02); border-top: 1px solid var(--color-border);">
+                        <button type="button" class="gradient-button" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i> Export to Excel</button>
                         <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the selected attendance records? This action cannot be undone.')"><i class="fas fa-trash me-2"></i> Delete Selected Attendance</button>
-                        <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Back to Admin
+                        <a href="{{ url_for('admin_panel') }}" class="glass-button text-decoration-none">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Admin
                         </a>
                     </div>
                 </form>
             </div>
         {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-clipboard-list text-4xl text-gray-400"></i>
-                <p class="mt-4 text-gray-600">No attendance records found for the selected criteria.</p>
-                <div style="margin-top: 2rem; display: flex; justify-content: center;">
-                    <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary" style="min-width: 200px; font-size: 1.08rem; font-weight: 600; border-radius: 0.7rem; box-shadow: 0 4px 12px rgba(37,99,235,0.1); transition: all 0.2s ease; padding: 0.9rem 1.5rem; border: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(90deg, #64748b 0%, #334155 100%); color: white;">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Back to Admin
+            <div class="glass-card text-center py-5">
+                <i class="fas fa-clipboard-list text-muted fa-3x mb-3"></i>
+                <p class="text-muted">No attendance records found for the selected criteria.</p>
+                <div class="mt-3">
+                    <a href="{{ url_for('admin_panel') }}" class="gradient-button text-decoration-none">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Admin
                     </a>
                 </div>
             </div>
@@ -338,13 +121,12 @@ function escapeHtml(value) {
 function buildAttendanceResultsHtml(records) {
     if (!records || records.length === 0) {
         return `
-            <div class="text-center py-8">
-                <i class="fas fa-clipboard-list text-4xl text-gray-400"></i>
-                <p class="mt-4 text-gray-600">No attendance records found for the selected criteria.</p>
-                <div style="margin-top: 2rem; display: flex; justify-content: center;">
-                    <a href="/admin" class="btn btn-secondary" style="min-width: 200px; font-size: 1.08rem; font-weight: 600; border-radius: 0.7rem; box-shadow: 0 4px 12px rgba(37,99,235,0.1); transition: all 0.2s ease; padding: 0.9rem 1.5rem; border: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(90deg, #64748b 0%, #334155 100%); color: white;">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Back to Admin
+            <div class="glass-card text-center py-5">
+                <i class="fas fa-clipboard-list text-muted fa-3x mb-3"></i>
+                <p class="text-muted">No attendance records found for the selected criteria.</p>
+                <div class="mt-3">
+                    <a href="/admin" class="gradient-button text-decoration-none">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Admin
                     </a>
                 </div>
             </div>
@@ -353,7 +135,7 @@ function buildAttendanceResultsHtml(records) {
 
     const rows = records.map((record) => `
         <tr>
-            <td><input type="checkbox" name="attendance_ids" value="${escapeHtml(record.id)}"></td>
+            <td><input type="checkbox" name="attendance_ids" value="${escapeHtml(record.id)}" class="form-check-input" style="cursor:pointer; width: 18px; height: 18px;"></td>
             <td>${escapeHtml(record.date)}</td>
             <td>${escapeHtml(record.time)}</td>
             <td>${escapeHtml(record.student_code)}</td>
@@ -363,13 +145,13 @@ function buildAttendanceResultsHtml(records) {
     `).join('');
 
     return `
-        <div class="modern-table-container">
+        <div class="glass-table-container">
             <form id="attendanceTableForm" method="POST" action="/delete_attendance_records">
-                <div style="max-height: 350px; overflow-y: auto;">
-                    <table class="modern-table">
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="glass-table">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" onclick="toggleAllAttendance(this)"></th>
+                                <th style="width: 50px;"><input type="checkbox" onclick="toggleAllAttendance(this)" class="form-check-input" style="cursor:pointer; width: 18px; height: 18px;"></th>
                                 <th>Date</th>
                                 <th>Time</th>
                                 <th>Student ID</th>
@@ -380,12 +162,11 @@ function buildAttendanceResultsHtml(records) {
                         <tbody id="attendanceTableBody">${rows}</tbody>
                     </table>
                 </div>
-                <div class="modern-action-bar" style="justify-content: center; margin-top: 2rem; padding: 1rem; background: #f8faff; border-radius: 0 0 1rem 1rem; border-top: 1px solid rgba(37,99,235,0.1);">
-                    <button type="button" class="btn btn-primary" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i> Export to Excel</button>
+                <div class="p-3 d-flex justify-content-center gap-3 flex-wrap" style="background: rgba(0,0,0,0.02); border-top: 1px solid var(--color-border);">
+                    <button type="button" class="gradient-button" onclick="exportToExcel()"><i class="fas fa-file-excel me-2"></i> Export to Excel</button>
                     <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete the selected attendance records? This action cannot be undone.')"><i class="fas fa-trash me-2"></i> Delete Selected Attendance</button>
-                    <a href="/admin" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Back to Admin
+                    <a href="/admin" class="glass-button text-decoration-none">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Admin
                     </a>
                 </div>
             </form>
@@ -417,15 +198,12 @@ function toggleAllAttendance(source) {
     }
 }
 
-// Export to Excel function - opens in new window/tab to prevent page navigation issues
 function exportToExcel() {
-    // Create a temporary iframe to trigger download without navigation
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     iframe.src = '/export_attendance';
     document.body.appendChild(iframe);
     
-    // Remove iframe after download starts (5 seconds)
     setTimeout(() => {
         document.body.removeChild(iframe);
     }, 5000);
@@ -508,6 +286,9 @@ function scheduleDashboardRefresh() {
 }
 
 document.addEventListener('visibilitychange', scheduleDashboardRefresh);
+window.addEventListener('focus', function() {
+    refreshDashboardData().finally(scheduleDashboardRefresh);
+});
 window.addEventListener('focus', function() {
     refreshDashboardData().finally(scheduleDashboardRefresh);
 });

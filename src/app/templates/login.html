@@ -1,284 +1,124 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Face Recognition Attendance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/animations.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
-    <style>
-        body {
-            background-image:
-                radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
-                radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.1) 0%, transparent 40%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 1rem;
-        }
+{% extends "base.html" %}
 
-        .login-card {
-            max-width: 450px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 1.5rem;
-            box-shadow: var(--shadow-xl);
-            overflow: hidden;
-            position: relative;
-            padding: 3rem 2rem;
-        }
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="#" class="page-back-button" onclick="window.history.back(); return false;" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">Admin Access Control</h1>
+        <p class="page-description">Secure administrator portal for SmartCam+ System</p>
+    </div>
+</div>
+{% endblock %}
 
-        .login-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: var(--primary-gradient);
-        }
-
-        .login-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--primary-gradient);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 2rem;
-            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5);
-        }
-
-        .login-icon i {
-            font-size: 2.5rem;
-            color: white;
-        }
-
-        .input-container {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-
-        .input-container i {
-            position: absolute;
-            left: 1.25rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            transition: all var(--transition-normal);
-        }
-
-        .input-container input {
-            width: 100%;
-            padding: 1rem 1rem 1rem 3rem;
-            border: 2px solid var(--border-color);
-            border-radius: 1rem;
-            font-size: 1rem;
-            transition: all var(--transition-normal);
-            background: rgba(255, 255, 255, 0.8);
-        }
-
-        .input-container input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-            background: white;
-        }
-
-        .input-container input:focus + i {
-            color: var(--primary-color);
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            transition: all var(--transition-normal);
-        }
-
-        .toggle-password:hover {
-            background: rgba(0, 0, 0, 0.05);
-            color: var(--primary-color);
-        }
-
-        .action-links {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .forgot-link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all var(--transition-normal);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .forgot-link:hover {
-            color: var(--primary-dark);
-            transform: translateY(-2px);
-        }
-
-        .exit-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--success-gradient);
-            color: white;
-            text-decoration: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 1rem;
-            font-weight: 600;
-            transition: all var(--transition-normal);
-            box-shadow: var(--shadow-md);
-        }
-
-        .exit-link:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <!-- Universal Notification System -->
-    {% include 'notifications.html' %}
-    
-    <div class="login-card animate-fade-in-up">
-        <div class="login-icon animate-float" data-aos="zoom-in">
-            <i class="fas fa-user-shield"></i>
-        </div>
-
-        <h2 class="text-center mb-4 text-gradient" data-aos="fade-up" data-aos-delay="100">Admin Login</h2>
-
-        <form method="POST" data-aos="fade-up" data-aos-delay="200" id="loginForm">
-            <div class="input-container">
-                <input type="password" name="password" id="password" placeholder="Enter password" required {% if lockout_remaining > 0 %}disabled{% endif %}>
-                <i class="fas fa-lock"></i>
-                <span class="toggle-password" id="togglePassword" tabindex="0" aria-label="Show password">
-                    <i class="fas fa-eye"></i>
-                </span>
+{% block content %}
+<div class="row justify-content-center align-items-center animate-fade-in-up" style="min-height: 60vh;">
+    <div class="col-md-6 col-lg-5">
+        <div class="glass-form p-4">
+            <div class="login-icon-wrap mb-4" data-aos="zoom-in">
+                <i class="fas fa-user-shield text-primary"></i>
             </div>
+            
+            <h2 class="text-center mb-4"><span class="gradient-text" style="font-weight: 800;">Admin Login</span></h2>
+            
+            <form method="POST" id="loginForm" class="mb-3">
+                <div class="mb-4 position-relative">
+                    <label for="password" class="form-label">System Security Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-0 position-absolute" style="left: 0.75rem; top: 50%; transform: translateY(-50%); z-index: 10; padding: 0;">
+                            <i class="fas fa-lock text-muted"></i>
+                        </span>
+                        <input type="password" name="password" id="password" class="premium-input form-control" style="padding-left: 2.5rem; padding-right: 3rem; height: 46px;" placeholder="Enter admin password" required {% if lockout_remaining > 0 %}disabled{% endif %}>
+                        <button class="glass-button ms-2" type="button" id="togglePassword" style="border-radius: var(--radius-sm); height: 46px; width: 46px; padding: 0;" aria-label="Show password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
 
-            <button type="submit" class="btn btn-primary w-100 py-3" {% if lockout_remaining > 0 %}disabled{% endif %}>
-                <i class="fas fa-sign-in-alt me-2"></i> Login
-            </button>
-        </form>
+                <button type="submit" class="gradient-button w-100" style="height: 48px;" {% if lockout_remaining > 0 %}disabled{% endif %}>
+                    <i class="fas fa-sign-in-alt me-2"></i> Unlock System
+                </button>
+            </form>
 
-        <div class="action-links">
-            <a href="/reset_password" class="forgot-link" data-aos="fade-up" data-aos-delay="300">
-                <i class="fas fa-key"></i> Forgot Password?
-            </a>
-
-            <a href="/" class="exit-link" data-aos="fade-up" data-aos-delay="400">
-                <i class="fas fa-home"></i> Return to Home
-            </a>
+            <div class="d-flex flex-column align-items-center gap-2 mt-4">
+                <a href="/reset_password" class="glass-button w-100" style="font-size: 0.85rem; height: 42px;">
+                    <i class="fas fa-key me-2 text-primary"></i> Forgot Password?
+                </a>
+                <a href="/" class="btn btn-secondary w-100" style="font-size: 0.85rem; height: 42px;">
+                    <i class="fas fa-home me-2"></i> Return to Home
+                </a>
+            </div>
         </div>
     </div>
+</div>
 
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        // Initialize AOS
-        AOS.init({
-            duration: 800,
-            easing: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
-            once: true,
-            offset: 50,
-            delay: 100
-        });
+<style>
+    .login-icon-wrap {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: var(--brand-gradient-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 1.875rem;
+        box-shadow: 0 4px 12px rgba(139,92,246,0.15);
+    }
+</style>
+{% endblock %}
 
-        // Show/hide password toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const passwordInput = document.getElementById('password');
-            const togglePassword = document.getElementById('togglePassword');
-            const eyeIcon = togglePassword ? togglePassword.querySelector('i') : null;
-            const form = document.querySelector('form');
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeIcon = togglePassword ? togglePassword.querySelector('i') : null;
 
-            if (passwordInput && togglePassword && eyeIcon) {
-                function toggle() {
-                    const isShown = passwordInput.type === 'text';
-                    passwordInput.type = isShown ? 'password' : 'text';
-                    eyeIcon.classList.toggle('fa-eye', isShown);
-                    eyeIcon.classList.toggle('fa-eye-slash', !isShown);
-                    togglePassword.setAttribute('aria-label', isShown ? 'Show password' : 'Hide password');
+        if (passwordInput && togglePassword && eyeIcon) {
+            togglePassword.addEventListener('click', function() {
+                const isShown = passwordInput.type === 'text';
+                passwordInput.type = isShown ? 'password' : 'text';
+                eyeIcon.classList.toggle('fa-eye', isShown);
+                eyeIcon.classList.toggle('fa-eye-slash', !isShown);
+                togglePassword.setAttribute('aria-label', isShown ? 'Show password' : 'Hide password');
+            });
+        }
 
-                    // Add animation
-                    togglePassword.classList.add('animate-pulse');
-                    setTimeout(() => {
-                        togglePassword.classList.remove('animate-pulse');
-                    }, 300);
-                }
-
-                togglePassword.addEventListener('click', toggle);
-                togglePassword.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        toggle();
-                    }
-                });
+        // Lockout countdown handler
+        {% if lockout_remaining > 0 %}
+        let lockoutSeconds = {{ lockout_remaining }};
+        const submitButton = document.querySelector('button[type="submit"]');
+        
+        if (passwordInput) passwordInput.disabled = true;
+        if (submitButton) submitButton.disabled = true;
+        
+        function updateLockoutNotification() {
+            if (lockoutSeconds > 0) {
+                showNotification('Too many failed attempts. Please wait ' + lockoutSeconds + ' seconds before trying again.', 'error');
             }
-
-            // Add smooth page transitions
-            document.body.classList.add('animate-fade-in');
-
-            // Handle lockout state
-            {% if lockout_remaining > 0 %}
-            let lockoutSeconds = {{ lockout_remaining }};
-            const passwordInput = document.getElementById('password');
-            const submitButton = document.querySelector('button[type="submit"]');
-            
-            // Disable form during lockout
-            if (passwordInput) passwordInput.disabled = true;
-            if (submitButton) submitButton.disabled = true;
-            
-            // Show lockout notification with countdown
-            function updateLockoutNotification() {
-                if (lockoutSeconds > 0) {
-                    showNotification('Too many failed attempts. Please wait ' + lockoutSeconds + ' seconds before trying again.', 'error');
-                }
+        }
+        
+        updateLockoutNotification();
+        
+        const lockoutInterval = setInterval(() => {
+            lockoutSeconds--;
+            if (lockoutSeconds > 0) {
+                updateLockoutNotification();
+            } else {
+                clearInterval(lockoutInterval);
+                if (passwordInput) passwordInput.disabled = false;
+                if (submitButton) submitButton.disabled = false;
+                showNotification('Lockout expired. You can try logging in again.', 'success');
+                setTimeout(() => window.location.reload(), 1500);
             }
-            
-            updateLockoutNotification();
-            
-            const lockoutInterval = setInterval(() => {
-                lockoutSeconds--;
-                
-                if (lockoutSeconds > 0) {
-                    updateLockoutNotification();
-                } else {
-                    clearInterval(lockoutInterval);
-                    // Enable form again
-                    if (passwordInput) passwordInput.disabled = false;
-                    if (submitButton) submitButton.disabled = false;
-                    showNotification('You can try logging in again now.', 'success');
-                    // Reload page to clear lockout state
-                    setTimeout(() => window.location.reload(), 2000);
-                }
-            }, 1000);
-            {% endif %}
-            
-            // Show error notification if present
-            {% if error and lockout_remaining == 0 %}
-            showNotification('{{ error }}', 'error');
-            {% endif %}
-        });
-    </script>
-</body>
-</html>
+        }, 1000);
+        {% endif %}
+        
+        {% if error and lockout_remaining == 0 %}
+        showNotification('{{ error }}', 'error');
+        {% endif %}
+    });
+</script>
+{% endblock %}

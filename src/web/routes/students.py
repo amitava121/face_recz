@@ -157,3 +157,173 @@ async def api_students():
         ]
 
     return JSONResponse(await asyncio.to_thread(_load_students))
+
+
+# ── Edit Student ─────────────────────────────────────────────────────────────
+
+@router.post("/edit_student/{student_id}", name="edit_student")
+async def edit_student(
+    request: Request,
+    student_id: int,
+    student_code: str = Form(...),
+    name: str = Form(...),
+    department: str = Form(...),
+    phone_number: str = Form(default=""),
+):
+    def _do_edit():
+        student = Student.query.get(student_id)
+        if not student:
+            return False, "Student not found."
+
+        # Check uniqueness of student_code if it changed
+        if student.student_code != student_code.strip():
+            existing = Student.query.filter_by(student_code=student_code.strip()).first()
+            if existing and existing.id != student_id:
+                return False, f"Student code {student_code} already exists."
+
+        student.student_code = student_code.strip()
+        student.name = name.strip()
+        student.department = department.strip()
+        student.phone_number = phone_number.strip()
+        db.session.commit()
+        return True, "Student updated successfully!"
+
+    ok, message = await asyncio.to_thread(_do_edit)
+    flash(request, message, "success" if ok else "error")
+    return RedirectResponse(url="/students", status_code=302)
+
+
+# ── Delete helpers ───────────────────────────────────────────────────────────
+
+def _delete_student_details_only(student_ids: list[int]) -> tuple[int, list[str]]:
+    """Delete student records, face images, and user accounts.
+
+    Attendance records are KEPT — only the FK reference (student_id) is set to
+    NULL.  The denormalized columns (student_code, student_name,
+    student_department) already stored on each attendance row preserve history.
+    """
+    from src.models.db import Attendance, FaceImage, User
+
+    deleted_names: list[str] = []
+    for sid in student_ids:
+        student = Student.query.get(sid)
+        if not student:
+            continue
+        deleted_names.append(student.name)
+
+        # Detach attendance records (preserve history)
+        Attendance.query.filter_by(student_id=sid).update({"student_id": None})
+
+        # Remove face images (binary blobs, no need to keep)
+        FaceImage.query.filter_by(student_id=sid).delete()
+
+        # Remove linked viewer user account
+        User.query.filter_by(student_id=sid).delete()
+
+        db.session.delete(student)
+
+    db.session.commit()
+    return len(deleted_names), deleted_names
+
+
+def _delete_students_and_attendance(student_ids: list[int]) -> tuple[int, list[str]]:
+    """Delete student records, face images, user accounts, AND attendance records."""
+    from src.models.db import Attendance, FaceImage, User
+
+    deleted_names: list[str] = []
+    for sid in student_ids:
+        student = Student.query.get(sid)
+        if not student:
+            continue
+        deleted_names.append(student.name)
+
+        # Remove attendance records
+        Attendance.query.filter_by(student_id=sid).delete()
+
+        # Remove face images
+        FaceImage.query.filter_by(student_id=sid).delete()
+
+        # Remove linked viewer user account
+        User.query.filter_by(student_id=sid).delete()
+
+        db.session.delete(student)
+
+    db.session.commit()
+    return len(deleted_names), deleted_names
+
+
+# ── Delete selected students (details only — keep attendance) ────────────────
+
+@router.post("/delete_selected_student_details", name="delete_selected_student_details")
+async def delete_selected_student_details(request: Request):
+    form = await request.form()
+    student_ids = [int(sid) for sid in form.getlist("student_ids")]
+
+    if not student_ids:
+        flash(request, "No students selected for deletion.", "error")
+        return RedirectResponse(url="/students", status_code=302)
+
+    try:
+        count, names = await asyncio.to_thread(_delete_student_details_only, student_ids)
+        flash(request, f"Deleted {count} student(s): {', '.join(names)}. Attendance history preserved.", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(request, f"Delete failed: {exc}", "error")
+
+    return RedirectResponse(url="/students", status_code=302)
+
+
+# ── Delete selected students AND their attendance ────────────────────────────
+
+@router.post("/delete_selected_students_and_attendance", name="delete_selected_students_and_attendance")
+async def delete_selected_students_and_attendance(request: Request):
+    form = await request.form()
+    student_ids = [int(sid) for sid in form.getlist("student_ids")]
+
+    if not student_ids:
+        flash(request, "No students selected for deletion.", "error")
+        return RedirectResponse(url="/students", status_code=302)
+
+    try:
+        count, names = await asyncio.to_thread(_delete_students_and_attendance, student_ids)
+        flash(request, f"Deleted {count} student(s) and their attendance records: {', '.join(names)}.", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(request, f"Delete failed: {exc}", "error")
+
+    return RedirectResponse(url="/students", status_code=302)
+
+
+# ── Export students to Excel ─────────────────────────────────────────────────
+
+@router.get("/export_students", name="export_students")
+async def export_students(request: Request):
+    import pandas as pd
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+
+    def _build_excel():
+        students = Student.query.order_by(Student.student_code.asc()).all()
+        data = [
+            {
+                "Roll Code": s.student_code,
+                "Name": s.name,
+                "Department": s.department,
+                "Phone": s.phone_number or "",
+                "Face Registered": "Yes" if s.face_embedding_array else "No",
+            }
+            for s in students
+        ]
+        df = pd.DataFrame(data)
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False, sheet_name="Students")
+        output.seek(0)
+        return output
+
+    excel_buffer = await asyncio.to_thread(_build_excel)
+    return StreamingResponse(
+        excel_buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="students_export.xlsx"'},
+    )

@@ -76,7 +76,7 @@ def setup_webrtc_logging():
 setup_webrtc_logging()
 
 # Configuration
-APP_API_URL = "http://localhost:5001"
+APP_API_URL = "http://127.0.0.1:5000"
 logger.info(f"APP_API_URL at startup: {APP_API_URL}")
 FRAME_SKIP = int(os.getenv('FRAME_SKIP', '3'))  # Reduced to process more frames for smoother video
 USE_GPU = os.getenv('USE_GPU', 'True').lower() in ('true', '1', 't')

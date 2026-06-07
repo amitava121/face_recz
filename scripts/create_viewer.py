@@ -145,7 +145,7 @@ def create_viewer_account():
             logger.info(f"Linked to: {student.name} ({student.student_code})")
             logger.info(f"Department: {student.department}")
             logger.info("="*60)
-            logger.info("\n📝 The viewer can now login at: http://localhost:5001/login")
+            logger.info("\n📝 The viewer can now login at: http://127.0.0.1:5001/login")
             logger.info(f"   Username: {username}")
             logger.info(f"   Password: [the password you entered]")
             logger.info("\n🔍 The viewer will have access to:")

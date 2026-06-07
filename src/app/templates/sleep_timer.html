@@ -1,209 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sleep Timer - Face Recognition Attendance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            color: #1e293b;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .timer-card {
-            background: #fff;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 32px rgba(37,99,235,0.10), 0 2px 8px rgba(0,0,0,0.08);
-            border: 1.5px solid #e5e7eb;
-            padding: 2.5rem;
-            max-width: 500px;
-            width: 100%;
-            margin: 2rem auto;
-            animation: fadeInCard 0.7s cubic-bezier(.4,1.4,.6,1);
-        }
-        @keyframes fadeInCard {
-            from { opacity: 0; transform: translateY(30px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .timer-title {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .timer-icon {
-            font-size: 3rem;
-            color: #2563eb;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-            100% { transform: scale(1); }
-        }
-        .timer-form {
-            margin-top: 1.5rem;
-        }
-        .timer-form label {
-            font-weight: 600;
-            color: #4b5563;
-            margin-bottom: 0.5rem;
-        }
-        .timer-form input {
-            border-radius: 0.75rem;
-            border: 2px solid #e5e7eb;
-            padding: 0.75rem 1rem;
-            font-size: 1.1rem;
-            transition: all 0.2s;
-            width: 100%;
-        }
-        .timer-form input:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-            outline: none;
-        }
-        .timer-form .input-group {
-            margin-bottom: 1.5rem;
-        }
-        .timer-btn {
-            display: block;
-            width: 100%;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: #fff;
-            border: none;
-            box-shadow: 0 2px 8px rgba(37,99,235,0.08);
-            transition: all 0.18s cubic-bezier(.4,1.4,.6,1);
-            margin-top: 1.5rem;
-            text-decoration: none;
-            text-align: center;
-        }
-        .timer-btn:hover, .timer-btn:focus {
-            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 6px 16px rgba(37,99,235,0.12);
-            color: #fff;
-        }
-        .timer-btn.btn-secondary {
-            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-        }
-        .timer-btn.btn-secondary:hover, .timer-btn.btn-secondary:focus {
-            background: linear-gradient(135deg, #475569 0%, #64748b 100%);
-        }
-        .timer-description {
-            text-align: center;
-            margin: 1.5rem 0;
-            color: #4b5563;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-        .timer-note {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-top: 1rem;
-            text-align: center;
-            font-style: italic;
-        }
-        @media (max-width: 576px) {
-            .timer-card {
-                padding: 1.5rem;
-                margin: 1rem;
-            }
-            .timer-title {
-                font-size: 1.75rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Universal Notification System -->
-    {% include 'notifications.html' %}
-    
-    <div class="timer-card" data-aos="zoom-in">
-        <div class="timer-icon" data-aos="fade-down">
-            <i class="fas fa-clock"></i>
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">Sleep Timer Settings</h1>
+        <p class="page-description">Configure sleep mode rules and automatic interface locking delay</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="timer-container animate-fade-in-up" style="max-width: 600px; margin: 2rem auto;">
+    <div class="glass-card p-4">
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px; border-radius: var(--radius-sm); background: var(--brand-gradient); color: white; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(139,92,246,0.2);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h4 class="font-weight-bold">Automatic Lockout Timer</h4>
+            <p class="text-muted" style="font-size: 0.95rem;">
+                Set a delay period for the interface to automatically lock when no user activity or attendance tracking is in progress.
+            </p>
         </div>
-        <h1 class="timer-title" data-aos="fade-up">Sleep Timer</h1>
-        
-        <p class="timer-description" data-aos="fade-up" data-aos-delay="100">
-            Set a timer for the system to automatically enter sleep mode after a period of inactivity.
-        </p>
-        
-        <form action="{{ url_for('set_sleep_timer') }}" method="POST" class="timer-form" data-aos="fade-up" data-aos-delay="200">
-            <div class="row">
+
+        <form action="{{ url_for('set_sleep_timer') }}" method="POST" class="mt-4">
+            <div class="row g-3">
                 <div class="col-6">
-                    <div class="input-group">
-                        <label for="minutes">Minutes</label>
-                        <input type="number" id="minutes" name="minutes" min="0" max="60" value="5" required>
-                    </div>
+                    <label for="minutes" class="form-label text-muted">Minutes</label>
+                    <input type="number" id="minutes" name="minutes" class="premium-input form-control" min="0" max="60" value="5" required>
                 </div>
                 <div class="col-6">
-                    <div class="input-group">
-                        <label for="seconds">Seconds</label>
-                        <input type="number" id="seconds" name="seconds" min="0" max="59" value="0" required>
-                    </div>
+                    <label for="seconds" class="form-label text-muted">Seconds</label>
+                    <input type="number" id="seconds" name="seconds" class="premium-input form-control" min="0" max="59" value="0" required>
                 </div>
             </div>
-            
-            <button type="submit" class="timer-btn">
-                <i class="fas fa-save me-2"></i> Set Timer
-            </button>
+
+            <div class="mt-4">
+                <button type="submit" class="gradient-button w-100" style="padding: 0.9rem;">
+                    <i class="fas fa-save me-2"></i> Set Sleep Delay
+                </button>
+            </div>
         </form>
-        
-        <p class="timer-note" data-aos="fade-up" data-aos-delay="300">
-            Note: The timer will not activate during ongoing attendance or registration processes.
+
+        <p class="text-center text-muted mt-4" style="font-size: 0.85rem; font-style: italic;">
+            Note: The sleep timer will stand down automatically during live video attendance marking or student face registration.
         </p>
-        
-        <a href="{{ url_for('admin_panel') }}" class="timer-btn btn-secondary mt-3" data-aos="fade-up" data-aos-delay="400">
-            <i class="fas fa-arrow-left me-2"></i> Back to Admin Panel
-        </a>
+
+        <div class="text-center mt-3 pt-3 border-top" style="border-color: var(--color-border) !important;">
+            <a href="{{ url_for('admin_panel') }}" class="glass-button text-decoration-none">
+                <i class="fas fa-arrow-left me-2"></i> Back to Admin Panel
+            </a>
+        </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        AOS.init({
-            duration: 800,
-            easing: 'ease-out',
-            once: true
-        });
-
-        // Fetch and set current sleep timer value
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/get_sleep_timer')
-                .then(response => response.json())
-                .then(data => {
-                    const totalSeconds = data.sleep_timer_seconds;
-                    const minutes = Math.floor(totalSeconds / 60);
-                    const seconds = totalSeconds % 60;
-                    
-                    // Set the input values
-                    document.getElementById('minutes').value = minutes;
-                    document.getElementById('seconds').value = seconds;
-                })
-                .catch(error => {
-                    console.error('Error fetching sleep timer:', error);
-                });
-        });
-    </script>
-</body>
-</html>
+<script>
+    // Fetch and set current sleep timer value
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/get_sleep_timer')
+            .then(response => response.json())
+            .then(data => {
+                const totalSeconds = data.sleep_timer_seconds;
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                
+                // Set the input values
+                document.getElementById('minutes').value = minutes;
+                document.getElementById('seconds').value = seconds;
+            })
+            .catch(error => {
+                console.error('Error fetching sleep timer:', error);
+            });
+    });
+</script>
+{% endblock %}

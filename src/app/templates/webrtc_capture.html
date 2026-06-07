@@ -2,31 +2,38 @@
 
 {% block title %}WebRTC Face Capture{% endblock %}
 
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">Face Registration</h1>
+        <p class="page-description">Automated real-time WebRTC face capture and enrollment</p>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Face Registration</h4>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-4" id="video-container">
-                        <video id="video-feed" autoplay playsinline class="img-fluid border rounded" style="max-width: 640px; max-height: 480px;"></video>
-                        <div id="status-message" class="mt-2 alert alert-info">Connecting to camera...</div>
-                    </div>
-                    <div class="alert alert-info">
-                        <p><i class="fas fa-info-circle"></i> Please position your face in the center of the frame and look directly at the camera.</p>
-                        <p>The system will automatically capture multiple images of your face for registration.</p>
-                        <p>Once registration is complete, you will be redirected to the registration page.</p>
-                    </div>
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('register') }}" class="btn btn-secondary" id="back-button">
-                            <i class="fas fa-arrow-left"></i> Back to Registration
-                        </a>
-                    </div>
-                </div>
-            </div>
+<div class="webrtc-capture-container animate-fade-in-up" style="max-width: 800px; margin: 0 auto 3rem;">
+    <div class="glass-card p-4">
+        <div class="text-center mb-4" id="video-container">
+            <video id="video-feed" autoplay playsinline class="img-fluid border rounded" style="max-width: 640px; max-height: 480px; border-color: var(--glass-border) !important; background: #000; box-shadow: var(--shadow-sm);"></video>
+            <div id="status-message" class="mt-3 alert alert-info" style="border-radius: var(--radius-sm);">Connecting to camera...</div>
+        </div>
+
+        <div class="alert alert-warning mb-4" style="background: rgba(59,130,246,0.08); border-left: 4px solid var(--color-primary); color: var(--color-text);">
+            <ul class="mb-0 list-unstyled" style="line-height: 1.8;">
+                <li><i class="fas fa-info-circle text-primary me-2"></i> Please position your face in the center of the frame and look directly at the camera.</li>
+                <li><i class="fas fa-camera text-primary me-2"></i> The system will automatically capture multiple images of your face for registration.</li>
+                <li><i class="fas fa-redo text-primary me-2"></i> Once registration is complete, you will be redirected to the registration page.</li>
+            </ul>
+        </div>
+
+        <div class="text-center mt-3 pt-3 border-top" style="border-color: var(--color-border) !important;">
+            <a href="{{ url_for('register') }}" class="glass-button text-decoration-none" id="back-button">
+                <i class="fas fa-arrow-left me-2"></i> Back to Registration
+            </a>
         </div>
     </div>
 </div>
@@ -34,6 +41,7 @@
 <!-- Camera client scripts -->
 <script src="{{ url_for('static', filename='js/unified-webrtc-client.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mac-camera-client.js') }}"></script>
+<script src="{{ url_for('static', filename='js/simple-reliable-camera.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -75,11 +83,11 @@
 
             // Show success message
             videoContainer.innerHTML = `
-                <div class="alert alert-success p-5 text-center">
-                    <i class="fas fa-check-circle fa-3x mb-3"></i>
-                    <h4>Registration Complete!</h4>
+                <div class="alert alert-success p-5 text-center" style="border-radius: var(--radius-sm);">
+                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                    <h4 class="font-weight-bold">Registration Complete!</h4>
                     <p>Your face has been successfully registered.</p>
-                    <p>Redirecting to registration page...</p>
+                    <p class="text-muted">Redirecting to registration page...</p>
                 </div>
             `;
 
@@ -107,13 +115,13 @@
             // Show a user-friendly error message
             videoContainer.innerHTML = `
                 <div class="text-center">
-                    <div class="alert alert-danger p-4">
-                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                        <h4>Browser Not Supported</h4>
+                    <div class="alert alert-danger p-4" style="border-radius: var(--radius-sm);">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                        <h4 class="font-weight-bold">Browser Not Supported</h4>
                         <p>Your browser does not support camera access required for face registration.</p>
                         <p>Please use a modern browser like Chrome, Firefox, Edge, or Safari.</p>
                     </div>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary mt-3">
+                    <a href="{{ url_for('register') }}" class="gradient-button mt-3 text-decoration-none">
                         <i class="fas fa-arrow-left"></i> Back to Registration
                     </a>
                 </div>
@@ -145,7 +153,7 @@
 
                 // Update status message
                 statusElement.textContent = message;
-                statusElement.className = 'mt-2 alert';
+                statusElement.className = 'mt-3 alert';
 
                 if (status === 'connected') {
                     statusElement.classList.add('alert-success');
@@ -182,8 +190,8 @@
             console.log('Using MacCameraClient for Mac ' + (isChrome ? 'Chrome' : 'Safari'));
             cameraClient = new MacCameraClient(cameraOptions);
         } else {
-            console.log('Using SimpleCameraClient for standard browsers');
-            cameraClient = new SimpleCameraClient(cameraOptions);
+            console.log('Using SimpleReliableCamera for standard browsers');
+            cameraClient = new SimpleReliableCamera(cameraOptions);
         }
 
         // Start the client
@@ -192,14 +200,14 @@
 
             // Update status message
             statusElement.textContent = 'Failed to connect to camera: ' + error.message;
-            statusElement.className = 'mt-2 alert alert-danger';
+            statusElement.className = 'mt-3 alert alert-danger';
 
             // Show a more detailed error in the video container
             let errorHTML = `
                 <div class="text-center">
-                    <div class="alert alert-danger p-4">
-                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                        <h4>Camera Access Error</h4>
+                    <div class="alert alert-danger p-4" style="border-radius: var(--radius-sm);">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                        <h4 class="font-weight-bold">Camera Access Error</h4>
                         <p>${error.message}</p>`;
 
             // Add error details if available
@@ -210,7 +218,7 @@
             errorHTML += `
                         <p class="mt-3">Please try using a different browser or device.</p>
                     </div>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary mt-3">
+                    <a href="{{ url_for('register') }}" class="gradient-button mt-3 text-decoration-none">
                         <i class="fas fa-arrow-left"></i> Back to Registration
                     </a>
                 </div>

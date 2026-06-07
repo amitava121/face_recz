@@ -3,33 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Recognition Attendance System</title>
+    <title>SmartCam+ — Smart Face Recognition Attendance</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <!-- Immediate Theme Initialization Script (Prevents White Flash) -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme') || localStorage.getItem('dashboard-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
+    <!-- Font Awesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- AOS Animation Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
+    <!-- Custom Design System styles -->
+    <link href="{{ url_for('static', filename='css/modern-ui.css') }}?v=1.2" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/animations.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/fast-response.css') }}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <!-- Standardized Premium Glass Navigation Bar -->
+    <nav class="navbar navbar-expand-lg glass-navbar sticky-top">
         <div class="container-fluid position-relative">
-            <a class="navbar-brand ms-4" href="{{ url_for('index') }}" data-aos="fade-right">
-                <i class="fas fa-camera-retro animate-pulse"></i>
-                <span>Face Recognition Attendance</span>
+            <a class="navbar-brand ms-4" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SmartCam+ Logo" class="brand-logo-img me-2" style="height: 32px; width: 32px; filter: drop-shadow(0 2px 8px rgba(139,92,246,0.3));">
+                <script>
+                    (function() {
+                        var theme = localStorage.getItem('theme') || localStorage.getItem('dashboard-theme') || 'light';
+                        var img = document.querySelector('.brand-logo-img');
+                        if (img) {
+                            img.src = theme === 'dark' ? "{{ url_for('static', filename='img/logo-dark.svg') }}" : "{{ url_for('static', filename='img/logo.svg') }}";
+                        }
+                    })();
+                </script>
+                <span class="brand-text">SmartCam+</span>
             </a>
 
             <!-- Navbar items -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     {% if not session.get('viewer_logged_in') %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">
@@ -48,7 +67,7 @@
                             </li>
                             <li>
                                 <form action="{{ url_for('lock') }}" method="POST" style="margin: 0;">
-                                    <button type="submit" class="dropdown-item" style="color: var(--danger-color);">
+                                    <button type="submit" class="dropdown-item text-danger" style="color: var(--color-danger) !important;">
                                         <i class="fas fa-power-off me-2"></i> Shut Down
                                     </button>
                                 </form>
@@ -56,17 +75,34 @@
                         </ul>
                     </li>
                     {% else %}
-                    <!-- Viewer logout button -->
+                    <!-- Viewer links & logout -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}" style="color: var(--danger-color);">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-chart-line me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{{ url_for('logout') }}" style="color: var(--color-danger) !important;">
                             <i class="fas fa-sign-out-alt me-2"></i> Logout
                         </a>
                     </li>
                     {% endif %}
+                    
+                    <!-- Integrated Global Theme Toggle Switch -->
+                    <li class="nav-item ms-3 d-flex align-items-center">
+                        <button class="theme-toggle-btn" id="globalThemeToggle" aria-label="Toggle theme" title="Toggle theme">
+                            <div class="theme-toggle-track">
+                                <div class="theme-toggle-thumb">
+                                    <i class="fas fa-sun sun-icon"></i>
+                                    <i class="fas fa-moon moon-icon"></i>
+                                </div>
+                            </div>
+                        </button>
+                    </li>
                 </ul>
             </div>
 
-            <!-- Mobile toggle button -->
+            <!-- Mobile menu button -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -76,10 +112,11 @@
     <!-- Universal Notification System -->
     {% include 'notifications.html' %}
 
-    <!-- Main Content -->
-    <div class="container mt-5">
+    <!-- Main Content Layout -->
+    <div class="container mt-4">
         <div class="row justify-content-center">
-            <div class="col-lg-10">
+            <div class="col-lg-12">
+                {% block page_header %}{% endblock %}
                 {% block content %}{% endblock %}
             </div>
         </div>
@@ -91,9 +128,9 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <!-- Sleep Timer JS -->
     <script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
-    <!-- Custom JS -->
+    <!-- Custom Global Actions JS -->
     <script>
-        // Initialize AOS
+        // Initialize Scroll Animations
         AOS.init({
             duration: 800,
             easing: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
@@ -102,41 +139,49 @@
             delay: 100
         });
 
-        // Add smooth page transitions
-        document.addEventListener('DOMContentLoaded', function() {
-            document.body.classList.add('animate-fade-in');
+        function updateLogo(theme) {
+            var imgs = document.querySelectorAll('.brand-logo-img');
+            imgs.forEach(function(img) {
+                img.src = theme === 'dark' ? "{{ url_for('static', filename='img/logo-dark.svg') }}" : "{{ url_for('static', filename='img/logo.svg') }}";
+            });
+        }
 
-            // Optimized button click handling for better responsiveness
+        // Global Dark Mode Toggle implementation
+        document.addEventListener('DOMContentLoaded', function() {
+            var toggleBtn = document.getElementById('globalThemeToggle');
+            var html = document.documentElement;
+
+            // Sync logo on page load
+            var initialTheme = html.getAttribute('data-theme') || 'light';
+            updateLogo(initialTheme);
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    var currentTheme = html.getAttribute('data-theme') || 'light';
+                    var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    html.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    localStorage.setItem('dashboard-theme', newTheme); // maintain dashboard compatibility
+                    updateLogo(newTheme);
+
+                    // Dispatch custom event to notify nested frames/components
+                    var event = new CustomEvent('themechanged', { detail: { theme: newTheme } });
+                    document.dispatchEvent(event);
+                });
+            }
+
+            // Quick transition scale effect on standard submissions
+            document.body.classList.add('animate-fade-in');
             document.addEventListener('click', function(e) {
-                const button = e.target.closest('.btn');
-                if (!button ||
-                    button.classList.contains('no-spinner') ||
-                    button.classList.contains('disabled') ||
-                    button.hasAttribute('data-bs-toggle') ||
-                    button.getAttribute('type') === 'button' ||
-                    button.closest('.dropdown-menu')) {
+                const btn = e.target.closest('.btn, .glass-button, .gradient-button');
+                if (!btn || btn.classList.contains('no-spinner') || btn.classList.contains('disabled') || btn.hasAttribute('data-bs-toggle') || btn.getAttribute('type') === 'button') {
                     return;
                 }
-
-                // Immediate visual feedback for better responsiveness
-                button.style.opacity = '0.8';
-                button.style.transform = 'scale(0.98)';
-
-                // Only add spinner for actual form submissions
-                if (button.type === 'submit' || (button.tagName === 'A' && button.href)) {
-                    // Minimal spinner after short delay to avoid blocking UI
-                    setTimeout(() => {
-                        if (!button.querySelector('.quick-spinner')) {
-                            const spinner = document.createElement('span');
-                            spinner.className = 'quick-spinner ms-1';
-                            spinner.innerHTML = '⏳';
-                            spinner.style.fontSize = '14px';
-                            button.appendChild(spinner);
-                        }
-                    }, 50);
-                }
+                btn.style.opacity = '0.85';
+                btn.style.transform = 'scale(0.97)';
             }, true);
         });
     </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

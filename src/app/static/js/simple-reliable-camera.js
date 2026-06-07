@@ -289,8 +289,8 @@ class SimpleReliableCamera {
             }
 
             // Check secure context
-            if (!window.isSecureContext && location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                throw new Error('Camera access requires a secure context (HTTPS or localhost)');
+            if (!window.isSecureContext && location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1' && location.hostname !== '0.0.0.0') {
+                throw new Error('Camera access requires a secure context (HTTPS, localhost, or loopback)');
             }
 
             console.log('✅ Prerequisites check passed');

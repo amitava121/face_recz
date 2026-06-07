@@ -1,323 +1,421 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports & Analytics - Face Recognition Attendance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            color: #1e293b;
-        }
-        .reports-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        .reports-card {
-            background: #fff;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 32px rgba(37,99,235,0.10);
-            border: 1px solid #e5e7eb;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        .reports-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2563eb;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            text-align: center;
-            box-shadow: 0 8px 25px rgba(37,99,235,0.3);
-        }
-        .stat-card.success {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        }
-        .stat-card.warning {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-        }
-        .stat-card.danger {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        }
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        .stat-label {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-        .chart-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .filter-section {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            margin-bottom: 2rem;
-            border: 1px solid #e2e8f0;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(37,99,235,0.3);
-        }
-        .table-container {
-            background: white;
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .table {
-            margin-bottom: 0;
-        }
-        .table thead th {
-            background: #f8fafc;
-            border: none;
-            font-weight: 600;
-            color: #475569;
-            padding: 1rem;
-        }
-        .table tbody td {
-            padding: 1rem;
-            border-color: #e2e8f0;
-        }
-        .back-btn {
-            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-            color: white;
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-        }
-        .back-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(100,116,139,0.3);
-            color: white;
-            text-decoration: none;
-        }
-    </style>
-</head>
-<body>
-    <!-- Universal Notification System -->
-    {% include 'notifications.html' %}
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">Reports & Analytics</h1>
+        <p class="page-description">Inspect overall turnout statistics, generate daily reports, and analyze department percentages</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="reports-analytics-layout animate-fade-in-up">
     
-    <div class="reports-container">
-        <div class="reports-card">
-            <h1 class="reports-title">
-                <i class="fas fa-chart-bar me-3"></i>Reports & Analytics
-            </h1>
-            
-            <!-- Statistics Overview -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">{{ total_students }}</div>
-                    <div class="stat-label">Total Students</div>
-                </div>
-                <div class="stat-card success">
-                    <div class="stat-number">{{ today_present }}</div>
-                    <div class="stat-label">Present Today</div>
-                </div>
-                <div class="stat-card warning">
-                    <div class="stat-number">{{ today_absent }}</div>
-                    <div class="stat-label">Absent Today</div>
-                </div>
-                <div class="stat-card danger">
-                    <div class="stat-number">{{ avg_attendance }}%</div>
-                    <div class="stat-label">Average Attendance</div>
-                </div>
-            </div>
+    <!-- Stats Cards Overview Grid (Using dashboard style glass cards) -->
+    <div class="reports-stats-grid mb-4">
+        <div class="reports-stat-card glass-card" data-aos="fade-up" data-aos-delay="50">
+            <div class="stat-icon-wrapper text-primary"><i class="fas fa-users"></i></div>
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value">{{ total_students }}</div>
+            <span class="stat-trend neutral"><i class="fas fa-database" style="font-size:0.6rem"></i> Registered</span>
+        </div>
+        
+        <div class="reports-stat-card glass-card success" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-icon-wrapper text-success"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-label">Present Today</div>
+            <div class="stat-value">{{ today_present }}</div>
+            <span class="stat-trend up"><i class="fas fa-user-check" style="font-size:0.6rem"></i> Present</span>
+        </div>
+        
+        <div class="reports-stat-card glass-card warning" data-aos="fade-up" data-aos-delay="150">
+            <div class="stat-icon-wrapper text-warning"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-label">Absent Today</div>
+            <div class="stat-value">{{ today_absent }}</div>
+            <span class="stat-trend-warning"><i class="fas fa-user-times" style="font-size:0.6rem"></i> Absent</span>
+        </div>
+        
+        <div class="reports-stat-card glass-card danger" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-icon-wrapper text-danger"><i class="fas fa-percent"></i></div>
+            <div class="stat-label">Average Attendance</div>
+            <div class="stat-value">{{ avg_attendance }}<span style="font-size:1rem;font-weight:600">%</span></div>
+            <span class="stat-trend {% if avg_attendance|float > 50 %}up{% else %}neutral{% endif %}">
+                <i class="fas fa-chart-line" style="font-size:0.6rem"></i> Rating
+            </span>
+        </div>
+    </div>
 
-            <!-- Filter Section -->
-            <div class="filter-section">
-                <form method="GET" class="row g-3">
-                    <div class="col-md-3">
-                        <label for="start_date" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="end_date" class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="department" class="form-label">Department</label>
-                        <select class="form-control" id="department" name="department">
-                            <option value="">All Departments</option>
-                            {% for dept in departments %}
-                                <option value="{{ dept }}" {% if selected_dept == dept %}selected{% endif %}>{{ dept }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-filter me-2"></i>Apply Filters
-                        </button>
-                    </div>
-                </form>
+    <!-- Filter Configuration Card -->
+    <div class="glass-form mb-4">
+        <h4 class="mb-3"><i class="fas fa-sliders-h me-2 gradient-text"></i>Filter Records</h4>
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="premium-input form-control" id="start_date" name="start_date" value="{{ start_date }}">
             </div>
+            <div class="col-md-3">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="premium-input form-control" id="end_date" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-md-3">
+                <label for="department" class="form-label">Department</label>
+                <select class="premium-select form-control" id="department" name="department">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept }}" {% if selected_dept == dept %}selected{% endif %}>{{ dept }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="gradient-button w-100" style="height: 46px;">
+                    <i class="fas fa-filter me-2"></i> Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
 
-            <!-- Charts Section -->
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="chart-container">
-                        <h5 class="mb-3">Daily Attendance Trend</h5>
-                        <canvas id="attendanceChart" width="400" height="200"></canvas>
+    <!-- Charts Visualization Grid -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3-mobile">
+            <div class="glass-card p-4">
+                <h5 class="mb-3 font-weight-bold"><i class="fas fa-chart-line me-2 text-primary"></i>Daily Attendance Trend</h5>
+                <div class="chart-wrapper"><canvas id="attendanceChart" height="220"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="glass-card p-4">
+                <h5 class="mb-3 font-weight-bold"><i class="fas fa-chart-pie me-2 text-warning"></i>Department-wise Attendance</h5>
+                <div class="chart-wrapper" style="display:flex; align-items:center; justify-content:center; gap: 2rem; flex-wrap: wrap; padding: 1rem 0; min-height: 220px;">
+                    <div style="position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <canvas id="departmentChart" style="width: 140px; height: 140px;"></canvas>
+                        <div style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-align: center;">
+                            <span id="departmentChartTotal" style="font-size: 1.5rem; font-weight: 700; color: var(--color-text); line-height: 1.1;">0</span>
+                            <span style="font-size: 0.65rem; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Logs</span>
+                        </div>
+                    </div>
+                    <div id="departmentChartLegend" style="flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 0.5rem; justify-content: center;">
+                        <!-- Dynamically populated legend via JS -->
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="chart-container">
-                        <h5 class="mb-3">Department-wise Attendance</h5>
-                        <canvas id="departmentChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Top Students Table -->
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Student ID</th>
-                            <th>Name</th>
-                            <th>Department</th>
-                            <th>Total Days</th>
-                            <th>Present Days</th>
-                            <th>Attendance %</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for student in student_stats %}
-                        <tr>
-                            <td>{{ student.student_code }}</td>
-                            <td>{{ student.name }}</td>
-                            <td>{{ student.department }}</td>
-                            <td>{{ student.total_days }}</td>
-                            <td>{{ student.present_days }}</td>
-                            <td>
-                                <span class="badge {% if student.attendance_percentage >= 80 %}bg-success{% elif student.attendance_percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}">
-                                    {{ "%.1f"|format(student.attendance_percentage) }}%
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Export Options -->
-            <div class="text-center mt-4">
-                <a href="{{ url_for('export_detailed_report') }}?start_date={{ start_date }}&end_date={{ end_date }}&department={{ selected_dept }}" 
-                   class="btn btn-success me-3">
-                    <i class="fas fa-file-excel me-2"></i>Export Detailed Report
-                </a>
-                <a href="{{ url_for('export_summary_report') }}?start_date={{ start_date }}&end_date={{ end_date }}&department={{ selected_dept }}" 
-                   class="btn btn-info me-3">
-                    <i class="fas fa-file-pdf me-2"></i>Export Summary Report
-                </a>
-                <a href="{{ url_for('admin_panel') }}" class="back-btn">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Admin Panel
-                </a>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Daily Attendance Chart
-        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
-        new Chart(attendanceCtx, {
-            type: 'line',
-            data: {
-                labels: {{ daily_labels | safe }},
-                datasets: [{
-                    label: 'Daily Attendance',
-                    data: {{ daily_data | safe }},
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
+    <!-- Stats Table Card -->
+    <div class="glass-table-container mb-4">
+        <div class="p-3" style="background: rgba(0,0,0,0.01); border-bottom: 1px solid var(--color-border);">
+            <h5 class="mb-0 font-weight-bold"><i class="fas fa-table me-2 text-primary"></i>Attendance Performance Summary</h5>
+        </div>
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Total Days</th>
+                    <th>Present Days</th>
+                    <th style="text-align: right;">Attendance Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in student_stats %}
+                <tr>
+                    <td><span class="badge bg-secondary" style="padding: 0.35rem 0.65rem; border-radius: var(--radius-sm);">{{ student.student_code }}</span></td>
+                    <td><strong>{{ student.name }}</strong></td>
+                    <td>{{ student.department }}</td>
+                    <td>{{ student.total_days }}</td>
+                    <td>{{ student.present_days }}</td>
+                    <td style="text-align: right;">
+                        <span class="badge {% if student.attendance_percentage >= 80 %}bg-success{% elif student.attendance_percentage >= 60 %}bg-warning{% else %}bg-danger{% endif %}" style="padding: 0.35rem 0.65rem; border-radius: var(--radius-sm);">
+                            {{ "%.1f"|format(student.attendance_percentage) }}%
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-        // Department Chart
-        const departmentCtx = document.getElementById('departmentChart').getContext('2d');
-        new Chart(departmentCtx, {
-            type: 'doughnut',
-            data: {
-                labels: {{ dept_labels | safe }},
-                datasets: [{
-                    data: {{ dept_data | safe }},
-                    backgroundColor: [
-                        '#2563eb',
-                        '#059669',
-                        '#d97706',
-                        '#dc2626',
-                        '#7c3aed',
-                        '#0891b2'
-                    ]
-                }]
+    <!-- Export Actions & Navigation -->
+    <div class="p-4 glass-card d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('export_detailed_report') }}?start_date={{ start_date }}&end_date={{ end_date }}&department={{ selected_dept }}" class="glass-button">
+                <i class="fas fa-file-excel me-2 text-success" style="color: #10B981 !important;"></i> Export Detailed Excel
+            </a>
+            <a href="{{ url_for('export_summary_report') }}?start_date={{ start_date }}&end_date={{ end_date }}&department={{ selected_dept }}" class="glass-button">
+                <i class="fas fa-file-pdf me-2 text-danger" style="color: #EF4444 !important;"></i> Export Summary PDF
+            </a>
+        </div>
+        <div>
+            <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Back to Admin Panel
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .reports-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+    }
+    
+    .reports-stat-card {
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        position: relative;
+        overflow: hidden;
+        transition: all var(--duration) var(--ease);
+    }
+    
+    .stat-icon-wrapper {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-sm);
+        background: var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+        transition: transform var(--duration) var(--spring);
+    }
+    
+    .reports-stat-card:hover .stat-icon-wrapper {
+        transform: scale(1.1);
+    }
+    
+    .reports-stat-card.success .stat-icon-wrapper { background: var(--color-success-light); color: var(--color-success) !important; }
+    .reports-stat-card.warning .stat-icon-wrapper { background: var(--color-warning-light); color: var(--color-warning) !important; }
+    .reports-stat-card.danger .stat-icon-wrapper { background: var(--color-danger-light); color: var(--color-danger) !important; }
+    
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-value {
+        font-size: 1.875rem;
+        font-weight: 800;
+        color: var(--color-text);
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-trend {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.725rem;
+        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-pill);
+        color: var(--color-success);
+        background: var(--color-success-light);
+    }
+    .stat-trend.neutral {
+        color: var(--color-text-secondary);
+        background: var(--color-border);
+    }
+    
+    .stat-trend-warning {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.725rem;
+        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-pill);
+        color: var(--color-warning);
+        background: var(--color-warning-light);
+    }
+    
+    .chart-wrapper {
+        position: relative;
+        width: 100%;
+    }
+    
+    @media (max-width: 768px) {
+        .mb-3-mobile {
+            margin-bottom: 1.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    // Theme responsive chart colors helper
+    function getChartThemeColors() {
+        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return {
+            text: isDark ? '#94A3B8' : '#64748B',
+            grid: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'
+        };
+    }
+    
+    var colors = getChartThemeColors();
+
+    // Daily Attendance Line Chart
+    var lineCtx = document.getElementById('attendanceChart').getContext('2d');
+    var attendanceGradient = lineCtx.createLinearGradient(0, 0, 0, 220);
+    attendanceGradient.addColorStop(0, 'rgba(139,92,246,0.18)');
+    attendanceGradient.addColorStop(1, 'rgba(139,92,246,0.01)');
+    
+    var attendanceChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: {{ daily_labels | safe }},
+            datasets: [{
+                label: 'Daily Attendance',
+                data: {{ daily_data | safe }},
+                borderColor: '#8B5CF6',
+                backgroundColor: attendanceGradient,
+                borderWidth: 2.5,
+                fill: true,
+                pointBackgroundColor: '#8B5CF6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: colors.text }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: colors.grid },
+                    ticks: { color: colors.text, stepSize: 1 }
                 }
             }
+        }
+    });
+
+    // Department Doughnut Chart
+    var doughnutCtx = document.getElementById('departmentChart').getContext('2d');
+    var deptLabels = {{ dept_labels | safe }};
+    var deptData = {{ dept_data | safe }};
+    
+    var totalLogs = deptData.reduce((a, b) => a + b, 0);
+    var totalLogsEl = document.getElementById('departmentChartTotal');
+    if (totalLogsEl) {
+        totalLogsEl.textContent = totalLogs.toLocaleString();
+    }
+    
+    var colors = ['#FF4D6D','#D946EF','#8B5CF6','#3B82F6','#10B981','#F59E0B','#06b6d4','#ec4899'];
+    
+    // Populate custom legend
+    var legendContainer = document.getElementById('departmentChartLegend');
+    if (legendContainer) {
+        legendContainer.innerHTML = '';
+        deptLabels.forEach(function(label, index) {
+            var val = deptData[index];
+            var pct = totalLogs > 0 ? ((val / totalLogs) * 100).toFixed(0) : 0;
+            var itemColor = colors[index % colors.length];
+            
+            var legendItem = document.createElement('div');
+            legendItem.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; padding: 0.35rem 0; border-bottom: 1px solid var(--color-border-light); transition: background-color var(--duration) var(--ease);';
+            
+            var leftWrap = document.createElement('div');
+            leftWrap.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; overflow: hidden;';
+            
+            var dot = document.createElement('span');
+            dot.style.cssText = 'width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; background-color: ' + itemColor + '; box-shadow: 0 0 6px ' + itemColor + '66;';
+            
+            var labelSpan = document.createElement('span');
+            labelSpan.style.cssText = 'font-weight: 500; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+            labelSpan.textContent = label;
+            
+            leftWrap.appendChild(dot);
+            leftWrap.appendChild(labelSpan);
+            
+            var rightWrap = document.createElement('div');
+            rightWrap.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;';
+            
+            var valSpan = document.createElement('span');
+            valSpan.style.cssText = 'font-weight: 600; color: var(--color-text-secondary);';
+            valSpan.textContent = val.toLocaleString();
+            
+            var pctSpan = document.createElement('span');
+            pctSpan.style.cssText = 'font-size: 0.75rem; color: var(--color-text-tertiary); width: 32px; text-align: right; font-weight: 600;';
+            pctSpan.textContent = pct + '%';
+            
+            rightWrap.appendChild(valSpan);
+            rightWrap.appendChild(pctSpan);
+            
+            legendItem.appendChild(leftWrap);
+            legendItem.appendChild(rightWrap);
+            
+            legendContainer.appendChild(legendItem);
         });
-    </script>
-</body>
-</html>
+    }
+
+    var departmentChart = new Chart(doughnutCtx, {
+        type: 'doughnut',
+        data: {
+            labels: deptLabels,
+            datasets: [{
+                data: deptData,
+                backgroundColor: colors.slice(0, deptLabels.length),
+                borderWidth: 0,
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '82%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { 
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+                    titleColor: '#ffffff', 
+                    bodyColor: '#cbd5e1', 
+                    padding: 10, 
+                    cornerRadius: 8, 
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderWidth: 1,
+                    callbacks: { 
+                        label: function(i) { return ' ' + i.label + ': ' + i.parsed + ' logs'; } 
+                    } 
+                }
+            }
+        }
+    });
+
+    // Redraw charts when theme changes
+    document.addEventListener('themechanged', function(e) {
+        var themeColors = getChartThemeColors();
+        
+        // Update Line chart scales
+        attendanceChart.options.scales.x.ticks.color = themeColors.text;
+        attendanceChart.options.scales.y.ticks.color = themeColors.text;
+        attendanceChart.options.scales.y.grid.color = themeColors.grid;
+        attendanceChart.update();
+        
+        // Update Doughnut chart
+        departmentChart.update();
+    });
+</script>
+{% endblock %}

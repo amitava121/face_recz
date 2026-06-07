@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF4D6D" />
+      <stop offset="33%" stop-color="#D946EF" />
+      <stop offset="66%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+  </defs>
+  <!-- Outer Camera Lens Ring -->
+  <circle cx="64" cy="64" r="54" fill="none" stroke="url(#brand-grad)" stroke-width="4.5" stroke-linecap="round" />
+  <circle cx="64" cy="64" r="46" fill="none" stroke="url(#brand-grad)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6" />
+  
+  <!-- Face Recognition Brackets -->
+  <path d="M 38,50 L 38,38 L 50,38" fill="none" stroke="url(#brand-grad)" stroke-width="4.5" stroke-linecap="round" />
+  <path d="M 78,38 L 90,38 L 90,50" fill="none" stroke="url(#brand-grad)" stroke-width="4.5" stroke-linecap="round" />
+  <path d="M 38,78 L 38,90 L 50,90" fill="none" stroke="url(#brand-grad)" stroke-width="4.5" stroke-linecap="round" />
+  <path d="M 78,90 L 90,90 L 90,78" fill="none" stroke="url(#brand-grad)" stroke-width="4.5" stroke-linecap="round" />
+  
+  <!-- Inner Lens Core -->
+  <circle cx="64" cy="64" r="15" fill="url(#brand-grad)" />
+  
+  <!-- Subtle + Symbol inside Core -->
+  <path d="M 64,59 L 64,69 M 59,64 L 69,64" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" />
+  
+  <!-- Lens Flare Reflection -->
+  <circle cx="59" cy="59" r="2.5" fill="#FFFFFF" opacity="0.85" />
+</svg>

@@ -2,55 +2,57 @@
 
 {% block content %}
 <!-- Welcome Section -->
-<div class="card p-5 animate-fade-in-up" data-aos="fade-up">
-    <div class="card-body text-center">
-        <div class="mb-4 animate-float">
-            <i class="fas fa-camera-retro fa-4x text-gradient"></i>
+<div class="glass-card p-5 animate-fade-in-up" data-aos="fade-up">
+    <div class="text-center">
+        <div class="mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center mb-2" style="width: 80px; height: 80px; border-radius: var(--radius-md); background: var(--brand-gradient); color: white; font-size: 2.5rem; box-shadow: 0 4px 16px rgba(139,92,246,0.3);">
+                <i class="fas fa-camera-retro"></i>
+            </div>
         </div>
-        <h1 class="mb-4 text-gradient">Welcome to Face Recognition Attendance</h1>
-        <p class="mb-5 lead text-secondary">A modern solution for automated attendance tracking using facial recognition technology.</p>
+        <h1 class="mb-3 gradient-text font-weight-bold" style="font-size: 2.5rem;">SmartCam+</h1>
+        <p class="mb-5 lead text-secondary">A modern automated attendance tracking system powered by real-time biometrics.</p>
 
-        <div class="row justify-content-center gap-4 mb-4">
+        <div class="row justify-content-center g-3 mb-4">
             <div class="col-md-5">
-                <a href="{{ url_for('register') }}" class="btn btn-primary w-100 py-3 animate-fade-in-up" data-aos="fade-up" data-aos-delay="200">
+                <a href="{{ url_for('register') }}" class="gradient-button w-100 py-3 text-decoration-none">
                     <i class="fas fa-user-plus me-2"></i> Register New Student
                 </a>
             </div>
             <div class="col-md-5">
-                <a href="{{ url_for('attendance') }}" class="btn btn-success w-100 py-3 animate-fade-in-up" data-aos="fade-up" data-aos-delay="300">
+                <a href="{{ url_for('attendance') }}" class="gradient-button w-100 py-3 text-decoration-none" style="background: linear-gradient(135deg, #FF4D6D, #D946EF);">
                     <i class="fas fa-camera me-2"></i> Take Attendance
                 </a>
             </div>
         </div>
 
-        <div class="mt-5 pt-4 border-top">
+        <div class="mt-5 pt-4 border-top" style="border-color: var(--color-border) !important;">
             <div class="row text-start">
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: rgba(59,130,246,0.1); color: #3B82F6;">
+                            <i class="fas fa-shield-alt fa-lg"></i>
+                        </div>
+                        <h4 class="m-0 font-weight-bold">Secure</h4>
+                    </div>
+                    <p class="text-secondary" style="font-size: 0.9rem;">Advanced biometrics and liveness detection prevents spoofing and guarantees accurate records.</p>
+                </div>
+                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: rgba(217,70,239,0.1); color: #D946EF;">
+                            <i class="fas fa-bolt fa-lg"></i>
+                        </div>
+                        <h4 class="m-0 font-weight-bold">Fast</h4>
+                    </div>
+                    <p class="text-secondary" style="font-size: 0.9rem;">High-performance, async WebRTC streaming detects and verifies faces under 200ms.</p>
+                </div>
                 <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="400">
                     <div class="d-flex align-items-center mb-3">
-                        <div class="me-3">
-                            <i class="fas fa-shield-alt fa-2x text-primary"></i>
+                        <div class="me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: var(--radius-sm); background: rgba(139,92,246,0.1); color: #8B5CF6;">
+                            <i class="fas fa-chart-line fa-lg"></i>
                         </div>
-                        <h3 class="m-0">Secure</h3>
+                        <h4 class="m-0 font-weight-bold">Efficient</h4>
                     </div>
-                    <p class="text-secondary">Advanced facial recognition ensures accurate and secure attendance tracking.</p>
-                </div>
-                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="500">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="me-3">
-                            <i class="fas fa-bolt fa-2x text-primary"></i>
-                        </div>
-                        <h3 class="m-0">Fast</h3>
-                    </div>
-                    <p class="text-secondary">Real-time processing provides immediate attendance confirmation.</p>
-                </div>
-                <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="600">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="me-3">
-                            <i class="fas fa-chart-line fa-2x text-primary"></i>
-                        </div>
-                        <h3 class="m-0">Efficient</h3>
-                    </div>
-                    <p class="text-secondary">Automated system eliminates manual attendance tracking errors.</p>
+                    <p class="text-secondary" style="font-size: 0.9rem;">Eliminates manual bookkeeping completely with robust analytics and daily backups.</p>
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import signal
 import sys
 import time
@@ -62,10 +63,14 @@ def preload_models():
             pass
 
 
-def start_fastapi_app(port=5001):
+def start_fastapi_app(port=5000):
     print(f"🚀 Starting FastAPI application on port {port}...")
     try:
-        prepare_runtime_models()
+        if os.getenv("PRELOAD_MODELS", "0").lower() in {"1", "true", "yes", "on"}:
+            try:
+                prepare_runtime_models()
+            except Exception as exc:
+                print(f"⚠️ Model preparation skipped: {exc}")
         from src.web.app import create_app
 
         app = create_app()
@@ -90,7 +95,7 @@ def run_system_checks():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Face Recognition Attendance System")
+    parser = argparse.ArgumentParser(description="SmartCam+ System")
     parser.add_argument(
         "--mode",
         choices=["app", "fastapi", "webrtc", "both", "check", "warmup", "quick"],
@@ -101,7 +106,7 @@ def main():
     args = parser.parse_args()
 
     if args.mode in {"app", "fastapi", "webrtc", "both", "quick"}:
-        return start_fastapi_app(args.port or 5001)
+        return start_fastapi_app(args.port or 5000)
     if args.mode == "check":
         return run_system_checks()
     if args.mode == "warmup":

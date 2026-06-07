@@ -130,6 +130,34 @@ async def dashboard_data(
     )
 
 
+@router.post("/delete_attendance_records", name="delete_attendance_records")
+async def delete_attendance_records(request: Request):
+    guard = _admin_only(request)
+    if guard:
+        return guard
+
+    form = await request.form()
+    attendance_ids = [int(aid) for aid in form.getlist("attendance_ids")]
+
+    if not attendance_ids:
+        flash(request, "No attendance records selected.", "error")
+        return RedirectResponse(url="/dashboard", status_code=302)
+
+    def _do_delete():
+        count = Attendance.query.filter(Attendance.id.in_(attendance_ids)).delete(synchronize_session=False)
+        db.session.commit()
+        return count
+
+    try:
+        deleted = await asyncio.to_thread(_do_delete)
+        flash(request, f"Deleted {deleted} attendance record(s).", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(request, f"Delete failed: {exc}", "error")
+
+    return RedirectResponse(url="/dashboard", status_code=302)
+
+
 @router.get("/admin", name="admin_panel")
 async def admin_panel(request: Request):
     guard = _admin_only(request)

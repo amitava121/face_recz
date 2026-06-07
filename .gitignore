@@ -132,11 +132,14 @@ dmypy.json
 logs/
 data/temp/
 data/datasets/private/
+models/
+pgdata/
 *.db
 *.sqlite
 .DS_Store
 .vscode/
 .idea/
+.gemini/
 
 # Face recognition models
 *.onnx

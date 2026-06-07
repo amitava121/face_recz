@@ -19,5 +19,5 @@ class Settings:
             or "default_secret_key"
         )
         host = os.getenv("APP_HOST", "0.0.0.0")
-        port = int(os.getenv("APP_PORT", "5001"))
+        port = int(os.getenv("APP_PORT", "5000"))
         return cls(secret_key=secret_key, host=host, port=port)

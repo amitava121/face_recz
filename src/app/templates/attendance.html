@@ -1,762 +1,236 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Recognition Attendance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/animations.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/fast-response.css') }}" rel="stylesheet">
-    <style>
-        /* iPhone-Style Smooth Animations */
-        * {
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            transform-style: preserve-3d;
-            will-change: auto;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        /* iOS-style spring animations */
-        :root {
-            --spring-easing: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            --smooth-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            --ios-easing: cubic-bezier(0.4, 0.0, 0.2, 1);
-            --bounce-easing: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        body {
-            background-image:
-                radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.08) 0%, transparent 50%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
-            contain: layout style paint;
-            transition: all 0.6s var(--ios-easing);
-            animation: fadeInBody 0.8s var(--smooth-easing) forwards;
-        }
-
-        @keyframes fadeInBody {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.98);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .attendance-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-            animation: slideInContainer 0.9s var(--spring-easing) forwards;
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-        }
-
-        @keyframes slideInContainer {
-            from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .attendance-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            animation: fadeInHeader 1s var(--smooth-easing) 0.2s forwards;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        @keyframes fadeInHeader {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .attendance-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-radius: 1.5rem;
-            box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.12),
-                0 2px 8px rgba(0, 0, 0, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5);
-            overflow: hidden;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: all 0.4s var(--spring-easing);
-            transform: translateZ(0) translateY(20px) scale(0.98);
-            will-change: transform, box-shadow, opacity;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: slideInCard 0.8s var(--spring-easing) 0.4s forwards;
-            opacity: 0;
-        }
-
-        @keyframes slideInCard {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.98) translateZ(0);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1) translateZ(0);
-            }
-        }
-
-        .attendance-card:hover {
-            transform: translateY(-12px) scale(1.02) translateZ(0);
-            box-shadow:
-                0 25px 50px rgba(0, 0, 0, 0.18),
-                0 12px 24px rgba(0, 0, 0, 0.12),
-                inset 0 1px 0 rgba(255, 255, 255, 0.7);
-            transition: all 0.3s var(--ios-easing);
-        }
-
-        .attendance-card:active {
-            transform: translateY(-8px) scale(0.98) translateZ(0);
-            transition: all 0.1s var(--ios-easing);
-        }
-
-        .video-container {
-            position: relative;
-            width: 100%;
-            max-width: 550px;
-            margin: 0 auto;
-            border-radius: 1.5rem;
-            overflow: hidden;
-            box-shadow:
-                0 12px 24px rgba(0, 0, 0, 0.15),
-                0 4px 8px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(240, 240, 240, 0.8));
-            transition: all 0.4s var(--spring-easing);
-            aspect-ratio: 4/3;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(15px) saturate(150%);
-            -webkit-backdrop-filter: blur(15px) saturate(150%);
-            transform: translateZ(0) translateY(15px) scale(0.96);
-            will-change: transform, box-shadow, opacity;
-            height: 420px;
-            animation: slideInVideo 1s var(--spring-easing) 0.6s forwards;
-            opacity: 0;
-        }
-
-        @keyframes slideInVideo {
-            from {
-                opacity: 0;
-                transform: translateY(15px) scale(0.96) translateZ(0);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1) translateZ(0);
-            }
-        }
-
-        .video-container:hover {
-            transform: scale(1.03) translateZ(0);
-            box-shadow:
-                0 20px 40px rgba(37, 99, 235, 0.2),
-                0 8px 16px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            border-color: rgba(37, 99, 235, 0.4);
-            transition: all 0.3s var(--ios-easing);
-        }
-
-        .video-container:active {
-            transform: scale(0.98) translateZ(0);
-            transition: all 0.1s var(--ios-easing);
-        }
-
-        #localVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            background: #e5e7eb;
-        }
-
-        .status-header {
-            text-align: center;
-            font-weight: 600;
-            font-size: 1.2rem;
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(37, 99, 235, 0.2);
-            border-radius: 1rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            transition: all 0.4s var(--spring-easing);
-            box-shadow: var(--shadow-sm);
-            backdrop-filter: blur(4px);
-            min-width: 280px;
-            border: 1px solid rgba(37, 99, 235, 0.3);
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
-            animation: slideInStatus 0.8s var(--spring-easing) 0.8s forwards;
-            opacity: 0;
-            transform: translateY(10px) scale(0.95);
-        }
-
-        @keyframes slideInStatus {
-            from {
-                opacity: 0;
-                transform: translateY(10px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            margin: 1.5rem 0 1rem 0;
-            flex-wrap: wrap;
-            animation: slideInControls 0.8s var(--spring-easing) 1s forwards;
-            opacity: 0;
-            transform: translateY(15px);
-        }
-
-        @keyframes slideInControls {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .control-btn {
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 1rem;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            min-width: 220px;
-            justify-content: center;
-            transition: all 0.3s var(--spring-easing);
-            box-shadow:
-                0 6px 20px rgba(0, 0, 0, 0.15),
-                0 2px 6px rgba(0, 0, 0, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            transform: translateZ(0) scale(1);
-            will-change: transform, opacity, box-shadow;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .control-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateX(-100%);
-            transition: transform 0.4s var(--ios-easing);
-            z-index: -1;
-        }
-
-        .control-btn:hover::before {
-            transform: translateX(0);
-        }
-
-        .control-btn:hover {
-            transform: translateY(-6px) scale(1.05) translateZ(0);
-            box-shadow:
-                0 20px 40px rgba(0, 0, 0, 0.25),
-                0 8px 16px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4);
-            transition: all 0.3s var(--spring-easing);
-        }
-
-        .control-btn:active {
-            transform: translateY(-2px) scale(0.95) translateZ(0);
-            transition: all 0.1s var(--ios-easing);
-            box-shadow:
-                0 8px 20px rgba(0, 0, 0, 0.2),
-                0 3px 8px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        }
-
-        .control-btn i {
-            font-size: 1.2rem;
-            transition: all 0.3s var(--spring-easing);
-        }
-
-        .control-btn:hover i {
-            transform: scale(1.2) rotate(5deg);
-        }
-
-        .control-btn:active i {
-            transform: scale(1.1) rotate(-2deg);
-        }
-
-        .start-btn {
-            background: var(--primary-gradient);
-            color: white;
-            border: 2px solid transparent;
-        }
-
-        .start-btn:hover {
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .stop-btn {
-            background: var(--danger-gradient);
-            color: white;
-            border: 2px solid transparent;
-        }
-
-        .stop-btn:hover {
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(12px) saturate(150%);
-            -webkit-backdrop-filter: blur(12px) saturate(150%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            z-index: 100;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.4s var(--ios-easing);
-            border-radius: 1.5rem;
-            transform: scale(0.9);
-        }
-
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-            transform: scale(1);
-            animation: fadeInLoading 0.4s var(--spring-easing) forwards;
-        }
-
-        @keyframes fadeInLoading {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-                backdrop-filter: blur(0px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-                backdrop-filter: blur(12px) saturate(150%);
-            }
-        }
-
-        .loading-spinner {
-            width: 70px;
-            height: 70px;
-            border: 5px solid rgba(255, 255, 255, 0.1);
-            border-top: 5px solid var(--primary-color);
-            border-right: 5px solid rgba(37, 99, 235, 0.7);
-            border-radius: 50%;
-            animation: iosSpinner 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
-            margin-bottom: 1.5rem;
-            box-shadow:
-                0 0 30px rgba(37, 99, 235, 0.5),
-                inset 0 0 15px rgba(37, 99, 235, 0.3),
-                0 0 60px rgba(37, 99, 235, 0.2);
-            transform: translateZ(0) scale(0);
-            will-change: transform;
-            backdrop-filter: blur(3px);
-            animation: iosSpinner 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) infinite,
-                       scaleInSpinner 0.5s var(--spring-easing) forwards;
-        }
-
-        @keyframes iosSpinner {
-            0% {
-                transform: rotate(0deg) translateZ(0);
-                border-top-color: var(--primary-color);
-                border-right-color: rgba(37, 99, 235, 0.7);
-            }
-            50% {
-                transform: rotate(180deg) translateZ(0);
-                border-top-color: rgba(37, 99, 235, 0.7);
-                border-right-color: var(--primary-color);
-            }
-            100% {
-                transform: rotate(360deg) translateZ(0);
-                border-top-color: var(--primary-color);
-                border-right-color: rgba(37, 99, 235, 0.7);
-            }
-        }
-
-        @keyframes scaleInSpinner {
-            from {
-                transform: scale(0) translateZ(0);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1) translateZ(0);
-                opacity: 1;
-            }
-        }
-
-        .loading-text {
-            font-size: 1.3rem;
-            font-weight: 500;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            background: rgba(37, 99, 235, 0.2);
-            padding: 0.5rem 1.5rem;
-            border-radius: 1rem;
-            backdrop-filter: blur(4px);
-            animation: fadeInText 0.6s var(--spring-easing) 0.2s forwards;
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        @keyframes fadeInText {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .retry-btn {
-            padding: 0.75rem 1.5rem;
-            background: var(--primary-gradient);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-normal);
-            display: none;
-            box-shadow: var(--shadow-md);
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-        }
-
-        .retry-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(-100%);
-            transition: transform 0.6s ease;
-            z-index: -1;
-        }
-
-        .retry-btn:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .retry-btn:hover::before {
-            transform: translateX(0);
-        }
-
-        .attendance-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            z-index: 10;
-            pointer-events: none;
-            opacity: 0;
-            visibility: hidden;
-            transition: all var(--transition-normal);
-            border-radius: 1.5rem;
-        }
-
-        .attendance-overlay.active {
-            opacity: 1;
-            visibility: visible;
-            animation: fadeInCheck 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .checkmark-circle {
-            width: 90px;
-            height: 90px;
-            background: var(--success-gradient);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.5), 0 0 0 10px rgba(5, 150, 105, 0.2);
-            margin-bottom: 1.5rem;
-            transform: scale(0);
-            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            animation-delay: 0.1s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .checkmark-circle::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-            opacity: 0;
-            animation: pulse 2s ease-out infinite;
-        }
-
-        .checkmark-circle i {
-            color: white;
-            font-size: 2.8rem;
-            animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            animation-delay: 0.2s;
-            transform: scale(0);
-        }
-
-        .student-name-overlay {
-            color: white;
-            font-size: 1.6rem;
-            font-weight: 700;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            background: rgba(5, 150, 105, 0.8);
-            padding: 0.6rem 2rem;
-            border-radius: 1rem;
-            transform: translateY(20px);
-            opacity: 0;
-            animation: slideUp 0.5s ease forwards;
-            animation-delay: 0.3s;
-            box-shadow: 0 5px 15px -5px rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(4px);
-        }
-
-        @keyframes bounceIn {
-            0% { transform: scale(0); }
-            60% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0; transform: scale(0.5); }
-            50% { opacity: 0.5; }
-            100% { opacity: 0; transform: scale(1.2); }
-        }
-
-        @keyframes fadeInCheck {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes popIn {
-            from { transform: scale(0); }
-            to { transform: scale(1); }
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Performance optimizations */
-        .control-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-            transform: none !important;
-        }
-
-        .control-btn:disabled:hover {
-            transform: none !important;
-            box-shadow: var(--shadow-md) !important;
-        }
-
-        /* Faster animations for better responsiveness */
-        .animate-fade-in-up {
-            animation: fadeInUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .attendance-container {
-                padding: 1rem;
-            }
-
-            .attendance-card {
-                padding: 1rem;
-            }
-
-            .video-container {
-                height: 350px;
-                max-width: 450px;
-            }
-
-            .controls {
-                margin: 1rem 0 0.5rem 0;
-            }
-
-            .control-btn {
-                padding: 0.75rem 1.5rem;
-                font-size: 1rem;
-                min-width: 180px;
-            }
-
-            .checkmark-circle {
-                width: 60px;
-                height: 60px;
-            }
-
-            .checkmark-circle i {
-                font-size: 2rem;
-            }
-
-            .student-name-overlay {
-                font-size: 1.2rem;
-                padding: 0.4rem 1.2rem;
-            }
-        }
-
-        /* Ensure button visibility on smaller screens */
-        @media (max-height: 700px) {
-            .video-container {
-                height: 200px;
-            }
-
-            .attendance-card {
-                padding: 1rem;
-            }
-
-            .controls {
-                margin: 1rem 0 0.5rem 0;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="attendance-container">
-        <div class="attendance-header animate-fade-in-up" data-aos="fade-down">
-            <h1 class="text-gradient">Face Recognition Attendance</h1>
-            <div class="d-flex justify-content-center mb-4">
-                <div class="badge-primary px-4 py-2 rounded-pill animate-fade-in" data-aos="fade-up" data-aos-delay="150" style="backdrop-filter: blur(4px); border: 1px solid rgba(37, 99, 235, 0.3); background-color: rgba(37, 99, 235, 0.2); color: #000; font-weight: 600; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Position your face in front of the camera for automatic attendance marking
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">Take Attendance</h1>
+        <p class="page-description">Mark live student attendance using secure real-time face recognition</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="attendance-page-layout animate-fade-in-up">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            
+            <div class="attendance-instructions-badge mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                Position face inside the camera view area to automatically register today's attendance
+            </div>
+            
+            <div class="status-header-wrap mb-4">
+                <div class="status-header animate-pulse" id="cameraStatusHeader">
+                    <i class="fas fa-circle-notch me-2 animate-spin"></i>
+                    Waiting for Face Detection...
                 </div>
             </div>
-            <div class="status-header animate-pulse" id="cameraStatusHeader">
-                <i class="fas fa-circle-notch me-2 animate-spin"></i>
-                Waiting for Face Detection...
-            </div>
-        </div>
 
-        <div class="attendance-card animate-fade-in-up" data-aos="zoom-in" data-aos-delay="100">
-            <div class="video-container" id="videoContainer">
-                <img id="localVideo" alt="Camera feed" />
+            <div class="glass-card p-4 attendance-card-main">
+                <div class="video-container" id="videoContainer">
+                    <img id="localVideo" alt="Camera feed" />
 
-                <div id="loading" class="loading-overlay">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text" id="loadingText">Starting camera...</div>
-                    <button id="retryBtn" class="retry-btn">
-                        <i class="fas fa-redo me-2"></i> Retry
+                    <div id="loading" class="loading-overlay">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" id="loadingText">Starting camera...</div>
+                        <button id="retryBtn" class="retry-btn">
+                            <i class="fas fa-redo me-2"></i> Retry
+                        </button>
+                    </div>
+
+                    <div id="attendanceOverlay" class="attendance-overlay">
+                        <div class="checkmark-circle">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="student-name-overlay" id="studentNameOverlay"></div>
+                    </div>
+                </div>
+
+                <div class="controls mt-4">
+                    <button id="startBtn" class="gradient-button control-btn">
+                        <i class="fas fa-play"></i>
+                        <span>Start Camera Feed</span>
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger control-btn" style="display: none;">
+                        <i class="fas fa-stop"></i>
+                        <span>Stop Camera Feed</span>
                     </button>
                 </div>
-
-                <div id="attendanceOverlay" class="attendance-overlay">
-                    <div class="checkmark-circle">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="student-name-overlay" id="studentNameOverlay"></div>
-                </div>
             </div>
-
-            <div class="controls" data-aos="fade-up" data-aos-delay="200">
-                <button id="startBtn" class="control-btn start-btn animate-fade-in-up">
-                    <i class="fas fa-play"></i>
-                    <span>Start Attendance</span>
-                </button>
-                <button id="stopBtn" class="control-btn stop-btn animate-fade-in-up" style="display: none;">
-                    <i class="fas fa-stop"></i>
-                    <span>Stop Attendance</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="text-center mt-4" data-aos="fade-up" data-aos-delay="300">
-            <a href="{{ url_for('index') }}" class="btn btn-outline-primary animate-fade-in-up" style="border-radius: 1rem; padding: 0.75rem 2rem; box-shadow: var(--shadow-sm); backdrop-filter: blur(4px); border: 2px solid rgba(37, 99, 235, 0.3);">
-                <i class="fas fa-home me-2"></i> Back to Home
-            </a>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
-    <!-- Camera client scripts -->
-    <script src="{{ url_for('static', filename='js/unified-webrtc-client.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/mac-camera-client.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/simple-reliable-camera.js') }}"></script>
+<style>
+    .attendance-instructions-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1.25rem;
+        background: var(--glass-bg-strong);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-pill);
+        color: var(--color-text-secondary);
+        font-size: 0.8rem;
+        font-weight: 500;
+        box-shadow: var(--shadow-xs);
+    }
+    
+    .status-header-wrap {
+        display: flex;
+        justify-content: center;
+    }
+    
+    .status-header {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--color-primary);
+        padding: 0.5rem 1.25rem;
+        background: var(--brand-gradient-subtle);
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: var(--shadow-sm);
+        border: 1.5px solid var(--glass-border);
+    }
+    
+    .attendance-card-main {
+        max-width: 650px;
+        margin: 0 auto;
+    }
+    
+    .video-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4/3;
+        height: 380px;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        background: #1e293b;
+        border: 1.5px solid var(--color-border);
+        box-shadow: var(--shadow-sm);
+        margin: 0 auto;
+    }
+    
+    #localVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .control-btn {
+        min-width: 200px;
+        height: 46px;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15,23,42,0.85);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        z-index: 20;
+    }
+    
+    .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(255,255,255,0.1);
+        border-top-color: #8B5CF6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 1rem;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+    
+    .retry-btn {
+        background: var(--brand-gradient);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: var(--radius-sm);
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    .attendance-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15,23,42,0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 30;
+    }
+    
+    .attendance-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .checkmark-circle {
+        width: 72px;
+        height: 72px;
+        background: #10B981;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 0 20px rgba(16,185,129,0.4);
+    }
+    
+    .student-name-overlay {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 700;
+        background: rgba(16,185,129,0.9);
+        padding: 0.5rem 1.5rem;
+        border-radius: var(--radius-pill);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Camera client scripts -->
+<script src="{{ url_for('static', filename='js/unified-webrtc-client.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mac-camera-client.js') }}"></script>
+<script src="{{ url_for('static', filename='js/simple-reliable-camera.js') }}"></script>
     <script>
     AOS.init({
         duration: 250,
@@ -924,7 +398,7 @@
             console.log('🌐 Browser:', navigator.userAgent);
 
             // Check if we're on a secure context (HTTPS or localhost)
-            const isSecureContext = window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost';
+            const isSecureContext = window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '0.0.0.0';
             console.log('🔒 Secure context:', isSecureContext);
 
             if (!isSecureContext) {
@@ -1082,13 +556,21 @@
             // Set a placeholder image while loading
             localVideo.src = '/static/img/camera-placeholder.jpg';
 
-            // First check camera permissions
-            console.log('🎥 Checking camera permissions...');
-            const permissionCheck = await checkCameraPermission();
-            if (!permissionCheck.granted) {
-                throw new Error(permissionCheck.error + (permissionCheck.errorDetails ? '\n\n' + permissionCheck.errorDetails : ''));
+            // NOTE: We do NOT call checkCameraPermission() here because it acquires
+            // the camera and then immediately releases it, which causes a race condition
+            // on Windows where the driver cannot be re-acquired immediately.
+            // SimpleReliableCamera will handle camera access and error reporting directly.
+
+            // Verify camera API is available before proceeding
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Camera API not available. Please use a modern browser (Chrome, Firefox, Edge) and ensure you are on localhost or HTTPS.');
             }
-            console.log('✅ Camera permission granted');
+
+            // Verify we are in a secure context
+            const isLoopback = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
+            if (!window.isSecureContext && location.protocol !== 'https:' && !isLoopback) {
+                throw new Error('Camera access requires HTTPS or localhost. Please access this application via localhost or a secure HTTPS connection.');
+            }
 
             // Call the application backend to start attendance
             console.log('🌐 Calling backend /start_attendance...');
@@ -1632,18 +1114,59 @@
             return;
         }
 
-        const videoWidth = videoElement.videoWidth || 320;
-        const videoHeight = videoElement.videoHeight || 240;
-        const displayWidth = videoElement.clientWidth;
+        // ── Coordinate-space fix ────────────────────────────────────────────────────
+        // The server receives the DOWNSCALED processing canvas image (e.g. 320×240),
+        // NOT the raw camera frame (e.g. 640×480).  Face bounding boxes returned by
+        // the server are therefore in processing-canvas space, NOT in video space.
+        //
+        // Using videoElement.videoWidth here caused boxes to appear at exactly half
+        // the correct position (they landed on the wall/background instead of the face).
+        //
+        // Fix: read the processing canvas dimensions from the camera client.
+        // Fall back to videoWidth only when the camera client has not started yet.
+        const cameraClient = window.cameraClient;
+        const srcWidth  = (cameraClient && cameraClient.canvas && cameraClient.canvas.width  > 0)
+                            ? cameraClient.canvas.width
+                            : (videoElement.videoWidth  || 320);
+        const srcHeight = (cameraClient && cameraClient.canvas && cameraClient.canvas.height > 0)
+                            ? cameraClient.canvas.height
+                            : (videoElement.videoHeight || 240);
+
+        const displayWidth  = videoElement.clientWidth;
         const displayHeight = videoElement.clientHeight;
 
-        const scaleX = displayWidth / videoWidth;
-        const scaleY = displayHeight / videoHeight;
+        // Handle object-fit:cover offset so boxes stay inside the visible crop area.
+        // If the video stream aspect ratio and the display element aspect ratio match,
+        // offset is zero.  When they differ (e.g. container is wider than the stream),
+        // cover will crop the top/bottom (or left/right) and we compensate.
+        const streamAspect  = srcWidth  / srcHeight;
+        const displayAspect = displayWidth / displayHeight;
+        let offsetX = 0;
+        let offsetY = 0;
+        let scaleX, scaleY;
+
+        if (Math.abs(streamAspect - displayAspect) < 0.05) {
+            // Aspect ratios are close enough – no crop, simple scale.
+            scaleX = displayWidth  / srcWidth;
+            scaleY = displayHeight / srcHeight;
+        } else if (displayAspect > streamAspect) {
+            // Display is wider than stream → video is scaled to fill width,
+            // top and bottom are cropped.
+            scaleX = displayWidth / srcWidth;
+            scaleY = scaleX;                            // uniform scale
+            offsetY = (srcHeight * scaleY - displayHeight) / 2;
+        } else {
+            // Display is taller than stream → video is scaled to fill height,
+            // left and right are cropped.
+            scaleY = displayHeight / srcHeight;
+            scaleX = scaleY;                            // uniform scale
+            offsetX = (srcWidth * scaleX - displayWidth) / 2;
+        }
 
         faceResults.forEach(face => {
-            const x = (face.x || 0) * scaleX;
-            const y = (face.y || 0) * scaleY;
-            const width = (face.width || 0) * scaleX;
+            const x = (face.x || 0) * scaleX - offsetX;
+            const y = (face.y || 0) * scaleY - offsetY;
+            const width  = (face.width  || 0) * scaleX;
             const height = (face.height || 0) * scaleY;
 
             let strokeColor = '#00FF00';
@@ -1918,5 +1441,4 @@
         }
     }
     </script>
-</body>
-</html>
+{% endblock %}

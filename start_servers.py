@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
-DEFAULT_PORT = 5001
+DEFAULT_PORT = 5000
 PYTHON_BIN = sys.executable
 _ACTIVE_PYTHON_BIN = PYTHON_BIN
 
@@ -116,7 +116,7 @@ def build_app_command(port):
 
 def build_browser_url(port, path="/"):
     normalized_path = path if path.startswith("/") else f"/{path}"
-    return f"http://localhost:{port}{normalized_path}"
+    return f"http://127.0.0.1:{port}{normalized_path}"
 
 
 def is_port_in_use(port):
@@ -298,7 +298,7 @@ def start_servers():
     global _ACTIVE_PYTHON_BIN
 
     print("\n" + "=" * 80)
-    print_colored("Face Recognition Attendance System", "blue")
+    print_colored("SmartCam+ System", "blue")
     print("=" * 80 + "\n")
 
     selected_python = verify_runtime_dependencies()
@@ -337,7 +337,7 @@ def start_servers():
     print_colored("FASTAPI SERVICE IS STARTING", "green")
     print_colored(f"Web Interface: {build_browser_url(DEFAULT_PORT, '/')}", "cyan")
     print_colored(f"Attendance Camera: {build_browser_url(DEFAULT_PORT, '/attendance')}", "cyan")
-    print_colored(f"WebRTC endpoints: http://localhost:{DEFAULT_PORT}/webrtc/offer", "cyan")
+    print_colored(f"WebRTC endpoints: http://127.0.0.1:{DEFAULT_PORT}/webrtc/offer", "cyan")
     print_colored("Press Ctrl+C to stop the server", "yellow")
     output_thread = threading.Thread(target=stream_process_output, args=(process,), daemon=True)
     output_thread.start()

@@ -2,26 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>System Locked</title>
+    <title>System Locked — SmartCam+</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Universal Notification System - Updated v2.0 -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <!-- Immediate Theme Initialization Script (Prevents White Flash) -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme') || localStorage.getItem('dashboard-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/modern-ui.css') }}?v=1.2" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/lock-screen.css') }}" rel="stylesheet">
 </head>
 <body>
+    <!-- Global Theme Toggle wrapper for lock screen -->
+    <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000;">
+        <button class="theme-toggle-btn" id="lockThemeToggle" aria-label="Toggle theme" title="Toggle theme">
+            <div class="theme-toggle-track">
+                <div class="theme-toggle-thumb">
+                    <i class="fas fa-sun sun-icon"></i>
+                    <i class="fas fa-moon moon-icon"></i>
+                </div>
+            </div>
+        </button>
+    </div>
+    
     <!-- Universal Notification System -->
     {% include 'notifications.html' %}
     <div class="lock-container animate-fade-in" data-aos="zoom-in">
-        <div class="lock-icon animate-pulse" data-aos="fade-down" data-aos-delay="100">
+        <div class="text-center mb-3">
+            <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SmartCam+" class="brand-logo-img" style="height: 64px; width: 64px; filter: drop-shadow(0 4px 12px rgba(139,92,246,0.3));">
+            <script>
+                (function() {
+                    var theme = localStorage.getItem('theme') || localStorage.getItem('dashboard-theme') || 'light';
+                    var img = document.querySelector('.brand-logo-img');
+                    if (img) {
+                        img.src = theme === 'dark' ? "{{ url_for('static', filename='img/logo-dark.svg') }}" : "{{ url_for('static', filename='img/logo.svg') }}";
+                    }
+                })();
+            </script>
+            <h2 class="mt-2 font-weight-bold gradient-text" style="font-size: 1.5rem; letter-spacing: -0.02em;">SmartCam+</h2>
+        </div>
+        <div class="lock-icon animate-pulse" data-aos="fade-down" data-aos-delay="100" style="margin-top: 1rem; margin-bottom: 1.5rem;">
             <i class="fas fa-lock"></i>
         </div>
 
-        <h1 class="lock-title animate-slide-up" data-aos="fade-up" data-aos-delay="200">System Locked</h1>
+        <h1 class="lock-title animate-slide-up" data-aos="fade-up" data-aos-delay="200" style="font-size: 2rem;">System Locked</h1>
 
         <!-- Role Toggle Switch -->
         <div class="role-toggle-container" data-aos="fade-up" data-aos-delay="250">
@@ -294,6 +328,27 @@
                     submitButton.innerHTML = originalButtonText;
                 });
             });
+
+            function updateLogo(theme) {
+                var imgs = document.querySelectorAll('.brand-logo-img');
+                imgs.forEach(function(img) {
+                    img.src = theme === 'dark' ? "{{ url_for('static', filename='img/logo-dark.svg') }}" : "{{ url_for('static', filename='img/logo.svg') }}";
+                });
+            }
+
+            // Global Theme toggle on lock screen
+            const lockThemeToggle = document.getElementById('lockThemeToggle');
+            if (lockThemeToggle) {
+                lockThemeToggle.addEventListener('click', function() {
+                    const html = document.documentElement;
+                    const currentTheme = html.getAttribute('data-theme') || 'light';
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    html.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    localStorage.setItem('dashboard-theme', newTheme);
+                    updateLogo(newTheme);
+                });
+            }
 
             // Add smooth page transitions
             document.body.classList.add('animate-fade-in');

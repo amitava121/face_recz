@@ -3,30 +3,26 @@
 */
 
 :root {
-    /* Primary Colors */
-    --primary-color: #2563eb;
-    --primary-light: #3b82f6;
-    --primary-dark: #1d4ed8;
-    --primary-gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    /* Primary brand gradient */
+    --primary-gradient: linear-gradient(135deg, #FF4D6D, #D946EF, #8B5CF6, #3B82F6);
+    --danger-gradient: linear-gradient(135deg, #FF4D6D, #D946EF, #8B5CF6, #3B82F6);
+    --success-gradient: linear-gradient(135deg, #10B981, #059669);
+    
+    /* Core colors */
+    --primary-color: #8B5CF6;
+    --primary-light: #a78bfa;
+    --primary-dark: #7c3aed;
+    --success-color: #10B981;
+    --danger-color: #EF4444;
 
-    /* Secondary Colors */
-    --success-color: #059669;
-    --success-light: #10b981;
-    --success-dark: #047857;
-    --success-gradient: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
-
-    /* Alert Colors */
-    --danger-color: #dc2626;
-    --danger-light: #ef4444;
-    --danger-dark: #b91c1c;
-    --danger-gradient: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-dark) 100%);
-
-    /* Neutral Colors */
-    --background-color: #f8fafc;
-    --card-background: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --border-color: #e2e8f0;
+    /* Neutral Colors - Light Mode Default */
+    --background-color: #F0F2F5;
+    --card-background: rgba(255,255,255,0.72);
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --border-color: rgba(0,0,0,0.06);
+    --input-background: rgba(255,255,255,0.8);
+    --role-toggle-bg: #f1f5f9;
 
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -35,16 +31,27 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
     /* Animation Timing */
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.3s ease;
-    --transition-slow: 0.5s ease;
+    --transition-fast: 150ms cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-normal: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-slow: 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme="dark"] {
+    --background-color: #0B1220;
+    --card-background: rgba(17,24,39,0.75);
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --border-color: rgba(255,255,255,0.06);
+    --input-background: rgba(17,24,39,0.7);
+    --role-toggle-bg: rgba(17,24,39,0.8);
 }
 
 body {
     font-family: 'Inter', sans-serif;
+    background-color: var(--background-color);
     background-image:
-        radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 40%),
-        radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.1) 0%, transparent 40%);
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139,92,246,0.06), transparent),
+        radial-gradient(ellipse 50% 40% at 85% 50%, rgba(217,70,239,0.04), transparent);
     background-attachment: fixed;
     min-height: 100vh;
     display: flex;
@@ -58,7 +65,7 @@ body {
 .lock-container {
     max-width: 500px;
     width: 100%;
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--card-background);
     backdrop-filter: blur(10px);
     border-radius: 1.5rem;
     box-shadow: var(--shadow-xl);
@@ -66,6 +73,7 @@ body {
     position: relative;
     padding: 3rem 2rem;
     text-align: center;
+    border: 1px solid var(--border-color);
 }
 
 .lock-container::before {
@@ -139,7 +147,8 @@ body {
     border-radius: 1rem;
     font-size: 1rem;
     transition: all var(--transition-normal);
-    background: rgba(255, 255, 255, 0.8);
+    background: var(--input-background);
+    color: var(--text-primary);
 }
 
 .input-container input:focus {
@@ -175,7 +184,7 @@ body {
     justify-content: center;
     padding: 0.75rem 1.5rem;
     font-weight: 600;
-    border-radius: 0.75rem;
+    border-radius: 18px;
     border: none;
     cursor: pointer;
     transition: all var(--transition-normal);
@@ -348,7 +357,7 @@ body {
 
 .role-toggle {
     display: inline-flex;
-    background: #f1f5f9;
+    background: var(--role-toggle-bg);
     border-radius: 1rem;
     padding: 0.4rem;
     gap: 0.3rem;
@@ -382,9 +391,9 @@ body {
 }
 
 .role-btn.active {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    background: var(--primary-gradient);
     color: white;
-    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
     transform: translateY(-1px);
 }
 
@@ -394,13 +403,13 @@ body {
 
 /* Admin specific styling when active */
 #adminToggle.active {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    background: var(--primary-gradient);
 }
 
 /* Viewer specific styling when active */
 #viewerToggle.active {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    background: var(--primary-gradient);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
 }
 
 /* Form transition animations */

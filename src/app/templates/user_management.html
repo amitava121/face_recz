@@ -1,793 +1,473 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - Face Recognition Attendance</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            color: #1e293b;
-        }
-        .user-container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        .user-card {
-            background: #fff;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 32px rgba(37,99,235,0.10);
-            border: 1px solid #e5e7eb;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        .user-title {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2563eb;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(37,99,235,0.3);
-        }
-        .table-container {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-            overflow: hidden;
-        }
-        
-        /* Scrollable table wrapper */
-        .table-wrapper {
-            max-height: 400px; /* Approximately 5 rows (each row ~80px) */
-            overflow-y: auto;
-            overflow-x: hidden;
-            position: relative;
-        }
-        
-        /* Custom scrollbar styling */
-        .table-wrapper::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .table-wrapper::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        
-        .table-wrapper::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        
-        .table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        
-        .table {
-            margin-bottom: 0;
-            width: 100%;
-        }
-        
-        .table thead th {
-            background: #f8fafc;
-            border: none;
-            font-weight: 600;
-            color: #475569;
-            padding: 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .table tbody td {
-            padding: 1rem;
-            border-color: #e2e8f0;
-            vertical-align: middle;
-        }
-        .role-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .role-admin {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        .role-moderator {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        .role-viewer {
-            background: #f3f4f6;
-            color: #374151;
-        }
-        .status-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .status-active {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .status-inactive {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-            border-radius: 0.5rem;
-        }
-        .back-btn {
-            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-            color: white;
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-        }
-        .back-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(100,116,139,0.3);
-            color: white;
-            text-decoration: none;
-        }
-        .form-section {
-            background: #f8fafc;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border: 1px solid #0f69e0;
-            position: relative;
-        }
-        
-        .form-section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            user-select: none;
-        }
-        
-        .form-section-header h5 {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1e293b;
-        }
-        
-        .toggle-form-btn {
-            background: transparent;
-            border: none;
-            color: #2563eb;
-            font-size: 1.25rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            padding: 0;
-            margin-left: 0.75rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-        }
-        
-        .toggle-form-btn:hover {
-            background: rgba(37, 99, 235, 0.1);
-            transform: scale(1.1);
-        }
-        
-        .toggle-form-btn i {
-            transition: all 0.3s ease;
-        }
-        
-        .toggle-form-btn.collapsed i::before {
-            content: "\f055"; /* fa-plus-circle */
-        }
-        
-        .toggle-form-btn:not(.collapsed) i::before {
-            content: "\f056"; /* fa-minus-circle */
-        }
-        
-        .form-content {
-            max-height: 0;
-            opacity: 0;
-            margin-top: -1rem;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out, opacity 0.3s ease-out, margin-top 0.3s ease-out;
-        }
-        
-        .form-content.show {
-            max-height: 1000px;
-            opacity: 1;
-            margin-top: 0;
-            overflow: visible;
-        }
-        
-        .form-control, .form-select {
-            border-radius: 0.75rem;
-            border: 1px solid #d1d5db;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        .activity-log {
-            max-height: 350px; /* Approximately 5 items (each ~70px) */
-            overflow-y: auto;
-            overflow-x: hidden;
-            background: #f8fafc;
-            border-radius: 0.75rem;
-            padding: 1rem;
-            border: 1px solid #e2e8f0;
-        }
-        
-        /* Custom scrollbar for activity log */
-        .activity-log::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .activity-log::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            border-radius: 3px;
-        }
-        
-        .activity-log::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        
-        .activity-log::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        
-        .activity-item {
-            padding: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        .activity-item:hover {
-            background-color: rgba(37, 99, 235, 0.05);
-            border-radius: 0.5rem;
-            transform: translateX(2px);
-        }
-        
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-        
-        .activity-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 0.875rem;
-        }
-        
-        .activity-icon.login {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .activity-icon.logout {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .activity-icon.update {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        
-        .activity-icon.password {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .activity-icon.create {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .activity-icon.delete {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .activity-icon.failed {
-            background: #fef3c7;
-            color: #d97706;
-        }
-        
-        .activity-content {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .activity-text {
-            color: #1e293b;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-        
-        .activity-text strong {
-            color: #2563eb;
-        }
-        
-        .activity-time {
-            color: #64748b;
-            font-size: 0.75rem;
-            margin-top: 0.25rem;
-        }
-    </style>
-</head>
-<body>
-    <!-- Universal Notification System -->
-    {% include 'notifications.html' %}
-    
-    <div class="user-container">
-        <div class="user-card">
-            <h1 class="user-title">
-                <i class="fas fa-user-shield me-3"></i>User Management
-            </h1>
+{% extends "base.html" %}
 
-            <!-- Add New User Form -->
-            <div class="form-section">
-                <div class="form-section-header">
-                    <h5>
-                        <i class="fas fa-user-plus me-2"></i>Add New User
-                        <button type="button" class="toggle-form-btn collapsed" id="toggleFormBtn" onclick="toggleAddUserForm()">
-                            <i class="fas fa-plus-circle" id="toggleFormIcon"></i>
+{% block page_header %}
+<div class="page-header" data-aos="fade-down">
+    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+    <div class="page-title-wrap">
+        <h1 class="page-title">User Management</h1>
+        <p class="page-description">Manage user logins, credentials, viewer permissions, and inspect security access activity logs</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium style additions for specific user elements */
+    .activity-log-scroll {
+        max-height: 350px;
+        overflow-y: auto;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--glass-border);
+        background: var(--color-surface);
+        padding: 0.5rem;
+    }
+    .activity-item-box {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--color-border-light);
+        font-size: 0.875rem;
+        transition: background-color 0.2s var(--ease);
+    }
+    .activity-item-box:hover {
+        background-color: var(--color-surface-hover);
+    }
+    .activity-icon-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.85rem;
+    }
+    .activity-icon-circle.login { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+    .activity-icon-circle.logout { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+    .activity-icon-circle.update { background: rgba(59, 130, 246, 0.15); color: #3B82F6; }
+    .activity-icon-circle.password { background: rgba(245, 158, 11, 0.15); color: #F59E0B; }
+    .activity-icon-circle.create { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+    .activity-icon-circle.delete { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+    .activity-icon-circle.failed { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+
+    [data-theme="dark"] .modal-content {
+        background: var(--color-surface) !important;
+        border: 1px solid var(--glass-border) !important;
+        color: var(--color-text) !important;
+    }
+</style>
+
+<div class="user-management-container animate-fade-in-up">
+    <!-- Add New User Glass Section -->
+    <div class="glass-card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="fas fa-user-plus me-2 gradient-text"></i>Add New User Account</h5>
+            <button type="button" class="btn btn-outline-primary btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" id="toggleFormBtn" onclick="toggleAddUserForm()">
+                <i class="fas fa-plus" id="toggleFormIcon"></i>
+            </button>
+        </div>
+
+        <div class="collapse" id="addUserCollapse">
+            <form method="POST" action="{{ url_for('user_management') }}" class="mt-3">
+                <input type="hidden" name="action" value="add_user">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="username" class="form-label text-muted">Username</label>
+                        <input type="text" class="premium-input form-control" id="username" name="username" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="email" class="form-label text-muted">Email</label>
+                        <input type="email" class="premium-input form-control" id="email" name="email" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="role" class="form-label text-muted">Role</label>
+                        <select class="premium-select" id="role" name="role" required>
+                            <option value="viewer">Viewer</option>
+                            <option value="moderator">Moderator</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="password" class="form-label text-muted">Password</label>
+                        <input type="password" class="premium-input form-control" id="password" name="password" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="gradient-button w-100" style="padding: 0.75rem 0.5rem;">
+                            <i class="fas fa-plus me-1"></i> Add Account
                         </button>
-                    </h5>
-                </div>
-                <div class="form-content" id="addUserFormContent">
-                    <form method="POST" action="{{ url_for('user_management') }}">
-                        <input type="hidden" name="action" value="add_user">
-                        <div class="row">
-                        <div class="col-md-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="role" class="form-label">Role</label>
-                            <select class="form-select" id="role" name="role" required>
-                                <option value="viewer">Viewer</option>
-                                <option value="moderator">Moderator</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-plus me-2"></i>Add User
-                            </button>
-                        </div>
                     </div>
-                </form>
                 </div>
-            </div>
+            </form>
+        </div>
+    </div>
 
-            <!-- Users Table -->
-            <div class="table-container">
-                <div class="table-wrapper">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Last Login</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for user in users %}
-                        <tr>
-                            <td>
-                                <strong>{{ user.username }}</strong>
-                                {% if user.id == current_user.id %}
-                                    <span class="badge bg-info ms-2">You</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ user.email }}</td>
-                            <td>
-                                <span class="role-badge role-{{ user.role }}">
-                                    {{ user.role.title() }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="status-badge status-{{ 'active' if user.is_active else 'inactive' }}">
-                                    {{ 'Active' if user.is_active else 'Inactive' }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if user.last_login %}
-                                    {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
-                                {% else %}
-                                    <span class="text-muted">Never</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-outline-primary btn-sm"
-                                            onclick="editUser({{ user.id }}, '{{ user.username }}', '{{ user.email }}', '{{ user.role }}', {{ user.is_active|lower }})">
-                                        <i class="fas fa-edit"></i>
+    <!-- Users Database Table -->
+    <div class="glass-table-container mb-4">
+        <div style="max-height: 400px; overflow-y: auto;">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th>Created</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <strong>{{ user.username }}</strong>
+                            {% if user.id == current_user.id %}
+                                <span class="badge bg-info ms-2">You</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <span class="badge {% if user.role == 'admin' %}bg-primary{% elif user.role == 'moderator' %}bg-warning text-dark{% else %}bg-secondary{% endif %}" style="padding: 0.4rem 0.75rem;">
+                                {{ user.role.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if user.is_active else 'bg-danger' }}" style="padding: 0.4rem 0.75rem;">
+                                {{ 'Active' if user.is_active else 'Inactive' }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if user.last_login %}
+                                {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                <span class="text-muted">Never</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</td>
+                        <td style="text-align: right;">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm me-1" style="border-radius: var(--radius-sm);"
+                                        onclick="editUser({{ user.id }}, '{{ user.username }}', '{{ user.email }}', '{{ user.role }}', {{ user.is_active|lower }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if user.id != current_user.id %}
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('Change user status?')">
+                                    <input type="hidden" name="action" value="toggle_status">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm me-1" style="border-radius: var(--radius-sm);">
+                                        <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
                                     </button>
-                                    {% if user.id != current_user.id %}
-                                    <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure?')">
-                                        <input type="hidden" name="action" value="toggle_status">
-                                        <input type="hidden" name="user_id" value="{{ user.id }}">
-                                        <button type="submit" class="btn btn-outline-warning btn-sm">
-                                            <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
-                                        </button>
-                                    </form>
-                                    <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this user permanently?')">
-                                        <input type="hidden" name="action" value="delete_user">
-                                        <input type="hidden" name="user_id" value="{{ user.id }}">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </form>
+                                <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this user permanently?')">
+                                    <input type="hidden" name="action" value="delete_user">
+                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" style="border-radius: var(--radius-sm);">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Details: Activity Logs & User Statistics -->
+    <div class="row g-4 mb-4">
+        <!-- Recent User Activity Logs -->
+        <div class="col-md-6">
+            <div class="glass-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2 gradient-text"></i>User Event Logs
+                    </h5>
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('export_activities') }}" class="btn btn-outline-success btn-sm me-1" style="border-radius: var(--radius-sm);">
+                            <i class="fas fa-file-excel me-1"></i>Export
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" style="border-radius: var(--radius-sm);" onclick="confirmClearActivities()">
+                            <i class="fas fa-trash me-1"></i>Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="activity-log-scroll">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item-box">
+                        <div class="activity-icon-circle {{ activity.action_type }}">
+                            <i class="fas {{ activity.icon }}"></i>
+                        </div>
+                        <div style="flex-grow: 1; min-width: 0;">
+                            <div class="text-truncate">
+                                <strong>{{ activity.username }}</strong> {{ activity.action }}
+                            </div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% if not recent_activities %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-info-circle fa-2x mb-2 text-muted"></i>
+                        <p class="mb-0">No recent activity logs recorded</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
+        </div>
 
-            <!-- Recent Activity -->
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">
-                            <i class="fas fa-history me-2"></i>Recent User Activity
-                            <span class="badge bg-primary ms-2">{{ recent_activities|length }}</span>
-                        </h5>
-                        <div class="btn-group" role="group">
-                            <a href="{{ url_for('export_activities') }}" class="btn btn-success btn-sm">
-                                <i class="fas fa-file-excel me-1"></i>Export
-                            </a>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmClearActivities()">
-                                <i class="fas fa-trash me-1"></i>Clear All
-                            </button>
+        <!-- User statistics counters -->
+        <div class="col-md-6">
+            <div class="glass-card p-4 h-100">
+                <h5 class="mb-4"><i class="fas fa-chart-pie me-2 gradient-text"></i>User Statistics</h5>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="p-3 text-center rounded border" style="background: rgba(0,0,0,0.01); border-color: var(--color-border) !important;">
+                            <h3 class="gradient-text font-weight-bold mb-1">{{ user_stats.total_users }}</h3>
+                            <small class="text-muted">Total Accounts</small>
                         </div>
                     </div>
-                    <div class="activity-log">
-                        {% for activity in recent_activities %}
-                        <div class="activity-item">
-                            <div class="activity-icon {{ activity.action_type }}">
-                                <i class="fas {{ activity.icon }}"></i>
-                            </div>
-                            <div class="activity-content">
-                                <div class="activity-text">
-                                    <strong>{{ activity.username }}</strong> {{ activity.action }}
-                                </div>
-                                <div class="activity-time">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</div>
-                            </div>
+                    <div class="col-6">
+                        <div class="p-3 text-center rounded border" style="background: rgba(0,0,0,0.01); border-color: var(--color-border) !important;">
+                            <h3 class="text-success font-weight-bold mb-1">{{ user_stats.active_users }}</h3>
+                            <small class="text-muted">Active Access</small>
                         </div>
-                        {% endfor %}
-                        {% if not recent_activities %}
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-info-circle me-2"></i>No recent activity
-                        </div>
-                        {% endif %}
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <h5 class="mb-3"><i class="fas fa-chart-pie me-2"></i>User Statistics</h5>
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-primary">{{ user_stats.total_users }}</h4>
-                                <small>Total Users</small>
-                            </div>
+                    <div class="col-6">
+                        <div class="p-3 text-center rounded border" style="background: rgba(0,0,0,0.01); border-color: var(--color-border) !important;">
+                            <h3 class="text-primary font-weight-bold mb-1">{{ user_stats.admins }}</h3>
+                            <small class="text-muted">Administrators</small>
                         </div>
-                        <div class="col-6">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-success">{{ user_stats.active_users }}</h4>
-                                <small>Active Users</small>
-                            </div>
-                        </div>
-                        <div class="col-6 mt-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-info">{{ user_stats.admins }}</h4>
-                                <small>Administrators</small>
-                            </div>
-                        </div>
-                        <div class="col-6 mt-3">
-                            <div class="text-center p-3 bg-light rounded">
-                                <h4 class="text-warning">{{ user_stats.online_now }}</h4>
-                                <small>Online Now</small>
-                            </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 text-center rounded border" style="background: rgba(0,0,0,0.01); border-color: var(--color-border) !important;">
+                            <h3 class="text-warning font-weight-bold mb-1">{{ user_stats.online_now }}</h3>
+                            <small class="text-muted">Active Sessions</small>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="text-center mt-4">
-                <button onclick="exportUsers()" class="btn btn-success me-3">
-                    <i class="fas fa-file-excel me-2"></i>Export Users
-                </button>
-                <button onclick="sendBulkEmail()" class="btn btn-info me-3">
-                    <i class="fas fa-envelope me-2"></i>Send Bulk Email
-                </button>
-                <a href="{{ url_for('admin_panel') }}" class="back-btn">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Admin Panel
-                </a>
             </div>
         </div>
     </div>
 
-    <!-- Edit User Modal -->
-    <div class="modal fade" id="editUserModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="POST" id="editUserForm">
-                    <div class="modal-body">
-                        <input type="hidden" name="action" value="edit_user">
-                        <input type="hidden" name="user_id" id="editUserId">
-                        <div class="mb-3">
-                            <label for="editUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="editUsername" name="username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="editEmail" name="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editRole" class="form-label">Role</label>
-                            <select class="form-select" id="editRole" name="role" required>
-                                <option value="viewer">Viewer</option>
-                                <option value="moderator">Moderator</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Student Details (shown only for viewers) -->
-                        <div id="studentDetailsSection" style="display: none;">
-                            <hr>
-                            <h6 class="text-muted mb-3">Student Details</h6>
-                            <div class="mb-3">
-                                <label for="editStudentName" class="form-label">Student Name</label>
-                                <input type="text" class="form-control" id="editStudentName" name="student_name" placeholder="Enter student name">
-                            </div>
-                            <div class="mb-3">
-                                <label for="editDepartment" class="form-label">Department</label>
-                                <input type="text" class="form-control" id="editDepartment" name="department" placeholder="Enter department">
-                            </div>
-                            <div class="mb-3">
-                                <label for="editPhoneNumber" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="editPhoneNumber" name="phone_number" placeholder="Enter phone number">
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="editPassword" class="form-label">New Password (leave blank to keep current)</label>
-                            <input type="password" class="form-control" id="editPassword" name="password">
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="editIsActive" name="is_active">
-                            <label class="form-check-label" for="editIsActive">
-                                Active User
-                            </label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </div>
-                </form>
+    <!-- Export / Bulk action cards -->
+    <div class="glass-card p-4 d-flex justify-content-center gap-3 flex-wrap">
+        <button onclick="exportUsers()" class="gradient-button">
+            <i class="fas fa-file-excel me-2"></i>Export User Database
+        </button>
+        <button onclick="sendBulkEmail()" class="glass-button">
+            <i class="fas fa-envelope me-2"></i>Send Bulk Notification
+        </button>
+        <a href="{{ url_for('admin_panel') }}" class="glass-button text-decoration-none">
+            <i class="fas fa-arrow-left me-2"></i>Back to Admin
+        </a>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-edit me-2"></i>Edit User Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form method="POST" id="editUserForm">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="edit_user">
+                    <input type="hidden" name="user_id" id="editUserId">
+                    <div class="mb-3">
+                        <label for="editUsername" class="form-label">Username</label>
+                        <input type="text" class="premium-input form-control" id="editUsername" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        <input type="email" class="premium-input form-control" id="editEmail" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRole" class="form-label">Role</label>
+                        <select class="premium-select" id="editRole" name="role" required>
+                            <option value="viewer">Viewer</option>
+                            <option value="moderator">Moderator</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Student Details (shown only for viewers) -->
+                    <div id="studentDetailsSection" style="display: none; padding: 1rem; border-radius: var(--radius-sm); border: 1px dashed var(--color-border); background: rgba(0,0,0,0.01);">
+                        <h6 class="text-muted mb-3 font-weight-bold">Student Record Link Details</h6>
+                        <div class="mb-3">
+                            <label for="editStudentName" class="form-label">Student Name</label>
+                            <input type="text" class="premium-input form-control" id="editStudentName" name="student_name" placeholder="Enter student name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDepartment" class="form-label">Department</label>
+                            <input type="text" class="premium-input form-control" id="editDepartment" name="department" placeholder="Enter department">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhoneNumber" class="form-label">Phone Number</label>
+                            <input type="tel" class="premium-input form-control" id="editPhoneNumber" name="phone_number" placeholder="Enter phone number">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 mt-3">
+                        <label for="editPassword" class="form-label">New Password (leave blank to keep current)</label>
+                        <input type="password" class="premium-input form-control" id="editPassword" name="password">
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="editIsActive" name="is_active">
+                        <label class="form-check-label font-weight-bold" for="editIsActive">
+                            Active User Account
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="glass-button" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="gradient-button">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Toggle Add User Form
-        function toggleAddUserForm() {
-            const formContent = document.getElementById('addUserFormContent');
-            const toggleBtn = document.getElementById('toggleFormBtn');
-            
-            if (formContent.classList.contains('show')) {
-                // Hide form
-                formContent.classList.remove('show');
-                toggleBtn.classList.add('collapsed');
-            } else {
-                // Show form
-                formContent.classList.add('show');
-                toggleBtn.classList.remove('collapsed');
-            }
-        }
+<script>
+    function toggleAddUserForm() {
+        const collapseEl = document.getElementById('addUserCollapse');
+        const icon = document.getElementById('toggleFormIcon');
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl);
         
-        function editUser(id, username, email, role, isActive) {
-            document.getElementById('editUserId').value = id;
-            document.getElementById('editUsername').value = username;
-            document.getElementById('editEmail').value = email;
-            document.getElementById('editRole').value = role;
-            document.getElementById('editIsActive').checked = isActive;
-            
-            // Show/hide student details section based on role
-            toggleStudentDetails(role);
-            
-            // If viewer role, fetch student details via AJAX
-            if (role === 'viewer') {
-                fetchStudentDetails(id);
-            }
-
-            new bootstrap.Modal(document.getElementById('editUserModal')).show();
+        if (collapseEl.classList.contains('show')) {
+            bsCollapse.hide();
+            icon.className = 'fas fa-plus';
+        } else {
+            bsCollapse.show();
+            icon.className = 'fas fa-minus';
         }
+    }
+    
+    function editUser(id, username, email, role, isActive) {
+        document.getElementById('editUserId').value = id;
+        document.getElementById('editUsername').value = username;
+        document.getElementById('editEmail').value = email;
+        document.getElementById('editRole').value = role;
+        document.getElementById('editIsActive').checked = isActive;
         
-        function toggleStudentDetails(role) {
-            const studentSection = document.getElementById('studentDetailsSection');
-            if (role === 'viewer') {
-                studentSection.style.display = 'block';
-            } else {
-                studentSection.style.display = 'none';
-            }
-        }
+        toggleStudentDetails(role);
         
-        function fetchStudentDetails(userId) {
-            // Fetch student details for the viewer user
-            fetch(`/get_user_details/${userId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.student) {
-                        document.getElementById('editStudentName').value = data.student.name || '';
-                        document.getElementById('editDepartment').value = data.student.department || '';
-                        document.getElementById('editPhoneNumber').value = data.student.phone_number || '';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching student details:', error);
-                });
-        }
-        
-        // Listen for role changes in the edit modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const editRoleSelect = document.getElementById('editRole');
-            if (editRoleSelect) {
-                editRoleSelect.addEventListener('change', function() {
-                    toggleStudentDetails(this.value);
-                });
-            }
-        });
-
-        function exportUsers() {
-            window.open('/export_users', '_blank');
+        if (role === 'viewer') {
+            fetchStudentDetails(id);
         }
 
-        function sendBulkEmail() {
-            // Create a modal for bulk email
-            const modal = document.createElement('div');
-            modal.className = 'modal fade';
-            modal.innerHTML = `
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Send Bulk Email</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <form method="POST" action="/send_bulk_email">
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label for="emailSubject" class="form-label">Subject</label>
-                                    <input type="text" class="form-control" id="emailSubject" name="subject" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="emailMessage" class="form-label">Message</label>
-                                    <textarea class="form-control" id="emailMessage" name="message" rows="4" required></textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Recipients</label>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="recipients" value="all" id="allUsers" checked>
-                                        <label class="form-check-label" for="allUsers">All Users</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-primary">Send Email</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            new bootstrap.Modal(modal).show();
-
-            // Remove modal after it's hidden
-            modal.addEventListener('hidden.bs.modal', function() {
-                document.body.removeChild(modal);
+        new bootstrap.Modal(document.getElementById('editUserModal')).show();
+    }
+    
+    function toggleStudentDetails(role) {
+        const studentSection = document.getElementById('studentDetailsSection');
+        if (role === 'viewer') {
+            studentSection.style.display = 'block';
+        } else {
+            studentSection.style.display = 'none';
+        }
+    }
+    
+    function fetchStudentDetails(userId) {
+        fetch(`/get_user_details/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.student) {
+                    document.getElementById('editStudentName').value = data.student.name || '';
+                    document.getElementById('editDepartment').value = data.student.department || '';
+                    document.getElementById('editPhoneNumber').value = data.student.phone_number || '';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching student details:', error);
+            });
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const editRoleSelect = document.getElementById('editRole');
+        if (editRoleSelect) {
+            editRoleSelect.addEventListener('change', function() {
+                toggleStudentDetails(this.value);
             });
         }
-        
-        // Clear all activities
-        function confirmClearActivities() {
-            if (confirm('Are you sure you want to delete ALL activity records? This action cannot be undone!')) {
-                // Send POST request to clear activities
-                fetch('{{ url_for("clear_activities") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showNotification(data.message, 'success');
-                        // Reload page after 1 second
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        showNotification(data.message || 'Error clearing activities', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Error clearing activities', 'error');
-                });
-            }
+    });
+
+    function exportUsers() {
+        window.open('/export_users', '_blank');
+    }
+
+    function sendBulkEmail() {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title font-weight-bold">Send Bulk Email Notification</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="POST" action="/send_bulk_email">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="emailSubject" class="form-label">Subject</label>
+                                <input type="text" class="premium-input form-control" id="emailSubject" name="subject" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="emailMessage" class="form-label">Message</label>
+                                <textarea class="premium-input form-control" id="emailMessage" name="message" rows="4" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Recipients</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="recipients" value="all" id="allUsers" checked>
+                                    <label class="form-check-label font-weight-bold" for="allUsers">All Users</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="glass-button" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="gradient-button">Send Email</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        new bootstrap.Modal(modal).show();
+
+        modal.addEventListener('hidden.bs.modal', function() {
+            document.body.removeChild(modal);
+        });
+    }
+    
+    function confirmClearActivities() {
+        if (confirm('Are you sure you want to delete ALL activity records? This action cannot be undone!')) {
+            fetch('{{ url_for("clear_activities") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification(data.message || 'Error clearing activities', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error clearing activities', 'error');
+            });
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}

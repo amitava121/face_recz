@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Dashboard CSS -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v=1.1">
+
+<div class="dashboard-page" id="dashboardPage">
+<div class="dashboard-container">
+
+    <!-- ── Hero Page Header System ───────────────────────────── -->
+    <div class="page-header" data-aos="fade-down">
+        <a href="#" class="page-back-button" onclick="window.history.back(); return false;" title="Go Back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="page-title-wrap d-flex justify-content-between align-items-center w-100 flex-wrap gap-3">
+            <div>
+                <h1 class="page-title">SmartCam+ Dashboard</h1>
+                <p class="page-description">
+                    AI-Powered SmartCam+ System
+                    <span class="badge rounded-pill ms-2" style="font-size: 0.75rem; font-weight: 600; background: var(--color-success-light); color: var(--color-success) !important; padding: 0.25rem 0.75rem; border: 1px solid rgba(16,185,129,0.2); vertical-align: middle;"><i class="fas fa-circle-notch fa-spin me-1"></i> System Online</span>
+                </p>
+            </div>
+            <div class="dash-hero-right">
+                <span class="dash-date-display" id="liveDateDisplay" style="font-weight: 600; color: var(--color-text-secondary); font-size: 0.9rem;"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Stats Cards ────────────────────────────────────── -->
+    <div class="stats-grid">
+        <div class="stat-card rose" data-aos="fade-up" data-aos-delay="80">
+            <div class="stat-icon rose"><i class="fas fa-users"></i></div>
+            <div class="stat-label">Total Students</div>
+            <div class="stat-value"><span class="counter-animate" data-target="{{ total_students }}">{{ total_students }}</span></div>
+            <span class="stat-trend neutral"><i class="fas fa-database" style="font-size:0.6rem"></i> Registered</span>
+        </div>
+
+        <div class="stat-card green" data-aos="fade-up" data-aos-delay="160">
+            <div class="stat-icon green"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-label">Today's Attendance</div>
+            <div class="stat-value"><span class="counter-animate" data-target="{{ today_attendance }}">{{ today_attendance }}</span></div>
+            <span class="stat-trend up"><i class="fas fa-clock" style="font-size:0.6rem"></i> Today</span>
+        </div>
+
+        <div class="stat-card purple" data-aos="fade-up" data-aos-delay="240">
+            <div class="stat-icon purple"><i class="fas fa-bullseye"></i></div>
+            <div class="stat-label">Recognition Accuracy</div>
+            <div class="stat-value"><span class="counter-animate" data-target="99.8">99.8</span><span style="font-size:1rem;font-weight:600">%</span></div>
+            <span class="stat-trend up"><i class="fas fa-check-circle" style="font-size:0.6rem"></i> Verified</span>
+        </div>
+
+        <div class="stat-card amber" data-aos="fade-up" data-aos-delay="320">
+            <div class="stat-icon amber"><i class="fas fa-chart-pie"></i></div>
+            <div class="stat-label">Attendance Rate</div>
+            <div class="stat-value"><span class="counter-animate" data-target="{{ attendance_rate }}">{{ attendance_rate }}</span><span style="font-size:1rem;font-weight:600">%</span></div>
+            <span class="stat-trend {% if attendance_rate|float > 50 %}up{% else %}neutral{% endif %}">
+                <i class="fas fa-arrow-{% if attendance_rate|float > 50 %}up{% else %}right{% endif %}" style="font-size:0.6rem"></i>
+                {% if attendance_rate|float > 80 %}Great{% elif attendance_rate|float > 50 %}Good{% else %}Low{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- ── Quick Actions — 2 Premium Centered Cards ──────── -->
+    <div class="actions-section">
+        <div class="actions-grid">
+            <a href="{{ url_for('register') }}" class="action-card register" data-aos="fade-up" data-aos-delay="100">
+                <div class="action-icon brand"><i class="fas fa-user-plus"></i></div>
+                <div class="action-title">Register Student</div>
+                <p class="action-desc">Enroll new students with facial recognition data capture</p>
+                <span class="action-cta brand-cta">Get Started <i class="fas fa-arrow-right"></i></span>
+            </a>
+
+            <a href="{{ url_for('attendance') }}" class="action-card attendance" data-aos="fade-up" data-aos-delay="200">
+                <div class="action-icon green-grad"><i class="fas fa-camera"></i></div>
+                <div class="action-title">Take Attendance</div>
+                <p class="action-desc">Mark attendance using AI-powered real-time face recognition</p>
+                <span class="action-cta green-cta">Start Attendance <i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ── Charts ─────────────────────────────────────────── -->
+    <div class="charts-grid">
+        <div class="chart-card" data-aos="fade-up" data-aos-delay="100">
+            <div class="chart-header">
+                <h3 class="chart-title"><i class="fas fa-chart-line me-2" style="color:var(--color-indigo)"></i>Attendance Trend</h3>
+                <span class="chart-badge">Last 7 Days</span>
+            </div>
+            <div class="chart-canvas-wrap"><canvas id="trendChart" height="220"></canvas></div>
+        </div>
+
+        <div class="chart-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="chart-header">
+                <h3 class="chart-title"><i class="fas fa-th-large me-2" style="color:var(--color-purple)"></i>Department Statistics</h3>
+                <span class="chart-badge">Distribution</span>
+            </div>
+            <div class="chart-canvas-wrap" style="display:flex; align-items:center; justify-content:center; gap: 2rem; flex-wrap: wrap; padding: 1rem 0; min-height: 220px;">
+                <div style="position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <canvas id="deptChart" style="width: 140px; height: 140px;"></canvas>
+                    <div style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-align: center;">
+                        <span id="deptChartTotal" style="font-size: 1.5rem; font-weight: 700; color: var(--color-text); line-height: 1.1;">{{ total_students }}</span>
+                        <span style="font-size: 0.65rem; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Students</span>
+                    </div>
+                </div>
+                <div id="deptChartLegend" style="flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 0.5rem; justify-content: center;">
+                    <!-- Dynamically populated legend via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Activity Feed ──────────────────────────────────── -->
+    <div class="activity-section" data-aos="fade-up">
+        <div class="activity-card">
+            <div class="activity-header">
+                <h3 class="activity-title">
+                    <i class="fas fa-stream" style="color:var(--color-indigo)"></i>
+                    Recent Attendance Logs
+                    <span class="activity-count" id="activityCount">{{ recent_records|length }}</span>
+                </h3>
+                <span class="dash-date-display" id="activityUpdated">Just now</span>
+            </div>
+
+            {% if recent_records %}
+            <ul class="activity-list" id="activityList">
+                {% for record in recent_records %}
+                <li class="activity-item">
+                    {% set colors = ['rose','indigo','green','purple','blue','amber'] %}
+                    <div class="activity-avatar {{ colors[loop.index0 % 6] }}">
+                        {{ record.student_name[:2] if record.student_name else '??' }}
+                    </div>
+                    <div class="activity-info">
+                        <p class="activity-name">{{ record.student_name or 'Unknown Student' }}</p>
+                        <p class="activity-dept">{{ record.student_department or 'N/A' }} · {{ record.student_code or 'N/A' }}</p>
+                    </div>
+                    <span class="activity-time">{{ record.time }}</span>
+                    <div class="activity-status success" title="Verified"></div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox d-block"></i>
+                <p>No attendance records for today yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Bottom Analytics ───────────────────────────────── -->
+    <div class="analytics-grid">
+        <div class="analytics-card" data-aos="fade-up" data-aos-delay="100">
+            <div class="analytics-icon" style="background:var(--color-green-light);color:var(--color-green);"><i class="fas fa-trophy"></i></div>
+            <div class="analytics-card-title">Most Active Department</div>
+            <div class="analytics-card-value">{{ top_department or 'N/A' }}</div>
+            <div class="analytics-card-sub">Highest attendance today</div>
+        </div>
+
+        <div class="analytics-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="analytics-icon" style="background:var(--color-rose-light);color:var(--color-rose);"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="analytics-card-title">Attendance Alert</div>
+            <div class="analytics-card-value">{% if total_students > 0 and attendance_rate|float < 50 %}Low Turnout{% else %}All Good{% endif %}</div>
+            <div class="analytics-card-sub">{% if attendance_rate|float < 50 %}Below 50% threshold{% else %}Above target threshold{% endif %}</div>
+        </div>
+
+        <div class="analytics-card" data-aos="fade-up" data-aos-delay="300">
+            <div class="analytics-icon" style="background:var(--color-indigo-light);color:var(--color-indigo);"><i class="fas fa-eye"></i></div>
+            <div class="analytics-card-title">Recognition Events</div>
+            <div class="analytics-card-value">{{ today_attendance }}</div>
+            <div class="analytics-card-sub">Face recognitions today</div>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── Add dashboard-page class to body for navbar override ──
+    document.body.classList.add('dashboard-page');
+
+    // ── Navbar brand upgrade — inject gradient icon + text ─────
+    (function upgradeBrand() {
+        var brand = document.querySelector('.navbar-brand');
+        if (!brand) return;
+        var iconEl = brand.querySelector('i');
+        if (iconEl) iconEl.remove();
+        var spanEl = brand.querySelector('span');
+        var text = spanEl ? spanEl.textContent : brand.textContent.trim();
+        brand.innerHTML = '<span class="brand-icon-wrap"><i class="fas fa-camera-retro"></i></span><span class="brand-text">' + text + '</span>';
+    })();
+
+    // ── Live date/time ────────────────────────────────────────
+    function updateDateTime() {
+        var now = new Date();
+        var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        var time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        var el = document.getElementById('liveDateDisplay');
+        if (el) el.textContent = now.toLocaleDateString('en-US', opts) + ' · ' + time;
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 30000);
+
+    // ── Dark mode (synced globally) ───────────────────────────
+    // Handled by the global navbar theme switch
+
+    // ── Animated counters ─────────────────────────────────────
+    function animateCounters() {
+        document.querySelectorAll('.counter-animate').forEach(function(el) {
+            var target = parseFloat(el.getAttribute('data-target')) || 0;
+            var isDecimal = String(target).includes('.');
+            var dur = 1200, start = null;
+            function step(ts) {
+                if (!start) start = ts;
+                var p = Math.min((ts - start) / dur, 1);
+                var e = 1 - Math.pow(1 - p, 3);
+                var v = e * target;
+                el.textContent = isDecimal ? v.toFixed(1) : Math.floor(v).toLocaleString();
+                if (p < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        });
+    }
+    var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) { if (e.isIntersecting) { animateCounters(); obs.disconnect(); } });
+    }, { threshold: 0.2 });
+    var sg = document.querySelector('.stats-grid');
+    if (sg) obs.observe(sg);
+
+    // ── Chart.js — Trend ──────────────────────────────────────
+    var tc = document.getElementById('trendChart');
+    if (tc && typeof Chart !== 'undefined') {
+        try {
+            var tl = {{ weekly_labels | tojson }};
+            var td = {{ weekly_data | tojson }};
+            if (!tl || !tl.length) { tl = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; td = [0,0,0,0,0,0,0]; }
+            var g = tc.getContext('2d').createLinearGradient(0, 0, 0, 220);
+            g.addColorStop(0, 'rgba(99,102,241,0.2)');
+            g.addColorStop(1, 'rgba(99,102,241,0.01)');
+            new Chart(tc, {
+                type: 'line',
+                data: { labels: tl, datasets: [{ label: 'Attendance', data: td, fill: true, backgroundColor: g, borderColor: '#6366F1', borderWidth: 2.5, pointBackgroundColor: '#6366F1', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6, tension: 0.4 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#cbd5e1', padding: 10, cornerRadius: 10, displayColors: false, callbacks: { label: function(i) { return i.parsed.y + ' students'; } } } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11, weight: 500 } } },
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { color: '#94a3b8', font: { size: 11, weight: 500 }, stepSize: Math.max(1, Math.ceil(Math.max.apply(null, td) / 5)) } }
+                    }
+                }
+            });
+        } catch(e) { console.warn('Trend chart error:', e); }
+    }
+
+    // ── Chart.js — Department Doughnut ─────────────────────────
+    var dc = document.getElementById('deptChart');
+    if (dc && typeof Chart !== 'undefined') {
+        try {
+            var dl = {{ dept_labels | tojson }};
+            var dd = {{ dept_data | tojson }};
+            if (!dl || !dl.length) { dl = ['No Data']; dd = [0]; }
+            
+            // Calculate total students for percentage calculation
+            var totalStudents = dd.reduce((a, b) => a + b, 0);
+            
+            // Set chart total center label
+            var totalEl = document.getElementById('deptChartTotal');
+            if (totalEl) {
+                totalEl.textContent = totalStudents.toLocaleString();
+            }
+
+            var colors = ['#FF4D6D','#D946EF','#8B5CF6','#3B82F6','#10B981','#F59E0B','#06b6d4','#ec4899'];
+            
+            // Populate premium custom legend
+            var legendContainer = document.getElementById('deptChartLegend');
+            if (legendContainer) {
+                legendContainer.innerHTML = '';
+                dl.forEach(function(label, index) {
+                    var val = dd[index];
+                    var pct = totalStudents > 0 ? ((val / totalStudents) * 100).toFixed(0) : 0;
+                    var itemColor = colors[index % colors.length];
+                    
+                    var legendItem = document.createElement('div');
+                    legendItem.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; padding: 0.35rem 0; border-bottom: 1px solid var(--color-border-light); transition: background-color var(--duration) var(--ease);';
+                    
+                    var leftWrap = document.createElement('div');
+                    leftWrap.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; overflow: hidden;';
+                    
+                    var dot = document.createElement('span');
+                    dot.style.cssText = 'width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; background-color: ' + itemColor + '; box-shadow: 0 0 6px ' + itemColor + '66;';
+                    
+                    var labelSpan = document.createElement('span');
+                    labelSpan.style.cssText = 'font-weight: 500; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+                    labelSpan.textContent = label;
+                    
+                    leftWrap.appendChild(dot);
+                    leftWrap.appendChild(labelSpan);
+                    
+                    var rightWrap = document.createElement('div');
+                    rightWrap.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;';
+                    
+                    var valSpan = document.createElement('span');
+                    valSpan.style.cssText = 'font-weight: 600; color: var(--color-text-secondary);';
+                    valSpan.textContent = val.toLocaleString();
+                    
+                    var pctSpan = document.createElement('span');
+                    pctSpan.style.cssText = 'font-size: 0.75rem; color: var(--color-text-tertiary); width: 32px; text-align: right; font-weight: 600;';
+                    pctSpan.textContent = pct + '%';
+                    
+                    rightWrap.appendChild(valSpan);
+                    rightWrap.appendChild(pctSpan);
+                    
+                    legendItem.appendChild(leftWrap);
+                    legendItem.appendChild(rightWrap);
+                    
+                    legendContainer.appendChild(legendItem);
+                });
+            }
+
+            new Chart(dc, {
+                type: 'doughnut',
+                data: { 
+                    labels: dl, 
+                    datasets: [{ 
+                        data: dd, 
+                        backgroundColor: colors.slice(0, dl.length), 
+                        borderWidth: 0, 
+                        hoverOffset: 6 
+                    }] 
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '82%',
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+                            titleColor: '#ffffff', 
+                            bodyColor: '#cbd5e1', 
+                            padding: 10, 
+                            cornerRadius: 8, 
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            borderWidth: 1,
+                            callbacks: { 
+                                label: function(i) { return ' ' + i.label + ': ' + i.parsed + ' students'; } 
+                            } 
+                        } 
+                    }
+                }
+            });
+        } catch(e) { console.warn('Dept chart error:', e); }
+    }
+
+    // ── Auto-refresh (60s) ────────────────────────────────────
+    setInterval(function() {
+        fetch('/api/dashboard_stats').then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+            if (!d) return;
+            var c = document.querySelectorAll('.counter-animate');
+            [d.total_students, d.today_attendance, 99.8, d.attendance_rate].forEach(function(v, i) {
+                if (c[i] && v !== undefined) { c[i].setAttribute('data-target', v); c[i].textContent = String(v).includes('.') ? parseFloat(v).toFixed(1) : parseInt(v).toLocaleString(); }
+            });
+            var u = document.getElementById('activityUpdated');
+            if (u) u.textContent = 'Updated just now';
+        }).catch(function() {});
+    }, 60000);
+
+    // ── Cleanup on page leave ─────────────────────────────────
+    window.addEventListener('beforeunload', function() {
+        document.body.classList.remove('dashboard-page');
+    });
+})();
+</script>
+{% endblock %}

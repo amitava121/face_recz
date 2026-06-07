@@ -25,7 +25,7 @@ def build_app_command(port):
 
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        return sock.connect_ex(("localhost", port)) == 0
+        return sock.connect_ex(("127.0.0.1", port)) == 0
 
 
 def kill_process_on_port(port):
@@ -85,7 +85,7 @@ def preload_models():
 def start_servers():
     project_dir = os.path.dirname(os.path.abspath(__file__))
     print("\n" + "=" * 80)
-    print_colored("Face Recognition Attendance System", "blue")
+    print_colored("SmartCam+ System", "blue")
     print("=" * 80 + "\n")
 
     if is_apple_silicon():
@@ -96,10 +96,10 @@ def start_servers():
     if not preload_models():
         print_colored("Warning: model preloading failed, continuing with startup.", "yellow")
 
-    kill_process_on_port(5001)
+    kill_process_on_port(5000)
     time.sleep(1)
     process = subprocess.Popen(
-        build_app_command(5001),
+        build_app_command(5000),
         cwd=project_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -108,8 +108,8 @@ def start_servers():
     )
 
     print_colored("🎉 FASTAPI SERVICE IS STARTING", "green")
-    print_colored("🌐 Web Interface: http://localhost:5001", "cyan")
-    print_colored("🎥 WebRTC endpoints: http://localhost:5001/webrtc/offer", "cyan")
+    print_colored("🌐 Web Interface: http://127.0.0.1:5000", "cyan")
+    print_colored("🎥 WebRTC endpoints: http://127.0.0.1:5000/webrtc/offer", "cyan")
     print_colored("🛑 Press Ctrl+C to stop the server", "yellow")
 
     try:

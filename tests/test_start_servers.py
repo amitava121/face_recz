@@ -29,9 +29,9 @@ def test_build_app_command_uses_selected_runtime(monkeypatch):
 
     import start_servers
 
-    command = start_servers.build_app_command(5001)
+    command = start_servers.build_app_command(5000)
 
-    assert command == [start_servers.PYTHON_BIN, "main.py", "--mode", "fastapi", "--port", "5001"]
+    assert command == [start_servers.PYTHON_BIN, "main.py", "--mode", "fastapi", "--port", "5000"]
 
 
 def test_find_missing_modules_reports_missing_package(monkeypatch):
@@ -71,9 +71,9 @@ def test_select_python_bin_prefers_candidate_with_dependencies(monkeypatch, tmp_
 def test_build_browser_url_points_to_localhost_root():
     import start_servers
 
-    assert start_servers.build_browser_url(5001) == "http://localhost:5001/"
-    assert start_servers.build_browser_url(5001, "/attendance") == "http://localhost:5001/attendance"
-    assert start_servers.build_browser_url(5001, "/") == "http://localhost:5001/"
+    assert start_servers.build_browser_url(5000) == "http://127.0.0.1:5000/"
+    assert start_servers.build_browser_url(5000, "/attendance") == "http://127.0.0.1:5000/attendance"
+    assert start_servers.build_browser_url(5000, "/") == "http://127.0.0.1:5000/"
 
 
 def test_preload_models_uses_selected_python(monkeypatch):
@@ -81,7 +81,7 @@ def test_preload_models_uses_selected_python(monkeypatch):
 
     captured = {}
 
-    def fake_run(cmd, cwd, text, capture_output):
+    def fake_run(cmd, cwd, text, capture_output, **kwargs):
         captured["cmd"] = cmd
         captured["cwd"] = cwd
         return subprocess.CompletedProcess(cmd, 0, stdout="ok\n", stderr="")

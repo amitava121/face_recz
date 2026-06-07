@@ -448,10 +448,12 @@ async function refreshDashboardData() {
     }
 
     const params = new URLSearchParams(window.location.search);
+    params.set('_ts', String(Date.now()));
     dashboardRefreshInFlight = true;
 
     try {
         const response = await fetch(`/dashboard/data?${params.toString()}`, {
+            cache: 'no-store',
             headers: {
                 'X-Requested-With': 'fetch'
             }
@@ -506,6 +508,12 @@ function scheduleDashboardRefresh() {
 }
 
 document.addEventListener('visibilitychange', scheduleDashboardRefresh);
+window.addEventListener('focus', function() {
+    refreshDashboardData().finally(scheduleDashboardRefresh);
+});
+window.addEventListener('pageshow', function() {
+    refreshDashboardData().finally(scheduleDashboardRefresh);
+});
 window.addEventListener('storage', function(event) {
     if (event.key !== ATTENDANCE_DASHBOARD_EVENT_KEY || !event.newValue) {
         return;
@@ -523,5 +531,4 @@ if ('BroadcastChannel' in window) {
 bindAttendanceTableForm();
 scheduleDashboardRefresh();
 </script>
-<script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
 {% endblock %}

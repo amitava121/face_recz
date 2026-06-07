@@ -3,6 +3,11 @@
  * This script handles the automatic sleep mode functionality
  */
 
+if (window.__sleepTimerScriptLoaded) {
+    console.warn('sleep-timer.js already loaded, skipping duplicate initialization');
+} else {
+window.__sleepTimerScriptLoaded = true;
+
 // Global variables
 let sleepTimerSeconds = 0;
 let sleepTimerInterval = null;
@@ -216,3 +221,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+}

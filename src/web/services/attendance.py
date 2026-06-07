@@ -11,6 +11,7 @@ from sqlalchemy import func
 from src.models.db import Attendance, FaceImage, Student, db
 from src.services.face_utils import ensure_insightface_initialized, preprocess_image
 from src.services.inference_service import get_inference_service
+from src.web.timezone_utils import local_day_bounds, today_local
 
 
 CHALLENGE_EXPIRY_SECONDS = 15
@@ -276,7 +277,8 @@ def process_attendance_image(img, attendance_running: bool, active_challenges: d
         if face.get("student_id") and face.get("challenge_required"):
             _issue_or_update_challenge(face, active_challenges)
 
-    today = datetime.now(timezone.utc).date()
+    today = today_local()
+    day_start_utc, day_end_utc = local_day_bounds(today)
     for face in envelope["faces"]:
         if not face.get("student_id") or face.get("challenge_required"):
             continue
@@ -284,7 +286,8 @@ def process_attendance_image(img, attendance_running: bool, active_challenges: d
             continue
         existing_attendance = Attendance.query.filter(
             Attendance.student_id == face["student_id"],
-            func.date(Attendance.timestamp) == today,
+            Attendance.timestamp >= day_start_utc,
+            Attendance.timestamp <= day_end_utc,
         ).first()
         if existing_attendance:
             face["label"] = "Already Marked Today"

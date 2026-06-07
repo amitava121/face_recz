@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import text
 
 from src.models.db import Attendance, Student, SystemSettings, db
+from src.web.timezone_utils import local_day_bounds, today_local
 
 
 def check_database_status() -> bool:
@@ -249,8 +250,12 @@ def build_system_metrics():
 
 def build_reports_data(start_date: str, end_date: str):
     total_students = Student.query.count()
-    today = datetime.now().date()
-    today_present = Attendance.query.filter(db.func.date(Attendance.timestamp) == today).count()
+    today = today_local()
+    day_start_utc, day_end_utc = local_day_bounds(today)
+    today_present = Attendance.query.filter(
+        Attendance.timestamp >= day_start_utc,
+        Attendance.timestamp <= day_end_utc,
+    ).count()
     today_absent = max(0, total_students - today_present)
 
     total_days = (datetime.strptime(end_date, "%Y-%m-%d").date() - datetime.strptime(start_date, "%Y-%m-%d").date()).days + 1

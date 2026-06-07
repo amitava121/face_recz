@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 from src.models.db import Student, Attendance
 from src.models.db import build_database_uri
+from src.web.timezone_utils import local_day_bounds, today_local
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
@@ -95,13 +96,14 @@ def mark_attendance(session, student_id, recognized_students, app=None, socketio
             student_name = student.name
 
         # Check if student was already marked present today
-        today = datetime.now().date()
+        today = today_local()
+        day_start_utc, day_end_utc = local_day_bounds(today)
         existing_attendance = (
             session.query(Attendance)
             .filter(
                 Attendance.student_id == student_id,
-                Attendance.timestamp >= datetime.combine(today, datetime.min.time()),
-                Attendance.timestamp <= datetime.combine(today, datetime.max.time())
+                Attendance.timestamp >= day_start_utc,
+                Attendance.timestamp <= day_end_utc
             )
             .first()
         )

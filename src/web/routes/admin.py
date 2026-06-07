@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, timedelta
 from io import BytesIO
 
 import pandas as pd
@@ -23,6 +23,7 @@ from src.web.services.system import (
 )
 from src.web.session import flash
 from src.web.templates import render_template
+from src.web.timezone_utils import local_day_bounds_from_string, now_local
 
 
 router = APIRouter()
@@ -45,20 +46,11 @@ def _excel_response(df: pd.DataFrame, filename: str, sheet_name: str = "Data") -
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
-
-def _local_day_bounds(date_str: str) -> tuple[datetime, datetime]:
-    local_tz = datetime.now().astimezone().tzinfo or timezone.utc
-    local_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    start_local = datetime.combine(local_date, time.min, tzinfo=local_tz)
-    end_local = datetime.combine(local_date, time.max, tzinfo=local_tz)
-    return start_local.astimezone(timezone.utc), end_local.astimezone(timezone.utc)
-
-
 def _load_dashboard_records(date: str, department: str, search: str):
     departments = [d[0] for d in db.session.query(db.func.distinct(Student.department)).filter(Student.department.isnot(None)).limit(50).all() if d[0]]
     query = Attendance.query.outerjoin(Student, Attendance.student_id == Student.id)
     if date:
-        start_utc, end_utc = _local_day_bounds(date)
+        start_utc, end_utc = local_day_bounds_from_string(date)
         query = query.filter(
             Attendance.timestamp >= start_utc,
             Attendance.timestamp <= end_utc,
@@ -90,7 +82,7 @@ def _serialize_dashboard_record(record: Attendance) -> dict:
 async def dashboard(
     request: Request,
     department: str = Query(default=""),
-    date: str = Query(default_factory=lambda: datetime.now().date().isoformat()),
+    date: str = Query(default_factory=lambda: now_local().date().isoformat()),
     search: str = Query(default=""),
 ):
     guard = _admin_only(request)
@@ -108,7 +100,7 @@ async def dashboard(
             "departments": departments,
             "selected_dept": department,
             "selected_date": date,
-            "dashboard_last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "dashboard_last_updated": now_local().strftime("%Y-%m-%d %H:%M:%S"),
         },
     )
 
@@ -117,7 +109,7 @@ async def dashboard(
 async def dashboard_data(
     request: Request,
     department: str = Query(default=""),
-    date: str = Query(default_factory=lambda: datetime.now().date().isoformat()),
+    date: str = Query(default_factory=lambda: now_local().date().isoformat()),
     search: str = Query(default=""),
 ):
     guard = _admin_only(request)
@@ -128,8 +120,13 @@ async def dashboard_data(
     return JSONResponse(
         {
             "records": [_serialize_dashboard_record(record) for record in attendance_records],
-            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
+            "last_updated": now_local().strftime("%Y-%m-%d %H:%M:%S"),
+        },
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
     )
 
 

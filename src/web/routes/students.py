@@ -14,6 +14,14 @@ from src.web.templates import render_template
 router = APIRouter()
 
 
+def _admin_only(request: Request):
+    if not request.session.get("admin_logged_in"):
+        if request.session.get("viewer_logged_in"):
+            return RedirectResponse(url="/viewer_dashboard", status_code=302)
+        return RedirectResponse(url="/login", status_code=302)
+    return None
+
+
 def _register_student(student_id: str, name: str, department: str, phone_number: str, password: str) -> int:
     student = Student(
         student_code=student_id.strip(),
@@ -41,6 +49,8 @@ def _register_student(student_id: str, name: str, department: str, phone_number:
 
 @router.get("/register", name="register")
 async def register_page(request: Request, success: str | None = Query(default=None)):
+    if request.session.get("viewer_logged_in"):
+        return RedirectResponse(url="/viewer_dashboard", status_code=302)
     if success == "true":
         flash(request, "Student registered successfully!", "success")
     templates = request.app.state.templates
@@ -57,6 +67,8 @@ async def register_submit(
     password: str = Form(default=""),
     confirm_password: str = Form(default=""),
 ):
+    if request.session.get("viewer_logged_in"):
+        return RedirectResponse(url="/viewer_dashboard", status_code=302)
     phone_number = phone_number.strip()
     password = password.strip()
     confirm_password = confirm_password.strip()
@@ -98,6 +110,8 @@ async def register_submit(
 
 @router.get("/capture_face", name="capture_face")
 async def capture_face(request: Request):
+    if request.session.get("viewer_logged_in"):
+        return RedirectResponse(url="/viewer_dashboard", status_code=302)
     student_id = request.session.get("registering_student_id")
     if not student_id:
         flash(request, "Please register student details first.", "error")
@@ -114,6 +128,9 @@ async def list_students(
     search: str = Query(default=""),
     page: int = Query(default=1),
 ):
+    guard = _admin_only(request)
+    if guard:
+        return guard
     search = search.strip()
     per_page = 50
 
@@ -170,6 +187,9 @@ async def edit_student(
     department: str = Form(...),
     phone_number: str = Form(default=""),
 ):
+    guard = _admin_only(request)
+    if guard:
+        return guard
     def _do_edit():
         student = Student.query.get(student_id)
         if not student:
@@ -256,6 +276,9 @@ def _delete_students_and_attendance(student_ids: list[int]) -> tuple[int, list[s
 
 @router.post("/delete_selected_student_details", name="delete_selected_student_details")
 async def delete_selected_student_details(request: Request):
+    guard = _admin_only(request)
+    if guard:
+        return guard
     form = await request.form()
     student_ids = [int(sid) for sid in form.getlist("student_ids")]
 
@@ -277,6 +300,9 @@ async def delete_selected_student_details(request: Request):
 
 @router.post("/delete_selected_students_and_attendance", name="delete_selected_students_and_attendance")
 async def delete_selected_students_and_attendance(request: Request):
+    guard = _admin_only(request)
+    if guard:
+        return guard
     form = await request.form()
     student_ids = [int(sid) for sid in form.getlist("student_ids")]
 
@@ -298,6 +324,9 @@ async def delete_selected_students_and_attendance(request: Request):
 
 @router.get("/export_students", name="export_students")
 async def export_students(request: Request):
+    guard = _admin_only(request)
+    if guard:
+        return guard
     import pandas as pd
     from io import BytesIO
     from fastapi.responses import StreamingResponse

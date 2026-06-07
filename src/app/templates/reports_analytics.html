@@ -139,19 +139,14 @@
         </table>
     </div>
 
-    <!-- Export Actions & Navigation -->
-    <div class="p-4 glass-card d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <!-- Export Actions -->
+    <div class="p-4 glass-card d-flex justify-content-end align-items-center flex-wrap gap-3">
         <div class="d-flex gap-2 flex-wrap">
             <a href="{{ url_for('export_detailed_report') }}?start_date={{ start_date }}&end_date={{ end_date }}&department={{ selected_dept }}" class="glass-button">
                 <i class="fas fa-file-excel me-2 text-success" style="color: #10B981 !important;"></i> Export Detailed Excel
             </a>
             <a href="{{ url_for('export_summary_report') }}?start_date={{ start_date }}&end_date={{ end_date }}&department={{ selected_dept }}" class="glass-button">
                 <i class="fas fa-file-pdf me-2 text-danger" style="color: #EF4444 !important;"></i> Export Summary PDF
-            </a>
-        </div>
-        <div>
-            <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i> Back to Admin Panel
             </a>
         </div>
     </div>

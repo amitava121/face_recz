@@ -124,12 +124,18 @@ a:hover {
     border-radius: var(--radius-card);
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-md);
-    transition: transform var(--duration) var(--ease), box-shadow var(--duration) var(--ease), border-color var(--duration) var(--ease), background-color var(--duration) var(--ease);
+    transition:
+        transform var(--duration) var(--ease),
+        box-shadow var(--duration) var(--ease),
+        border-color var(--duration) var(--ease);
     overflow: hidden;
+    /* Targeted GPU promotion for hover animation */
+    will-change: transform;
+    transform: translateZ(0);
 }
 
 .glass-card:hover {
-    transform: translateY(-4px) scale(1.01);
+    transform: translateY(-3px) translateZ(0);
     box-shadow: var(--shadow-lg);
 }
 
@@ -170,31 +176,56 @@ a:hover {
 .premium-select,
 .form-control {
     width: 100%;
-    padding: 0.75rem 1.125rem;
-    font-size: 0.95rem;
+    height: 46px;
+    padding: 0 1.125rem;
+    font-size: 0.9rem;
     font-weight: 500;
     color: var(--color-text) !important;
     background: var(--color-surface) !important;
-    border: 1.5px solid var(--color-border) !important;
+    border: 1.5px solid rgba(0,0,0,0.1) !important;
     border-radius: var(--radius-input) !important;
-    transition: all var(--duration) var(--ease) !important;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease !important;
     outline: none !important;
-    box-shadow: var(--shadow-xs) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), inset 0 1px 2px rgba(0,0,0,0.02) !important;
+    line-height: 1;
+}
+
+textarea.premium-input,
+textarea.form-control {
+    height: auto;
+    padding: 0.75rem 1.125rem;
+    line-height: 1.5;
+    resize: vertical;
 }
 
 [data-theme="dark"] .premium-input,
 [data-theme="dark"] .premium-select,
 [data-theme="dark"] .form-control {
-    background: rgba(17,24,39,0.7) !important;
-    border-color: rgba(255,255,255,0.08) !important;
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    box-shadow: none !important;
 }
 
 .premium-input:focus,
 .premium-select:focus,
 .form-control:focus {
     border-color: #8B5CF6 !important;
-    box-shadow: 0 0 0 4px rgba(139,92,246,0.15) !important;
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.18), 0 1px 3px rgba(0,0,0,0.04) !important;
+    transform: none;
+}
+
+.premium-input.is-invalid,
+.form-control.is-invalid {
+    border-color: var(--color-danger) !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.15) !important;
+}
+
+.premium-input.is-valid,
+.form-control.is-valid {
+    border-color: var(--color-success) !important;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.15) !important;
 }
 
 .form-label {
@@ -227,30 +258,33 @@ a:hover {
 }
 
 .glass-table th {
-    background: rgba(0,0,0,0.02);
+    background: rgba(0,0,0,0.025);
     color: var(--color-text-secondary);
     font-weight: 700;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 1.125rem 1.5rem;
+    letter-spacing: 0.09em;
+    padding: 0.875rem 1.25rem;
     border-bottom: 1px solid var(--color-border);
     position: sticky;
     top: 0;
     z-index: 10;
+    white-space: nowrap;
+    user-select: none;
 }
 
 [data-theme="dark"] .glass-table th {
-    background: rgba(255,255,255,0.01);
+    background: rgba(255,255,255,0.03);
 }
 
 .glass-table td {
-    padding: 1.125rem 1.5rem;
+    padding: 0.875rem 1.25rem;
     border-bottom: 1px solid var(--color-border-light);
     color: var(--color-text);
     font-size: 0.875rem;
     font-weight: 500;
-    transition: background-color 0.2s var(--ease);
+    transition: background-color 120ms ease;
+    vertical-align: middle;
 }
 
 .glass-table tr:last-child td {
@@ -258,7 +292,17 @@ a:hover {
 }
 
 .glass-table tr:hover td {
-    background: var(--color-surface-hover);
+    background-color: rgba(99,102,241,0.035);
+}
+
+/* Selected row state */
+.glass-table tr.selected td {
+    background-color: rgba(139,92,246,0.07) !important;
+    border-bottom-color: rgba(139,92,246,0.12);
+}
+
+[data-theme="dark"] .glass-table tr:hover td {
+    background-color: rgba(99,102,241,0.06);
 }
 
 /* 5. Buttons */
@@ -319,13 +363,35 @@ a:hover {
 }
 
 .btn-danger {
-    background: linear-gradient(135deg, #EF4444, #B91C1C) !important;
+    background: linear-gradient(135deg, #EF4444, #DC2626) !important;
     color: white !important;
     border: none !important;
+    box-shadow: 0 2px 8px rgba(239,68,68,0.2) !important;
 }
 
 .btn-danger:hover {
-    box-shadow: 0 4px 12px rgba(239,68,68,0.3) !important;
+    box-shadow: 0 4px 16px rgba(239,68,68,0.35) !important;
+    transform: translateY(-1px) translateZ(0) !important;
+}
+
+.btn-danger:active {
+    transform: scale(0.97) translateZ(0) !important;
+}
+
+.btn-warning,
+.btn-outline-warning {
+    border-color: var(--color-warning) !important;
+    color: var(--color-warning) !important;
+}
+
+.btn-outline-primary {
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+    background: transparent !important;
+}
+
+.btn-outline-primary:hover {
+    background: rgba(99,102,241,0.08) !important;
 }
 
 /* 6. Typography Accent */
@@ -345,12 +411,12 @@ a:hover {
     border: 1px solid var(--glass-border) !important;
     box-shadow: var(--shadow-md) !important;
     padding: 0 1.5rem !important;
-    height: 72px;
+    height: 68px;
     display: flex;
     align-items: center;
     position: sticky;
-    top: 12px;
-    margin: 12px 1.5rem !important;
+    top: 8px;
+    margin: 8px 1.25rem !important;
     border-radius: var(--radius-navbar) !important;
     z-index: 100;
     transition: all var(--duration) var(--ease);
@@ -427,10 +493,10 @@ a:hover {
     display: flex;
     align-items: center;
     gap: 1.25rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--color-border);
-    padding-bottom: 1.25rem;
-    animation: fadeInDown var(--duration) var(--ease);
+    padding-bottom: 1rem;
+    animation: fadeInDown 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .page-back-button {
@@ -600,3 +666,330 @@ a:hover {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-tertiary); }
+
+/* ── Global Badge Visibility ─────────────────────────────── */
+.badge {
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+}
+.badge.bg-primary   { background-color: #6366F1 !important; color: white !important; }
+.badge.bg-success   { background-color: #10B981 !important; color: white !important; }
+.badge.bg-danger    { background-color: #EF4444 !important; color: white !important; }
+.badge.bg-warning   { background-color: #F59E0B !important; color: #1e293b !important; }
+.badge.bg-secondary { background-color: #94A3B8 !important; color: white !important; }
+.badge.bg-info      { background-color: #06B6D4 !important; color: white !important; }
+
+/* ── Container top margin when using floating navbar ─────── */
+body:not(.dashboard-page) .container.mt-4 {
+    margin-top: 1.25rem !important;
+}
+
+/* ── Global form control visibility improvements ─────────── */
+select.premium-select,
+select.form-control {
+    appearance: auto;
+    -webkit-appearance: auto;
+    background-image: none !important;
+}
+[data-theme="dark"] select.premium-select,
+[data-theme="dark"] select.form-control {
+    color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   P2 GLOBAL POLISH ADDITIONS
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Dark Mode Global Refinements ───────────────────────── */
+[data-theme="dark"] {
+    /* Increase border visibility in dark mode */
+    --glass-border: rgba(255,255,255,0.085);
+    --color-border-light: rgba(255,255,255,0.04);
+}
+
+[data-theme="dark"] .glass-card {
+    box-shadow:
+        0 1px 3px rgba(0,0,0,0.3),
+        0 4px 16px rgba(0,0,0,0.2),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+[data-theme="dark"] .glass-card:hover {
+    box-shadow:
+        0 2px 8px rgba(0,0,0,0.35),
+        0 8px 32px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Dark mode form labels */
+[data-theme="dark"] .form-label {
+    color: var(--color-text-secondary) !important;
+}
+
+/* Dark mode table header — ensure readable */
+[data-theme="dark"] .glass-table th {
+    background: rgba(255,255,255,0.03) !important;
+    color: rgba(148,163,184,0.9);
+    border-bottom-color: rgba(255,255,255,0.06);
+}
+
+[data-theme="dark"] .glass-table td {
+    border-bottom-color: rgba(255,255,255,0.04);
+}
+
+/* Dark mode badge borders for definition */
+[data-theme="dark"] .badge {
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+/* ── Light Mode Global Refinements ──────────────────────── */
+[data-theme="light"] .glass-card,
+:root:not([data-theme="dark"]) .glass-card {
+    box-shadow:
+        0 1px 3px rgba(0,0,0,0.04),
+        0 4px 16px rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .glass-card:hover,
+:root:not([data-theme="dark"]) .glass-card:hover {
+    box-shadow:
+        0 2px 8px rgba(0,0,0,0.06),
+        0 8px 32px rgba(0,0,0,0.08);
+}
+
+/* Light mode input definition */
+[data-theme="light"] .premium-input,
+[data-theme="light"] .form-control,
+:root:not([data-theme="dark"]) .premium-input,
+:root:not([data-theme="dark"]) .form-control {
+    box-shadow:
+        0 1px 3px rgba(0,0,0,0.04),
+        inset 0 1px 2px rgba(0,0,0,0.02) !important;
+}
+
+/* ── Glass Button Refinement ────────────────────────────── */
+.glass-button {
+    transition:
+        background-color var(--duration) var(--ease),
+        border-color var(--duration) var(--ease),
+        box-shadow var(--duration) var(--ease),
+        transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    will-change: transform, box-shadow;
+}
+
+.glass-button:hover {
+    transform: translateY(-1px) translateZ(0) !important;
+}
+
+.glass-button:active {
+    transform: scale(0.97) translateZ(0) !important;
+    transition-duration: 60ms !important;
+}
+
+/* ── Gradient Button Polish ─────────────────────────────── */
+.gradient-button {
+    position: relative;
+    overflow: hidden;
+    will-change: transform, box-shadow;
+    transition:
+        transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        box-shadow 120ms ease !important;
+}
+
+.gradient-button:hover {
+    transform: translateY(-1px) translateZ(0) !important;
+}
+
+.gradient-button:active {
+    transform: scale(0.97) translateZ(0) !important;
+    transition-duration: 60ms !important;
+}
+
+/* Gradient button ripple effect on click */
+.gradient-button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.12);
+    opacity: 0;
+    border-radius: inherit;
+    transition: opacity 200ms ease;
+    pointer-events: none;
+}
+
+.gradient-button:active::after {
+    opacity: 1;
+    transition-duration: 60ms;
+}
+
+/* ── Modal System Polish ────────────────────────────────── */
+.modal-backdrop {
+    background-color: rgba(0,0,0,0.55) !important;
+    backdrop-filter: blur(4px) !important;
+    -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.modal-content {
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid var(--glass-border) !important;
+    box-shadow:
+        0 24px 48px rgba(0,0,0,0.25),
+        0 8px 16px rgba(0,0,0,0.12) !important;
+    animation: zoomIn 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal-header .btn-close {
+    opacity: 0.5;
+    transition: opacity 150ms ease;
+}
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+/* ── Form Label Consistency ─────────────────────────────── */
+.form-label {
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.45rem;
+    letter-spacing: 0.01em;
+    display: block;
+}
+
+/* ── Flash / Toast Polish ───────────────────────────────── */
+.flash-messages {
+    position: fixed;
+    top: 88px;
+    right: 1.25rem;
+    z-index: 9000;
+    max-width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.flash-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.125rem;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-lg);
+    pointer-events: auto;
+    font-size: 0.875rem;
+    font-weight: 500;
+    animation: slideInRight 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(110%); opacity: 0; }
+    to   { transform: translateX(0);   opacity: 1; }
+}
+
+.flash-message.alert-success {
+    border-left: 3px solid #10B981;
+    background: rgba(16,185,129,0.04);
+}
+.flash-message.alert-danger {
+    border-left: 3px solid #EF4444;
+    background: rgba(239,68,68,0.04);
+}
+.flash-message.alert-warning {
+    border-left: 3px solid #F59E0B;
+    background: rgba(245,158,11,0.04);
+}
+.flash-message.alert-info {
+    border-left: 3px solid #6366F1;
+    background: rgba(99,102,241,0.04);
+}
+
+/* ── Responsive Breakpoints ─────────────────────────────── */
+@media (max-width: 1100px) {
+    /* Tighter page container on mid-size screens */
+    body:not(.dashboard-page) .container {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Compact page header on mobile */
+    .page-header {
+        gap: 0.875rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.875rem;
+    }
+
+    .page-title { font-size: 1.4rem !important; }
+    .page-description { font-size: 0.8rem !important; }
+
+    /* Compact glass-navbar on mobile */
+    .glass-navbar {
+        margin: 6px 0.75rem !important;
+        height: 60px !important;
+        border-radius: 14px !important;
+    }
+
+    /* Stack action buttons on small screens */
+    .d-flex.flex-wrap.gap-3 > a,
+    .d-flex.flex-wrap.gap-3 > button {
+        flex: 0 0 auto;
+    }
+
+    /* Scrollable tables */
+    .glass-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Compact glass-table cells */
+    .glass-table th,
+    .glass-table td {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .glass-navbar {
+        margin: 4px 0.5rem !important;
+        border-radius: 12px !important;
+    }
+
+    .gradient-button,
+    .glass-button {
+        padding: 0.5rem 0.875rem !important;
+        font-size: 0.8rem !important;
+    }
+}
+
+/* ── Focus Visible (Accessibility) ──────────────────────── */
+:focus-visible {
+    outline: 2px solid #8B5CF6 !important;
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+:focus:not(:focus-visible) {
+    outline: none !important;
+}
+
+/* ── Print Overrides ────────────────────────────────────── */
+@media print {
+    .glass-navbar,
+    .flash-messages,
+    .page-back-button,
+    .gradient-button,
+    .glass-button {
+        display: none !important;
+    }
+
+    .glass-card {
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+        background: white !important;
+    }
+}

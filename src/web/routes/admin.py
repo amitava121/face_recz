@@ -31,6 +31,8 @@ router = APIRouter()
 
 def _admin_only(request: Request):
     if not request.session.get("admin_logged_in"):
+        if request.session.get("viewer_logged_in"):
+            return RedirectResponse(url="/viewer_dashboard", status_code=302)
         return RedirectResponse(url="/login", status_code=302)
     return None
 

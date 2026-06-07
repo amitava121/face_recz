@@ -53,10 +53,32 @@
     .activity-icon-circle.delete { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
     .activity-icon-circle.failed { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
 
-    [data-theme="dark"] .modal-content {
+    /* Modal fix: ensure it renders above glass containers and sticky headers */
+    .modal { z-index: 1060 !important; }
+    .modal-backdrop { z-index: 1055 !important; }
+    .modal-content {
         background: var(--color-surface) !important;
         border: 1px solid var(--glass-border) !important;
         color: var(--color-text) !important;
+        border-radius: var(--radius-lg) !important;
+    }
+    .modal-header {
+        border-bottom: 1px solid var(--color-border) !important;
+        background: rgba(0,0,0,0.01);
+    }
+    .modal-footer {
+        border-top: 1px solid var(--color-border) !important;
+    }
+    /* Sticky table header inside max-height container */
+    .glass-table-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--color-surface) !important;
+        box-shadow: 0 1px 0 var(--color-border);
+    }
+    [data-theme="dark"] .glass-table-scroll thead th {
+        background: var(--color-surface) !important;
     }
 </style>
 
@@ -106,7 +128,7 @@
 
     <!-- Users Database Table -->
     <div class="glass-table-container mb-4">
-        <div style="max-height: 400px; overflow-y: auto;">
+        <div class="glass-table-scroll" style="max-height: 400px; overflow-y: auto;">
             <table class="glass-table">
                 <thead>
                     <tr>
@@ -164,7 +186,7 @@
                                 <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this user permanently?')">
                                     <input type="hidden" name="action" value="delete_user">
                                     <input type="hidden" name="user_id" value="{{ user.id }}">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" style="border-radius: var(--radius-sm);">
+                                    <button type="submit" class="btn btn-danger btn-sm" style="border-radius: var(--radius-sm);">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -262,9 +284,6 @@
         <button onclick="sendBulkEmail()" class="glass-button">
             <i class="fas fa-envelope me-2"></i>Send Bulk Notification
         </button>
-        <a href="{{ url_for('admin_panel') }}" class="glass-button text-decoration-none">
-            <i class="fas fa-arrow-left me-2"></i>Back to Admin
-        </a>
     </div>
 </div>
 

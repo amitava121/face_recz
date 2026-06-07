@@ -1,85 +1,72 @@
-/* Ultra-Fast Response Optimizations for Face Recognition System */
+/* ============================================================
+   SmartCam+ — Targeted Performance Layer
+   Replaces old over-aggressive GPU acceleration patterns
+   ============================================================ */
 
-/* Global Performance Optimizations */
-* {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform-style: preserve-3d;
-}
-
-/* Immediate button feedback */
-.btn {
-    transition: all 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-    will-change: transform, opacity, box-shadow;
+/* ── Targeted GPU Promotion ─────────────────────────────── */
+/* Only promote elements that actually animate, not every element */
+.glass-card,
+.stat-card,
+.action-card,
+.analytics-card,
+.chart-card,
+.admin-action-item {
+    will-change: transform;
     transform: translateZ(0);
 }
 
-.btn:hover {
-    transform: translateY(-2px) translateZ(0) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+/* Buttons need fast response but minimal GPU cost */
+.btn,
+.glass-button,
+.gradient-button {
+    will-change: transform, box-shadow;
+    transform: translateZ(0);
+}
+
+/* Navbar promoted for sticky performance */
+.glass-navbar {
+    will-change: auto; /* sticky navbar — don't over-promote */
+    transform: translateZ(0);
+}
+
+/* Modal gets promoted during animation only (Bootstrap handles this) */
+.modal-dialog {
+    will-change: transform;
+}
+
+/* ── Optimized Button Feedback ───────────────────────────── */
+.btn {
+    transition:
+        transform 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        box-shadow 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        opacity 120ms ease;
 }
 
 .btn:active {
     transform: scale(0.97) translateZ(0) !important;
-    opacity: 0.9 !important;
-    transition: all 0.05s ease !important;
+    transition-duration: 60ms !important;
 }
 
-/* Quick spinner for better UX */
-.quick-spinner {
-    display: inline-block;
-    animation: spin 1s linear infinite;
+/* ── Camera / Video: NO animations (Issue #3) ───────────── */
+.video-container,
+.video-container:hover,
+[id*="camera"],
+[id*="video"],
+[id*="canvas"],
+canvas {
+    transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Optimized form elements */
-input, select, textarea {
-    transition: border-color 0.1s ease !important;
-}
-
-/* Fast loading states */
-.loading-fast {
-    opacity: 0.7;
-    pointer-events: none;
-    position: relative;
-}
-
-.loading-fast::after {
-    content: "⏳";
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-/* Optimize table rendering */
-.modern-table {
-    contain: layout style paint;
-    transform: translateZ(0);
-}
-
-.modern-table tbody tr {
-    will-change: background-color;
-}
-
-/* Fast flash messages */
+/* ── Fast Flash Messages ─────────────────────────────────── */
 .flash-message {
-    animation: slideInFast 0.2s ease-out !important;
+    animation: slideInFast 180ms cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
 }
 
 @keyframes slideInFast {
     from {
-        transform: translateX(100%);
+        transform: translateX(110%);
         opacity: 0;
     }
     to {
@@ -88,197 +75,110 @@ input, select, textarea {
     }
 }
 
-/* Optimize card animations */
-.modern-card {
-    animation: fadeInFast 0.3s ease-out !important;
+/* ── Smooth Table Row Hover ──────────────────────────────── */
+.glass-table tbody tr {
+    transition: background-color 120ms ease;
 }
 
-@keyframes fadeInFast {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* ── Loading States ──────────────────────────────────────── */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.75;
 }
 
-/* Fast hover effects */
-.modern-table tbody tr:hover {
-    transition: all 0.1s ease !important;
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    margin-top: -7px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinnerRing 0.65s linear infinite;
 }
 
-/* Optimize search input */
-.modern-search input {
-    transition: border-color 0.1s ease !important;
+@keyframes spinnerRing {
+    to { transform: rotate(360deg); }
 }
 
-/* Quick button states */
-.btn-processing {
-    opacity: 0.8;
-    transform: scale(0.98);
+/* ── Skeleton Loading Shimmer ───────────────────────────── */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--color-border) 25%,
+        var(--color-surface-hover) 50%,
+        var(--color-border) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+    color: transparent !important;
     pointer-events: none;
 }
 
-/* Performance optimizations */
-* {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
-/* GPU acceleration for smooth animations */
-.btn, .modern-table tbody tr, .flash-message {
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-}
-
-/* Reduce repaints */
-.modern-table-container {
-    contain: layout style paint;
-}
-
-/* Fast checkbox animations */
-input[type="checkbox"] {
-    transition: all 0.1s ease !important;
-}
-
-/* Optimize dropdown performance */
-.dropdown-menu {
-    will-change: opacity, transform;
-    transition: all 0.15s ease !important;
-}
-
-/* Fast navigation */
-.navbar-nav .nav-link {
-    transition: color 0.1s ease !important;
-}
-
-/* Optimize modal performance */
-.modal {
-    will-change: opacity;
-}
-
-.modal-dialog {
-    will-change: transform;
-}
-
-/* Fast form validation feedback */
-.is-invalid {
-    transition: border-color 0.1s ease !important;
-}
-
-.is-valid {
-    transition: border-color 0.1s ease !important;
-}
-
-/* Optimize pagination */
-.pagination .page-link {
-    transition: all 0.1s ease !important;
-}
-
-/* Fast loading overlay */
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-}
-
-.loading-overlay.show {
-    opacity: 1;
-    visibility: visible;
-}
-
-.loading-overlay .spinner {
-    font-size: 2rem;
-    animation: spin 1s linear infinite;
-}
-
-/* Reduce layout thrashing */
-.container, .row, .col {
-    contain: layout;
-}
-
-/* Fast scroll performance */
-.modern-table-container {
-    scroll-behavior: auto;
+/* ── Scroll Performance ──────────────────────────────────── */
+.glass-table-scroll,
+.activity-log-scroll,
+[class*="scroll"] {
+    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    /* contain: layout style; — removed, breaks some flex layouts */
 }
 
-/* Optimize image loading */
-img {
-    will-change: opacity;
-}
-
-/* Fast transitions for all interactive elements */
-a, button, input, select, textarea {
-    transition-duration: 0.1s !important;
-}
-
-/* Prevent unnecessary reflows */
-.fixed-layout {
-    table-layout: fixed;
-}
-
-/* Fast focus states */
-:focus {
-    transition: box-shadow 0.1s ease !important;
-}
-
-/* Optimize for mobile performance */
-@media (max-width: 768px) {
-    .btn {
-        transition-duration: 0.05s !important;
-    }
-
-    .modern-table tbody tr:hover {
-        transform: none !important;
-    }
-
-    .modern-card {
-        animation: none !important;
-    }
-}
-
-/* Disable animations on slow devices */
+/* ── Reduced Motion Accessibility ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
 
-/* Critical performance optimizations */
-.performance-critical {
-    contain: strict;
-    will-change: auto;
+/* ── Mobile Performance ──────────────────────────────────── */
+@media (max-width: 768px) {
+    /* Remove hover effects on touch devices */
+    .glass-card:hover,
+    .stat-card:hover,
+    .action-card:hover,
+    .admin-action-item:hover {
+        transform: none !important;
+    }
+
+    /* Simpler animations on mobile */
+    .animate-fade-in-up {
+        animation-duration: 200ms !important;
+    }
 }
 
-/* Fast form submission feedback */
-.form-submitting {
-    opacity: 0.7;
-    pointer-events: none;
+/* ── Focus Visibility (Accessibility) ────────────────────── */
+:focus-visible {
+    outline: 2px solid #8B5CF6;
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
-.form-submitting .btn {
-    position: relative;
+/* Suppress :focus for mouse users (only show for keyboard) */
+:focus:not(:focus-visible) {
+    outline: none;
 }
 
-.form-submitting .btn::after {
-    content: "⏳";
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+/* ── Form Field Fast Transitions ─────────────────────────── */
+.form-control:focus,
+.premium-input:focus,
+.premium-select:focus {
+    transition:
+        border-color 100ms ease,
+        box-shadow 100ms ease !important;
 }

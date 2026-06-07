@@ -129,6 +129,9 @@ async def index(request: Request):
     if request.app.state.system_locked:
         return RedirectResponse(url="/locked", status_code=302)
 
+    if request.session.get("viewer_logged_in"):
+        return RedirectResponse(url="/viewer_dashboard", status_code=302)
+
     if not ENABLE_DASHBOARD:
         # Fallback to old homepage
         templates = request.app.state.templates

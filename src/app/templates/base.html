@@ -21,10 +21,10 @@
     <!-- AOS Animation Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <!-- Custom Design System styles -->
-    <link href="{{ url_for('static', filename='css/modern-ui.css') }}?v=1.2" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/animations.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/fast-response.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/modern-ui.css') }}?v=2.0" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/animations.css') }}?v=2.0" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}?v=2.0" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/fast-response.css') }}?v=2.0" rel="stylesheet">
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
@@ -77,7 +77,7 @@
                     {% else %}
                     <!-- Viewer links & logout -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
+                        <a class="nav-link" href="{{ url_for('viewer_dashboard') }}">
                             <i class="fas fa-chart-line me-2"></i> Dashboard
                         </a>
                     </li>
@@ -130,13 +130,13 @@
     <script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
     <!-- Custom Global Actions JS -->
     <script>
-        // Initialize Scroll Animations
+        // Initialize Scroll Animations — tuned for snappy SaaS feel
         AOS.init({
-            duration: 800,
-            easing: 'cubic-bezier(0.25, 0.1, 0.25, 1.0)',
+            duration: 380,
+            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
             once: true,
-            offset: 50,
-            delay: 100
+            offset: 30,
+            delay: 0
         });
 
         function updateLogo(theme) {

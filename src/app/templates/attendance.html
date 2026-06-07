@@ -13,6 +13,29 @@
 {% endblock %}
 
 {% block content %}
+<style>
+    /* ── Attendance Camera Stability ── P2 Issue #3 ── */
+    /* Prevent ANY hover effect on the glass card that wraps the camera */
+    #videoContainer,
+    #videoContainer:hover,
+    #videoContainer *,
+    .video-container,
+    .video-container:hover {
+        transform: none !important;
+        transition: none !important;
+        animation-play-state: paused !important;
+        will-change: auto !important;
+    }
+    /* Re-enable spinner animation on the loading state only */
+    #loading .loading-spinner {
+        animation-play-state: running !important;
+    }
+    /* The glass-card wrapping the camera: suppress hover lift */
+    .attendance-camera-glass:hover {
+        transform: none !important;
+        box-shadow: var(--shadow-md) !important;
+    }
+</style>
 <div class="attendance-page-layout animate-fade-in-up">
     <div class="row justify-content-center">
         <div class="col-lg-8 text-center">
@@ -29,7 +52,7 @@
                 </div>
             </div>
 
-            <div class="glass-card p-4 attendance-card-main">
+            <div class="glass-card p-4 attendance-camera-glass">
                 <div class="video-container" id="videoContainer">
                     <img id="localVideo" alt="Camera feed" />
 

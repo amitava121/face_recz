@@ -92,8 +92,8 @@
         </div>
         
         <div class="mt-4 d-flex justify-content-end">
-            <a href="{{ url_for('index') }}" class="btn btn-danger">
-                <i class="fas fa-sign-out-alt me-2"></i> Exit Admin Mode
+            <a href="{{ url_for('index') }}" class="btn btn-danger" style="gap: 0.5rem;">
+                <i class="fas fa-sign-out-alt"></i> Exit Admin Mode
             </a>
         </div>
     </div>
@@ -110,13 +110,19 @@
         display: flex;
         align-items: center;
         gap: 1.125rem;
-        padding: 1.25rem;
+        padding: 1.125rem 1.25rem;
         border-radius: var(--radius-md);
         background: var(--color-surface);
         border: 1.5px solid var(--color-border);
         box-shadow: var(--shadow-xs);
-        transition: all var(--duration) var(--ease);
+        transition:
+            transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 200ms ease,
+            border-color 200ms ease;
         cursor: pointer;
+        text-decoration: none;
+        will-change: transform;
+        transform: translateZ(0);
     }
     
     [data-theme="dark"] .admin-action-item {
@@ -125,9 +131,9 @@
     }
     
     .admin-action-item:hover {
-        transform: translateY(-4px);
-        border-color: #8B5CF6;
-        box-shadow: var(--shadow-md);
+        transform: translateY(-3px) translateZ(0);
+        border-color: rgba(139,92,246,0.4);
+        box-shadow: 0 4px 20px rgba(139,92,246,0.1), var(--shadow-sm);
     }
     
     .action-item-icon {

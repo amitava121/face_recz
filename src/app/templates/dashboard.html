@@ -8,10 +8,7 @@
 <div class="dashboard-container">
 
     <!-- ── Hero Page Header System ───────────────────────────── -->
-    <div class="page-header" data-aos="fade-down">
-        <a href="#" class="page-back-button" onclick="window.history.back(); return false;" title="Go Back">
-            <i class="fas fa-arrow-left"></i>
-        </a>
+    <div class="page-header" style="margin-bottom: 1rem; padding-bottom: 0.75rem;" data-aos="fade-down">
         <div class="page-title-wrap d-flex justify-content-between align-items-center w-100 flex-wrap gap-3">
             <div>
                 <h1 class="page-title">SmartCam+ Dashboard</h1>
@@ -232,28 +229,102 @@
     var sg = document.querySelector('.stats-grid');
     if (sg) obs.observe(sg);
 
-    // ── Chart.js — Trend ──────────────────────────────────────
+    // ── Chart.js — Trend (Premium) ─────────────────────────
     var tc = document.getElementById('trendChart');
     if (tc && typeof Chart !== 'undefined') {
         try {
             var tl = {{ weekly_labels | tojson }};
             var td = {{ weekly_data | tojson }};
             if (!tl || !tl.length) { tl = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']; td = [0,0,0,0,0,0,0]; }
-            var g = tc.getContext('2d').createLinearGradient(0, 0, 0, 220);
-            g.addColorStop(0, 'rgba(99,102,241,0.2)');
-            g.addColorStop(1, 'rgba(99,102,241,0.01)');
-            new Chart(tc, {
+            var ctx = tc.getContext('2d');
+            var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            var textColor = isDark ? '#94A3B8' : '#64748B';
+            var gridColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+
+            var g = ctx.createLinearGradient(0, 0, 0, 220);
+            g.addColorStop(0, 'rgba(99,102,241,0.18)');
+            g.addColorStop(0.5, 'rgba(99,102,241,0.06)');
+            g.addColorStop(1, 'rgba(99,102,241,0.00)');
+
+            var trendChart = new Chart(tc, {
                 type: 'line',
-                data: { labels: tl, datasets: [{ label: 'Attendance', data: td, fill: true, backgroundColor: g, borderColor: '#6366F1', borderWidth: 2.5, pointBackgroundColor: '#6366F1', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6, tension: 0.4 }] },
+                data: {
+                    labels: tl,
+                    datasets: [{
+                        label: 'Attendance',
+                        data: td,
+                        fill: true,
+                        backgroundColor: g,
+                        borderColor: '#6366F1',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#6366F1',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#6366F1',
+                        pointHoverBorderWidth: 2.5,
+                        tension: 0.38
+                    }]
+                },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
                     interaction: { intersect: false, mode: 'index' },
-                    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e293b', titleColor: '#f8fafc', bodyColor: '#cbd5e1', padding: 10, cornerRadius: 10, displayColors: false, callbacks: { label: function(i) { return i.parsed.y + ' students'; } } } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(15,23,42,0.92)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94A3B8',
+                            padding: { top: 10, bottom: 10, left: 14, right: 14 },
+                            cornerRadius: 10,
+                            borderColor: 'rgba(99,102,241,0.3)',
+                            borderWidth: 1,
+                            displayColors: false,
+                            titleFont: { size: 12, weight: '600' },
+                            bodyFont: { size: 13, weight: '500' },
+                            callbacks: {
+                                title: function(items) { return items[0].label; },
+                                label: function(i) { return i.parsed.y + ' students present'; }
+                            }
+                        }
+                    },
                     scales: {
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11, weight: 500 } } },
-                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false }, ticks: { color: '#94a3b8', font: { size: 11, weight: 500 }, stepSize: Math.max(1, Math.ceil(Math.max.apply(null, td) / 5)) } }
+                        x: {
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 11, weight: '500' },
+                                maxRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: gridColor, drawBorder: false },
+                            border: { display: false, dash: [4, 4] },
+                            ticks: {
+                                color: textColor,
+                                font: { size: 11, weight: '500' },
+                                stepSize: Math.max(1, Math.ceil(Math.max.apply(null, td.concat([1])) / 5)),
+                                padding: 8
+                            }
+                        }
                     }
                 }
+            });
+
+            // Theme change listener
+            document.addEventListener('themechanged', function() {
+                var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+                var tc2 = dark ? '#94A3B8' : '#64748B';
+                var gc2 = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
+                trendChart.options.scales.x.ticks.color = tc2;
+                trendChart.options.scales.y.ticks.color = tc2;
+                trendChart.options.scales.y.grid.color = gc2;
+                trendChart.update('none');
             });
         } catch(e) { console.warn('Trend chart error:', e); }
     }
@@ -323,38 +394,50 @@
                 });
             }
 
-            new Chart(dc, {
+            var deptChart = new Chart(dc, {
                 type: 'doughnut',
-                data: { 
-                    labels: dl, 
-                    datasets: [{ 
-                        data: dd, 
-                        backgroundColor: colors.slice(0, dl.length), 
-                        borderWidth: 0, 
-                        hoverOffset: 6 
-                    }] 
+                data: {
+                    labels: dl,
+                    datasets: [{
+                        data: dd,
+                        backgroundColor: colors.slice(0, dl.length),
+                        borderWidth: 2,
+                        borderColor: isDark ? 'rgba(15,23,42,0.9)' : 'rgba(255,255,255,0.9)',
+                        hoverOffset: 5,
+                        borderRadius: 3
+                    }]
                 },
                 options: {
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    cutout: '82%',
-                    plugins: { 
-                        legend: { display: false }, 
-                        tooltip: { 
-                            backgroundColor: 'rgba(17, 24, 39, 0.95)', 
-                            titleColor: '#ffffff', 
-                            bodyColor: '#cbd5e1', 
-                            padding: 10, 
-                            cornerRadius: 8, 
-                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '80%',
+                    animation: { animateRotate: true, duration: 600, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(15,23,42,0.92)',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#94A3B8',
+                            padding: { top: 8, bottom: 8, left: 12, right: 12 },
+                            cornerRadius: 10,
+                            borderColor: 'rgba(255,255,255,0.1)',
                             borderWidth: 1,
-                            callbacks: { 
-                                label: function(i) { return ' ' + i.label + ': ' + i.parsed + ' students'; } 
-                            } 
-                        } 
+                            titleFont: { size: 12, weight: '600' },
+                            bodyFont: { size: 12 },
+                            callbacks: {
+                                label: function(i) {
+                                    var pct = totalStudents > 0 ? ((i.parsed / totalStudents) * 100).toFixed(1) : 0;
+                                    return ' ' + i.parsed + ' students (' + pct + '%)';
+                                }
+                            }
+                        }
                     }
                 }
             });
+
+            // Update legend dots to have no glow (cleaner look)
+            var ldots = legendContainer ? legendContainer.querySelectorAll('span[style*="box-shadow"]') : [];
+            ldots.forEach(function(d) { d.style.boxShadow = 'none'; });
         } catch(e) { console.warn('Dept chart error:', e); }
     }
 

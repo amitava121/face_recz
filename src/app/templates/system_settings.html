@@ -13,6 +13,55 @@
 {% endblock %}
 
 {% block content %}
+<style>
+    /* Settings-specific visibility improvements */
+    .settings-container .form-control,
+    .settings-container .premium-input,
+    .settings-container .premium-select {
+        background: var(--color-surface) !important;
+        color: var(--color-text) !important;
+        border: 1.5px solid rgba(0,0,0,0.12) !important;
+    }
+    [data-theme="dark"] .settings-container .form-control,
+    [data-theme="dark"] .settings-container .premium-input,
+    [data-theme="dark"] .settings-container .premium-select {
+        background: rgba(255,255,255,0.05) !important;
+        border-color: rgba(255,255,255,0.1) !important;
+    }
+    /* Form check (checkboxes/radios) */
+    .settings-container .form-check-input {
+        border: 2px solid rgba(0,0,0,0.3) !important;
+        background-color: var(--color-surface) !important;
+    }
+    [data-theme="dark"] .settings-container .form-check-input {
+        border-color: rgba(255,255,255,0.25) !important;
+    }
+    .settings-container .form-check-input:checked {
+        background-color: #8B5CF6 !important;
+        border-color: #8B5CF6 !important;
+    }
+    /* Range input track */
+    .settings-container .form-range {
+        accent-color: #8B5CF6;
+    }
+    /* Labels */
+    .settings-container .form-label {
+        color: var(--color-text) !important;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+    /* Small helper text */
+    .settings-container small.text-muted {
+        color: var(--color-text-secondary) !important;
+    }
+    /* Status badge labels */
+    .settings-container .form-label:not(.form-check-label) {
+        color: var(--color-text-secondary) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.8rem;
+    }
+</style>
 <div class="settings-container animate-fade-in-up">
     <form method="POST">
         <!-- Face Recognition Settings -->
@@ -170,9 +219,6 @@
             <button type="button" onclick="resetToDefaults()" class="glass-button text-danger" style="color: var(--color-danger) !important; border-color: rgba(239,68,68,0.2) !important;">
                 <i class="fas fa-undo me-2"></i>Reset to Defaults
             </button>
-            <a href="{{ url_for('admin_panel') }}" class="glass-button text-decoration-none">
-                <i class="fas fa-arrow-left me-2"></i>Exit
-            </a>
         </div>
     </form>
 </div>

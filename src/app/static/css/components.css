@@ -189,7 +189,7 @@
     border-left: 4px solid var(--info-color);
 }
 
-/* Video Container */
+/* Video Container — NO hover animations (Issue #3: camera stability) */
 .video-container {
     position: relative;
     width: 100%;
@@ -197,14 +197,18 @@
     margin: 0 auto;
     border-radius: 1.5rem;
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
-    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
-    background: var(--card-background);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    background: #0a0a0f;
+    /* Stable rendering — no transforms, no hover scale */
+    contain: layout;
+    transform: none;
+    transition: none;
 }
 
+/* Explicitly suppress any inherited hover animations */
 .video-container:hover {
-    transform: scale(1.02);
-    box-shadow: var(--shadow-xl);
+    transform: none !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12) !important;
 }
 
 .video-container video,
@@ -299,32 +303,39 @@
     box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.2);
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar — consistent with design system */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--background-color);
-    border-radius: 4px;
+    background: transparent;
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 4px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-dark);
+    background: rgba(0,0,0,0.25);
 }
 
-/* Tables */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.22);
+}
+
+/* Tables — smooth hover without transform */
 .table-container {
     overflow-x: auto;
     border-radius: 1rem;
-    box-shadow: var(--shadow-md);
-    background: var(--card-background);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .table {
@@ -333,18 +344,26 @@
 }
 
 .table th {
-    background-color: rgba(37, 99, 235, 0.05);
-    color: var(--text-primary);
-    font-weight: 600;
+    background-color: rgba(0,0,0,0.02);
+    color: #64748B;
+    font-weight: 700;
     text-align: left;
-    padding: 1rem;
-    border-bottom: 2px solid var(--border-color);
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    position: sticky;
+    top: 0;
+    z-index: 5;
 }
 
 .table td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    color: #0F172A;
+    font-size: 0.875rem;
+    transition: background-color 120ms ease;
 }
 
 .table tr:last-child td {
@@ -352,7 +371,7 @@
 }
 
 .table tr:hover td {
-    background-color: rgba(37, 99, 235, 0.05);
+    background-color: rgba(99,102,241,0.03);
 }
 
 /* Badges */

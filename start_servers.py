@@ -16,6 +16,22 @@ import time
 import webbrowser
 from pathlib import Path
 
+# Configure standard streams for UTF-8 and replacement of invalid characters on Windows/non-UTF8 systems
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+# Force child python processes to default to UTF-8
+os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["PYTHONUTF8"] = "1"
+
 
 PROJECT_DIR = Path(__file__).resolve().parent
 DEFAULT_PORT = 5000
@@ -84,7 +100,14 @@ def find_missing_modules(python_bin):
             "print(json.dumps(missing))"
         ),
     ]
-    result = subprocess.run(command, capture_output=True, text=True, cwd=PROJECT_DIR)
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=PROJECT_DIR,
+    )
     if result.returncode != 0:
         stderr = result.stderr.strip() or result.stdout.strip() or "unknown interpreter failure"
         return None, stderr
@@ -126,6 +149,28 @@ def is_port_in_use(port):
 
 
 def list_pids_on_port(port):
+    if platform.system() == "Windows":
+        try:
+            result = subprocess.run(
+                ["netstat", "-ano"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="ignore"
+            )
+            pids = set()
+            for line in result.stdout.splitlines():
+                parts = line.strip().split()
+                if len(parts) >= 5 and parts[0] == "TCP":
+                    local_address = parts[1]
+                    if local_address.endswith(f":{port}"):
+                        pid = parts[-1]
+                        if pid.isdigit() and int(pid) > 0:
+                            pids.add(int(pid))
+            return list(pids)
+        except Exception:
+            return []
+
     lsof_path = shutil.which("lsof")
     if not lsof_path:
         return []
@@ -133,6 +178,8 @@ def list_pids_on_port(port):
         [lsof_path, "-ti", f"tcp:{port}"],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=PROJECT_DIR,
     )
     if result.returncode not in (0, 1):
@@ -145,11 +192,27 @@ def kill_process_on_port(port):
     if not pids:
         return False
 
-    for sig in (signal.SIGTERM, signal.SIGKILL):
+    signals = [signal.SIGTERM]
+    if hasattr(signal, "SIGKILL"):
+        signals.append(signal.SIGKILL)
+
+    for sig in signals:
         for pid in pids:
             try:
-                os.kill(pid, sig)
+                if platform.system() == "Windows":
+                    subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+                else:
+                    os.kill(pid, sig)
             except ProcessLookupError:
+                continue
+            except PermissionError:
+                if platform.system() == "Windows":
+                    try:
+                        subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+                    except Exception:
+                        pass
+                continue
+            except Exception:
                 continue
         time.sleep(0.5)
         if not is_port_in_use(port):
@@ -197,6 +260,8 @@ def preload_models(python_bin):
             [python_bin, "main.py", "--mode", "warmup"],
             cwd=PROJECT_DIR,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             capture_output=True,
             timeout=warmup_timeout,
         )
@@ -234,6 +299,8 @@ def prepare_models(python_bin):
         ],
         cwd=PROJECT_DIR,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
     )
     if result.stdout:
@@ -332,6 +399,8 @@ def start_servers():
         stderr=subprocess.STDOUT,
         bufsize=1,
         universal_newlines=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
     print_colored("FASTAPI SERVICE IS STARTING", "green")

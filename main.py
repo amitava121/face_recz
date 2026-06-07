@@ -10,6 +10,18 @@ import sys
 import time
 from pathlib import Path
 
+# Configure standard streams for UTF-8 and replacement of invalid characters on Windows/non-UTF8 systems
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import uvicorn
 
 
@@ -27,16 +39,19 @@ def preload_models():
     def timeout_handler(signum, frame):
         raise TimeoutError("Model initialization timed out")
 
+    has_alarm = hasattr(signal, "SIGALRM")
     try:
         start_time = time.time()
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(30)
+        if has_alarm:
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(30)
         try:
             from src.services.face_utils import app as face_app, initialize_insightface
 
             if face_app is None:
                 face_app = initialize_insightface()
-            signal.alarm(0)
+            if has_alarm:
+                signal.alarm(0)
             if face_app is None:
                 print("❌ Failed to initialize InsightFace model")
                 return False
@@ -58,7 +73,8 @@ def preload_models():
         return False
     finally:
         try:
-            signal.alarm(0)
+            if has_alarm:
+                signal.alarm(0)
         except Exception:
             pass
 

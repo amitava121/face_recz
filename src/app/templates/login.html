@@ -16,8 +16,17 @@
 <div class="row justify-content-center align-items-center animate-fade-in-up" style="min-height: 60vh;">
     <div class="col-md-6 col-lg-5">
         <div class="glass-form p-4">
-            <div class="login-icon-wrap mb-4" data-aos="zoom-in">
-                <i class="fas fa-user-shield text-primary"></i>
+            <div class="login-icon-wrap mb-4" data-aos="zoom-in" style="background: transparent;">
+                <img src="/static/img/logo.svg" alt="SmartCam+" class="brand-logo-img" style="height: 64px; width: 64px; filter: drop-shadow(0 2px 8px rgba(139,92,246,0.3));">
+                <script>
+                    (function() {
+                        var theme = localStorage.getItem('theme') || localStorage.getItem('dashboard-theme') || 'light';
+                        var img = document.querySelector('.login-icon-wrap .brand-logo-img');
+                        if (img) {
+                            img.src = theme === 'dark' ? "/static/img/logo-dark.svg" : "/static/img/logo.svg";
+                        }
+                    })();
+                </script>
             </div>
             
             <h2 class="text-center mb-4"><span class="gradient-text" style="font-weight: 800;">Admin Login</span></h2>

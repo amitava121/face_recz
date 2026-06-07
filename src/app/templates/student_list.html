@@ -74,10 +74,10 @@
                 <!-- Bulk Operations Action Bar -->
                 <div class="p-3 d-flex justify-content-between align-items-center flex-wrap gap-3" style="background: rgba(0,0,0,0.01); border-top: 1px solid var(--color-border);">
                     <div class="d-flex gap-2 flex-wrap">
-                        <button type="submit" formaction="/delete_selected_student_details" class="btn btn-danger" onclick="return confirmBulkDelete('Delete selected student records? Attendance history will be preserved.');">
+                        <button type="submit" formaction="/delete_selected_student_details" class="btn btn-danger">
                             <i class="fas fa-user-minus me-2"></i> Delete Selected (Keep Attendance)
                         </button>
-                        <button type="submit" formaction="/delete_selected_students_and_attendance" class="btn btn-danger" onclick="return confirmBulkDelete('Delete selected students AND their attendance records? This cannot be undone.');">
+                        <button type="submit" formaction="/delete_selected_students_and_attendance" class="btn btn-danger">
                             <i class="fas fa-user-times me-2"></i> Delete Selected + Attendance
                         </button>
                         <button type="button" class="btn btn-outline-danger" onclick="deleteAllStudents()">
@@ -101,11 +101,8 @@
         </div>
     {% endif %}
 
-    <!-- Bottom Actions Navigation -->
-    <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i> Back to Admin Panel
-        </a>
+    <!-- Bottom Actions -->
+    <div class="mt-3 d-flex justify-content-end">
         <a href="{{ url_for('register') }}" class="gradient-button">
             <i class="fas fa-user-plus me-2"></i> Add New Student
         </a>
@@ -156,6 +153,30 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal (replaces native confirm() which gets dismissed by sleep timer) -->
+<div id="deleteModal" style="display:none; position:fixed; z-index:10001; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; backdrop-filter: blur(8px); padding: 1rem;">
+    <div class="glass-card p-4 animate-fade-in-up" style="max-width: 440px; width: 100%; box-shadow: var(--shadow-xl); position: relative; background: var(--color-surface); border-radius: var(--radius-lg);">
+        <div class="d-flex align-items-center mb-3">
+            <div class="me-3" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.2)); display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-exclamation-triangle" style="color: #EF4444; font-size: 1.2rem;"></i>
+            </div>
+            <h3 id="deleteModalTitle" class="mb-0" style="font-weight: 800; font-size: 1.25rem;">Confirm Delete</h3>
+        </div>
+        <p id="deleteModalMessage" class="mb-4" style="color: var(--color-text-secondary); line-height: 1.6; font-size: 0.95rem;"></p>
+        <div class="d-flex gap-3">
+            <button type="button" id="deleteModalConfirmBtn" class="btn btn-danger flex-grow-1" style="padding: 0.75rem; font-weight: 600; border-radius: var(--radius-sm);">
+                <i class="fas fa-trash-alt me-2"></i> Confirm Delete
+            </button>
+            <button type="button" class="btn btn-secondary flex-grow-1" onclick="closeDeleteModal()" style="padding: 0.75rem; font-weight: 600; border-radius: var(--radius-sm);">
+                <i class="fas fa-times me-2"></i> Cancel
+            </button>
+        </div>
+        <button onclick="closeDeleteModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; border: none; background: var(--color-border); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary); cursor: pointer; transition: all var(--duration) var(--ease);" aria-label="Close dialog">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+
 <style>
     .col-grow-1 {
         flex: 1 1 auto;
@@ -171,7 +192,7 @@
 </style>
 
 <script>
-// Search form empty submission handler
+// ── Search form handler ──────────────────────────────────────
 document.getElementById('studentSearchForm').addEventListener('submit', function(e) {
     var val = document.getElementById('studentSearchInput').value.trim();
     if (!val) {
@@ -187,51 +208,151 @@ function toggleAll(source) {
     }
 }
 
-// Confirm bulk operations — validates at least one checkbox is selected
-function confirmBulkDelete(message) {
-    var checkboxes = document.querySelectorAll('input[name="student_ids"]:checked');
-    if (checkboxes.length === 0) {
-        alert('Please select at least one student first.');
-        return false;
+// ── Custom Delete Confirmation Modal ─────────────────────────
+// Replaces native confirm() which gets dismissed by sleep timer navigation.
+var _deleteModalCallback = null;
+
+function showDeleteModal(message, onConfirm) {
+    document.getElementById('deleteModalMessage').textContent = message;
+    document.getElementById('deleteModal').style.display = 'flex';
+    _deleteModalCallback = onConfirm;
+
+    // Pause sleep timer while modal is open
+    if (typeof addActiveProcess === 'function') {
+        addActiveProcess('delete-modal');
     }
-    return confirm(message);
+
+    // Bind confirm button
+    var confirmBtn = document.getElementById('deleteModalConfirmBtn');
+    // Remove old listeners by replacing the node
+    var newBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+    newBtn.addEventListener('click', function() {
+        closeDeleteModal();
+        if (_deleteModalCallback) _deleteModalCallback();
+    });
 }
 
-// Delete a single student via POST (inline row action)
-function deleteSingleStudent(studentId, studentName) {
-    if (!confirm('Delete student "' + studentName + '"? Attendance history will be preserved.')) {
-        return;
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    _deleteModalCallback = null;
+
+    // Resume sleep timer
+    if (typeof removeActiveProcess === 'function') {
+        removeActiveProcess('delete-modal');
     }
-    var form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/delete_selected_student_details';
-    var input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'student_ids';
-    input.value = studentId;
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
 }
 
-// Delete ALL students
-function deleteAllStudents() {
-    var step1 = confirm('WARNING: This will delete ALL student records.\n\nAttendance history will be preserved.\n\nAre you sure?');
-    if (!step1) return;
-    var step2 = confirm('FINAL CONFIRMATION:\n\nType OK to confirm deletion of ALL student records.\n\nThis action CANNOT be undone.');
-    if (!step2) return;
-
-    // Select all checkboxes and submit via the "details only" form action
-    var checkboxes = document.getElementsByName('student_ids');
-    for(var i=0; i<checkboxes.length; i++) {
-        checkboxes[i].checked = true;
+// Close modal on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('deleteModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeDeleteModal();
+        });
     }
+    // Same for edit modal
+    var editModal = document.getElementById('editModal');
+    if (editModal) {
+        editModal.addEventListener('click', function(e) {
+            if (e.target === editModal) closeEditModal();
+        });
+    }
+});
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.getElementById('deleteModal').style.display === 'flex') closeDeleteModal();
+        if (document.getElementById('editModal').style.display === 'flex') closeEditModal();
+    }
+});
+
+// ── Bulk delete (keep attendance) ────────────────────────────
+// Intercept the submit buttons — prevent form submission, show modal instead
+document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('studentTableForm');
-    form.action = '/delete_selected_student_details';
-    form.submit();
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Always prevent — modal handles submission
+
+        var target = e.submitter;
+        if (!target) return;
+
+        var action = target.getAttribute('formaction');
+        if (!action) return;
+
+        var checkboxes = document.querySelectorAll('input[name="student_ids"]:checked');
+        if (checkboxes.length === 0) {
+            showDeleteModal('Please select at least one student first.', function() {
+                // No action — just dismiss
+            });
+            document.getElementById('deleteModalConfirmBtn').style.display = 'none';
+            return;
+        }
+
+        // Restore confirm button visibility
+        document.getElementById('deleteModalConfirmBtn').style.display = '';
+
+        var message = '';
+        if (action.indexOf('student_details') !== -1) {
+            message = 'Delete ' + checkboxes.length + ' selected student(s)?\n\nAttendance history will be preserved. Student records, face images, and user accounts will be permanently removed.';
+        } else if (action.indexOf('students_and_attendance') !== -1) {
+            message = 'Delete ' + checkboxes.length + ' selected student(s) AND their attendance records?\n\nThis action cannot be undone. All data will be permanently removed.';
+        }
+
+        showDeleteModal(message, function() {
+            form.action = action;
+            // Temporarily remove the submit interceptor
+            form.removeEventListener('submit', arguments.callee);
+            form.submit();
+        });
+    });
+});
+
+// ── Delete single student ────────────────────────────────────
+function deleteSingleStudent(studentId, studentName) {
+    showDeleteModal(
+        'Delete student "' + studentName + '"?\n\nAttendance history will be preserved. Student record, face images, and user account will be permanently removed.',
+        function() {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/delete_selected_student_details';
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'student_ids';
+            input.value = studentId;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    );
 }
 
-// Export to excel handler via hidden iframe
+// ── Delete ALL students ──────────────────────────────────────
+function deleteAllStudents() {
+    showDeleteModal(
+        'WARNING: This will delete ALL student records.\n\nAttendance history will be preserved. All student records, face images, and user accounts will be permanently removed.\n\nThis action CANNOT be undone.',
+        function() {
+            // Second confirmation
+            showDeleteModal(
+                'FINAL CONFIRMATION\n\nYou are about to delete ALL student records from the database. Are you absolutely sure?',
+                function() {
+                    var checkboxes = document.getElementsByName('student_ids');
+                    for(var i=0; i<checkboxes.length; i++) {
+                        checkboxes[i].checked = true;
+                    }
+                    var form = document.getElementById('studentTableForm');
+                    form.action = '/delete_selected_student_details';
+                    form.submit();
+                }
+            );
+        }
+    );
+}
+
+// ── Export to Excel ──────────────────────────────────────────
 function exportStudentsToExcel() {
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
@@ -242,6 +363,7 @@ function exportStudentsToExcel() {
     }, 5000);
 }
 
+// ── Edit Modal ───────────────────────────────────────────────
 function openEditModal(id, code, name, dept, phone) {
     document.getElementById('editModal').style.display = 'flex';
     document.getElementById('modal_student_id').value = id;
@@ -250,10 +372,14 @@ function openEditModal(id, code, name, dept, phone) {
     document.getElementById('modal_department').value = dept;
     document.getElementById('modal_phone_number').value = phone;
     document.getElementById('editStudentForm').action = '/edit_student/' + id;
+
+    if (typeof addActiveProcess === 'function') addActiveProcess('edit-modal');
 }
 
 function closeEditModal() {
     document.getElementById('editModal').style.display = 'none';
+    if (typeof removeActiveProcess === 'function') removeActiveProcess('edit-modal');
 }
 </script>
 {% endblock %}
+

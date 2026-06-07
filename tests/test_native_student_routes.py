@@ -30,10 +30,10 @@ async def test_native_students_page_renders():
     app = create_app()
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
-        response = await client.get("/students")
+        response = await client.get("/students", follow_redirects=False)
 
-    assert response.status_code == 200
-    assert "Student" in response.text
+    assert response.status_code == 302
+    assert response.headers["location"] == "/login"
 
 
 @pytest.mark.asyncio

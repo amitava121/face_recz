@@ -1,8 +1,7 @@
 {% extends "base.html" %} {% block page_header %}
 <div class="page-header" data-aos="fade-down">
   <a
-    href="javascript:void(0)"
-    onclick="window.history.back()"
+    href="{{ url_for('index') }}"
     class="page-back-button"
     title="Go Back"
   >

@@ -2,7 +2,7 @@
 
 {% block page_header %}
 <div class="page-header" data-aos="fade-down">
-    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
+    <a href="{{ url_for('index') }}" class="page-back-button" title="Go Back">
         <i class="fas fa-arrow-left"></i>
     </a>
     <div class="page-title-wrap">
@@ -15,6 +15,24 @@
 {% block content %}
 <div class="row justify-content-center animate-fade-in-up">
     <div class="col-md-7 col-lg-6">
+        {% if success_registered %}
+        <div class="alert alert-success mb-4 p-4" style="border-radius: var(--radius-sm); border-left: 4px solid var(--color-success); background: rgba(16, 185, 129, 0.08); color: var(--color-text);">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fas fa-check-circle text-success me-2 fa-lg" style="color: #10b981 !important;"></i>
+                <h5 class="mb-0 font-weight-bold" style="color: #10b981 !important; font-size: 1.1rem;">Student Registered Successfully</h5>
+            </div>
+            <div class="ms-4" style="font-size: 0.9rem; line-height: 1.6;">
+                <div><strong>Name:</strong> {{ registered_name }}</div>
+                <div><strong>Student ID:</strong> {{ registered_code }}</div>
+                <div><strong>Timestamp:</strong> {{ registered_timestamp }}</div>
+            </div>
+            <div class="mt-3 ms-4">
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.75rem; background-color: rgba(16, 185, 129, 0.15) !important; color: #10b981 !important;">
+                    <i class="fas fa-info-circle me-1"></i> Ready for next registration.
+                </span>
+            </div>
+        </div>
+        {% endif %}
         <div class="glass-form p-4">
             <h3 class="mb-4 text-center"><i class="fas fa-user-plus me-2 gradient-text"></i>Enrollment Form</h3>
             

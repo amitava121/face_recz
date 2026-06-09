@@ -7,6 +7,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import RedirectResponse
 from werkzeug.security import check_password_hash
 
+from sqlalchemy import func
 from src.models.db import Admin, User, UserActivity, db
 from src.web.session import flash
 from src.web.templates import render_template
@@ -46,10 +47,10 @@ async def login_post(
         return RedirectResponse(url="/login", status_code=302)
 
     def _authenticate():
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter(func.lower(User.username) == username.lower()).first()
         if user and user.is_active and check_password_hash(user.password_hash, password):
             return user
-        admin = Admin.query.filter_by(username=username).first()
+        admin = Admin.query.filter(func.lower(Admin.username) == username.lower()).first()
         if admin and check_password_hash(admin.password_hash, password):
             return admin
         return None

@@ -422,13 +422,47 @@ textarea.form-control {
     transition: all var(--duration) var(--ease);
 }
 
-.glass-navbar .navbar-brand {
+.navbar-brand-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    text-decoration: none !important;
+}
+
+.brand-logo-img {
+    height: 38px !important; /* 32px–40px desktop */
+    width: auto !important; /* Keep aspect ratio */
+    min-width: 38px !important; /* Prevent overlap using min-width protection */
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    transition: all var(--duration) var(--ease) !important;
+}
+
+.glass-navbar .brand-text {
+    background: var(--brand-gradient-90);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-weight: 800 !important;
-    font-size: 1.2rem !important;
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    color: var(--color-text) !important;
+    font-size: 1.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+
+@media (max-width: 576px) {
+    .brand-logo-img {
+        height: 24px !important; /* 24px mobile */
+        min-width: 24px !important;
+    }
+    .glass-navbar .brand-text {
+        font-size: 1.1rem !important;
+    }
+    .navbar-brand-container {
+        gap: 8px !important;
+    }
 }
 
 .glass-navbar .brand-icon-wrap {
@@ -993,3 +1027,96 @@ select.form-control {
         background: white !important;
     }
 }
+
+/* ── Range Sliders (Light/Dark Visibility Fix) ──────────── */
+input[type="range"].form-range,
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+}
+
+input[type="range"].form-range:focus,
+input[type="range"]:focus {
+    outline: none;
+}
+
+/* Track styles */
+input[type="range"].form-range::-webkit-slider-runnable-track,
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #E5E7EB, #D1D5DB) !important;
+    transition: background-color var(--duration) var(--ease);
+}
+
+input[type="range"].form-range::-moz-range-track,
+input[type="range"]::-moz-range-track {
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #E5E7EB, #D1D5DB) !important;
+    transition: background-color var(--duration) var(--ease);
+}
+
+[data-theme="dark"] input[type="range"].form-range::-webkit-slider-runnable-track,
+[data-theme="dark"] input[type="range"]::-webkit-slider-runnable-track {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="dark"] input[type="range"].form-range::-moz-range-track,
+[data-theme="dark"] input[type="range"]::-moz-range-track {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Thumb styles */
+input[type="range"].form-range::-webkit-slider-thumb,
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF4D6D, #D946EF, #8B5CF6, #3B82F6) !important;
+    border: 3px solid white !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    margin-top: -6px;
+    transition: transform 150ms ease !important;
+    will-change: transform;
+}
+
+input[type="range"].form-range::-moz-range-thumb,
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF4D6D, #D946EF, #8B5CF6, #3B82F6) !important;
+    border: 3px solid white !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: transform 150ms ease !important;
+    will-change: transform;
+}
+
+/* Hover Thumb scale */
+input[type="range"].form-range:hover::-webkit-slider-thumb,
+input[type="range"]:hover::-webkit-slider-thumb {
+    transform: scale(1.1) !important;
+}
+
+input[type="range"].form-range:hover::-moz-range-thumb,
+input[type="range"]:hover::-moz-range-thumb {
+    transform: scale(1.1) !important;
+}
+
+/* Active Drag Thumb scale */
+input[type="range"].form-range:active::-webkit-slider-thumb,
+input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.15) !important;
+}
+
+input[type="range"].form-range:active::-moz-range-thumb,
+input[type="range"]:active::-moz-range-thumb {
+    transform: scale(1.15) !important;
+}
+

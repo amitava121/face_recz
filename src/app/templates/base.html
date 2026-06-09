@@ -32,8 +32,8 @@
     <!-- Standardized Premium Glass Navigation Bar -->
     <nav class="navbar navbar-expand-lg glass-navbar sticky-top">
         <div class="container-fluid position-relative">
-            <a class="navbar-brand ms-4" href="{{ url_for('index') }}">
-                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SmartCam+ Logo" class="brand-logo-img me-2" style="height: 32px; width: 32px; filter: drop-shadow(0 2px 8px rgba(139,92,246,0.3));">
+            <a class="navbar-brand ms-4 navbar-brand-container" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SmartCam+ Logo" class="brand-logo-img" style="filter: drop-shadow(0 2px 8px rgba(139,92,246,0.3));">
                 <script>
                     (function() {
                         var theme = localStorage.getItem('theme') || localStorage.getItem('dashboard-theme') || 'light';

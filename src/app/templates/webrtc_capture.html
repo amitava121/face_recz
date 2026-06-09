@@ -2,8 +2,7 @@
 block page_header %}
 <div class="page-header" data-aos="fade-down">
   <a
-    href="javascript:void(0)"
-    onclick="window.history.back()"
+    href="{{ url_for('register') }}"
     class="page-back-button"
     title="Go Back"
   >
@@ -271,7 +270,9 @@ block page_header %}
           // Redirect after a short delay
           setTimeout(function() {
               console.log('Redirecting to registration page at ' + new Date().toISOString());
-              window.location.href = "{{ url_for('register') }}?success=true";
+              const nameParam = encodeURIComponent("{{ student_name }}");
+              const codeParam = encodeURIComponent("{{ student_code }}");
+              window.location.replace("{{ url_for('register') }}?success=true&name=" + nameParam + "&code=" + codeParam);
           }, 1500);
       }
 

@@ -130,32 +130,6 @@
 
 .dashboard-page .navbar-brand {
     color: var(--color-text) !important;
-    font-weight: 800 !important;
-    font-size: 1.2rem !important;
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-}
-
-.dashboard-page .navbar-brand .brand-icon-wrap {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-sm);
-    background: var(--brand-gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.95rem;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
-}
-
-.dashboard-page .navbar-brand .brand-text {
-    background: var(--brand-gradient-90);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 12px rgba(99,102,241,0.15));
 }
 
 .dashboard-page .nav-link {

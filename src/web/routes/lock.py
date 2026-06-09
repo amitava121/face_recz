@@ -8,6 +8,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from werkzeug.security import check_password_hash
 
+from sqlalchemy import func
 from src.models.db import Admin, User, db
 from src.web.session import flash
 from src.web.templates import render_template
@@ -166,7 +167,7 @@ async def unlock_viewer(
         flash(request, f"Too many failed attempts. Please wait {lockout_remaining} seconds.", "error")
         return RedirectResponse(url="/locked", status_code=302)
 
-    user = await asyncio.to_thread(lambda: User.query.filter_by(username=username, role="viewer").first())
+    user = await asyncio.to_thread(lambda: User.query.filter(func.lower(User.username) == username.lower(), User.role == "viewer").first())
     if user and check_password_hash(user.password_hash, password):
         if not user.is_active:
             if is_ajax:

@@ -8,7 +8,7 @@
 <div class="dashboard-container">
 
     <!-- ── Hero Page Header System ───────────────────────────── -->
-    <div class="page-header" style="margin-bottom: 1rem; padding-bottom: 0.75rem;" data-aos="fade-down">
+    <div class="page-header" style="margin-bottom: 2.25rem; padding-bottom: 1.5rem;" data-aos="fade-down">
         <div class="page-title-wrap d-flex justify-content-between align-items-center w-100 flex-wrap gap-3">
             <div>
                 <h1 class="page-title">SmartCam+ Dashboard</h1>
@@ -181,16 +181,7 @@
     // ── Add dashboard-page class to body for navbar override ──
     document.body.classList.add('dashboard-page');
 
-    // ── Navbar brand upgrade — inject gradient icon + text ─────
-    (function upgradeBrand() {
-        var brand = document.querySelector('.navbar-brand');
-        if (!brand) return;
-        var iconEl = brand.querySelector('i');
-        if (iconEl) iconEl.remove();
-        var spanEl = brand.querySelector('span');
-        var text = spanEl ? spanEl.textContent : brand.textContent.trim();
-        brand.innerHTML = '<span class="brand-icon-wrap"><i class="fas fa-camera-retro"></i></span><span class="brand-text">' + text + '</span>';
-    })();
+    // Preserve consistent branding logo SVG from base.html
 
     // ── Live date/time ────────────────────────────────────────
     function updateDateTime() {

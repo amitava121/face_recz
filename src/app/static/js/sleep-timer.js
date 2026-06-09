@@ -15,6 +15,40 @@ let lastActivityTime = Date.now();
 let isProcessRunning = false;
 let activeProcesses = new Set(); // Track active processes
 
+// Helper to check if current page is a protected workstation
+function isProtectedPath() {
+    const path = window.location.pathname.toLowerCase();
+    const protectedPaths = [
+        '/register',
+        '/capture_face',
+        '/attendance',
+        '/students',
+        '/webrtc_test',
+        '/webrtc_capture'
+    ];
+    return protectedPaths.some(p => path === p || path.startsWith(p + '/'));
+}
+
+// Helper to check if any video or MJPEG stream is active
+function isCameraActive() {
+    const videos = document.querySelectorAll('video');
+    for (let video of videos) {
+        if (video.srcObject && video.srcObject.active) {
+            return true;
+        }
+        if (!video.paused && video.currentTime > 0) {
+            return true;
+        }
+    }
+    const images = document.querySelectorAll('img');
+    for (let img of images) {
+        if (img.src && (img.src.includes('/video_feed') || img.src.includes('video_feed'))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Start the sleep timer
 function startSleepTimer() {
     // Clear any existing interval
@@ -29,6 +63,10 @@ function startSleepTimer() {
 
 // Initialize the sleep timer
 function initSleepTimer() {
+    if (isProtectedPath()) {
+        console.log('Workstation path detected. Sleep timer completely disabled.');
+        return;
+    }
     // Fetch the current sleep timer value from the server
     fetch('/get_sleep_timer')
         .then(response => response.json())
@@ -75,6 +113,10 @@ function setProcessRunning(running) {
 
 // Check if the system has been inactive for the sleep timer duration
 function checkInactivity() {
+    if (isProtectedPath() || isCameraActive()) {
+        lastActivityTime = Date.now();
+        return;
+    }
     // If any process is running, don't go to sleep
     if (isProcessRunning || activeProcesses.size > 0) {
         console.log('Active process detected, resetting inactivity timer');

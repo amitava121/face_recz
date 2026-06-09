@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash
 from src.models.db import Student, User, db
 from src.web.session import flash
 from src.web.templates import render_template
+from src.web.timezone_utils import now_local
 
 
 router = APIRouter()
@@ -49,13 +50,34 @@ def _register_student(student_id: str, name: str, department: str, phone_number:
 
 
 @router.get("/register", name="register")
-async def register_page(request: Request, success: str | None = Query(default=None)):
+async def register_page(
+    request: Request,
+    success: str | None = Query(default=None),
+    name: str | None = Query(default=None),
+    code: str | None = Query(default=None),
+):
     if request.session.get("viewer_logged_in"):
         return RedirectResponse(url="/viewer_dashboard", status_code=302)
+    request.session.pop("registering_student_id", None)
+    
+    timestamp = None
     if success == "true":
+        timestamp = now_local().strftime("%Y-%m-%d %H:%M:%S")
         flash(request, "Student registered successfully!", "success")
+        
     templates = request.app.state.templates
-    return render_template(templates, request, "register.html", {})
+    return render_template(
+        templates,
+        request,
+        "register.html",
+        {
+            "success_registered": success == "true",
+            "registered_name": name,
+            "registered_code": code,
+            "registered_timestamp": timestamp,
+        },
+    )
+
 
 
 @router.post("/register", name="register_post")
@@ -124,9 +146,23 @@ async def capture_face(request: Request):
         flash(request, "Please register student details first.", "error")
         return RedirectResponse(url="/register", status_code=302)
 
+    student = await asyncio.to_thread(lambda: Student.query.get(student_id))
+    if not student:
+        flash(request, "Student not found.", "error")
+        return RedirectResponse(url="/register", status_code=302)
+
     request.app.state.registration_complete.pop(student_id, None)
     templates = request.app.state.templates
-    return render_template(templates, request, "webrtc_capture.html", {"student_id": student_id})
+    return render_template(
+        templates,
+        request,
+        "webrtc_capture.html",
+        {
+            "student_id": student_id,
+            "student_name": student.name,
+            "student_code": student.student_code,
+        },
+    )
 
 
 @router.get("/students", name="list_students")

@@ -1,41 +1,159 @@
-{% extends "base.html" %}
-
-{% block title %}WebRTC Face Capture{% endblock %}
-
-{% block page_header %}
+{% extends "base.html" %} {% block title %}WebRTC Face Capture{% endblock %} {%
+block page_header %}
 <div class="page-header" data-aos="fade-down">
-    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-    <div class="page-title-wrap">
-        <h1 class="page-title">Face Registration</h1>
-        <p class="page-description">Automated real-time WebRTC face capture and enrollment</p>
-    </div>
+  <a
+    href="javascript:void(0)"
+    onclick="window.history.back()"
+    class="page-back-button"
+    title="Go Back"
+  >
+    <i class="fas fa-arrow-left"></i>
+  </a>
+  <div class="page-title-wrap">
+    <h1 class="page-title">Face Registration</h1>
+    <p class="page-description">
+      Automated real-time WebRTC face capture and enrollment
+    </p>
+  </div>
 </div>
-{% endblock %}
+{% endblock %} {% block content %}
+<div
+  class="webrtc-capture-container animate-fade-in-up"
+  style="max-width: 800px; margin: 0 auto 3rem"
+>
+  <div class="glass-card p-4">
+    <div class="text-center mb-4" id="video-container">
+      <video
+        id="video-feed"
+        autoplay
+        playsinline
+        class="img-fluid border rounded"
+        style="
+          max-width: 640px;
+          max-height: 480px;
+          border-color: var(--glass-border) !important;
+          background: #000;
+          box-shadow: var(--shadow-sm);
+        "
+      ></video>
+      <div
+        id="status-message"
+        class="mt-3 alert alert-info"
+        style="border-radius: var(--radius-sm)"
+      >
+        Connecting to camera...
+      </div>
 
-{% block content %}
-<div class="webrtc-capture-container animate-fade-in-up" style="max-width: 800px; margin: 0 auto 3rem;">
-    <div class="glass-card p-4">
-        <div class="text-center mb-4" id="video-container">
-            <video id="video-feed" autoplay playsinline class="img-fluid border rounded" style="max-width: 640px; max-height: 480px; border-color: var(--glass-border) !important; background: #000; box-shadow: var(--shadow-sm);"></video>
-            <div id="status-message" class="mt-3 alert alert-info" style="border-radius: var(--radius-sm);">Connecting to camera...</div>
-        </div>
+      <!-- Camera permission status -->
+      <div
+        id="permission-status"
+        class="mt-2"
+        style="
+          display: none;
+          font-size: 0.85rem;
+          font-weight: 500;
+          padding: 6px 12px;
+          border-radius: var(--radius-sm);
+          max-width: 640px;
+          margin: 0 auto;
+        "
+      ></div>
 
-        <div class="alert alert-warning mb-4" style="background: rgba(59,130,246,0.08); border-left: 4px solid var(--color-primary); color: var(--color-text);">
-            <ul class="mb-0 list-unstyled" style="line-height: 1.8;">
-                <li><i class="fas fa-info-circle text-primary me-2"></i> Please position your face in the center of the frame and look directly at the camera.</li>
-                <li><i class="fas fa-camera text-primary me-2"></i> The system will automatically capture multiple images of your face for registration.</li>
-                <li><i class="fas fa-redo text-primary me-2"></i> Once registration is complete, you will be redirected to the registration page.</li>
-            </ul>
+      <!-- Registration progress bar -->
+      <div
+        id="progress-container"
+        class="mt-3"
+        style="display: none; max-width: 640px; margin: 0 auto"
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+          "
+        >
+          <span
+            id="progress-label"
+            style="
+              font-size: 0.9rem;
+              font-weight: 600;
+              color: var(--color-text);
+            "
+            >Initializing...</span
+          >
+          <span
+            id="progress-percent"
+            style="
+              font-size: 0.9rem;
+              font-weight: 700;
+              color: var(--color-primary);
+            "
+            >0%</span
+          >
         </div>
-
-        <div class="text-center mt-3 pt-3 border-top" style="border-color: var(--color-border) !important;">
-            <a href="{{ url_for('register') }}" class="glass-button text-decoration-none" id="back-button">
-                <i class="fas fa-arrow-left me-2"></i> Back to Registration
-            </a>
+        <div
+          style="
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 999px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.12);
+          "
+        >
+          <div
+            id="progress-fill"
+            style="
+              width: 0%;
+              height: 100%;
+              background: linear-gradient(90deg, var(--color-primary), #3b82f6);
+              border-radius: 999px;
+              transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+              box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+            "
+          ></div>
         </div>
+      </div>
     </div>
+
+    <div
+      class="alert alert-warning mb-4"
+      style="
+        background: rgba(59, 130, 246, 0.08);
+        border-left: 4px solid var(--color-primary);
+        color: var(--color-text);
+      "
+    >
+      <ul class="mb-0 list-unstyled" style="line-height: 1.8">
+        <li>
+          <i class="fas fa-info-circle text-primary me-2"></i> Please position
+          your face in the center of the frame and look directly at the camera.
+        </li>
+        <li>
+          <i class="fas fa-camera text-primary me-2"></i> The system will
+          automatically capture multiple images of your face for registration.
+        </li>
+        <li>
+          <i class="fas fa-redo text-primary me-2"></i> Once registration is
+          complete, you will be redirected to the registration page.
+        </li>
+      </ul>
+    </div>
+
+    <div
+      class="text-center mt-3 pt-3 border-top"
+      style="border-color: var(--color-border) !important"
+    >
+      <a
+        href="{{ url_for('register') }}"
+        class="glass-button text-decoration-none"
+        id="back-button"
+      >
+        <i class="fas fa-arrow-left me-2"></i> Back to Registration
+      </a>
+    </div>
+  </div>
 </div>
 
 <!-- Camera client scripts -->
@@ -44,214 +162,287 @@
 <script src="{{ url_for('static', filename='js/simple-reliable-camera.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sleep-timer.js') }}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const videoElement = document.getElementById('video-feed');
-        const statusElement = document.getElementById('status-message');
-        const videoContainer = document.getElementById('video-container');
-        let cameraClient = null;
-        let registrationCompleteDetected = false;
-        let forcedCompletionTimeout = null;
-        const registrationProcessId = 'registration-' + Date.now();
+  document.addEventListener('DOMContentLoaded', function() {
+      const videoElement = document.getElementById('video-feed');
+      const statusElement = document.getElementById('status-message');
+      const videoContainer = document.getElementById('video-container');
+      let cameraClient = null;
+      let registrationCompleteDetected = false;
+      let forcedCompletionTimeout = null;
+      const registrationProcessId = 'registration-' + Date.now();
 
-        // Dispatch registration start event when page loads
-        document.dispatchEvent(new CustomEvent('registration:start', {
-            detail: { processId: registrationProcessId }
-        }));
+      // Permission status UI helper
+      const permissionStatusEl = document.getElementById('permission-status');
 
-        // Function to handle registration completion
-        function completeRegistration() {
-            // Check if we've already initiated a redirect
-            if (registrationCompleteDetected || window.registrationRedirectInitiated) {
-                console.log('Registration already completed, ignoring duplicate call');
-                return; // Prevent multiple executions
-            }
+      function showPermissionStatus(state, message) {
+          if (!permissionStatusEl) return;
+          permissionStatusEl.style.display = 'block';
+          permissionStatusEl.textContent = message;
+          if (state === 'granted') {
+              permissionStatusEl.style.background = 'rgba(5, 150, 105, 0.1)';
+              permissionStatusEl.style.color = '#059669';
+              permissionStatusEl.style.border = '1px solid rgba(5, 150, 105, 0.3)';
+          } else if (state === 'denied') {
+              permissionStatusEl.style.background = 'rgba(185, 28, 28, 0.1)';
+              permissionStatusEl.style.color = '#b91c1c';
+              permissionStatusEl.style.border = '1px solid rgba(185, 28, 28, 0.3)';
+          } else {
+              permissionStatusEl.style.background = 'rgba(59, 130, 246, 0.1)';
+              permissionStatusEl.style.color = '#2563eb';
+              permissionStatusEl.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+          }
+      }
 
-            // Set flags to prevent multiple redirects
-            registrationCompleteDetected = true;
-            window.registrationRedirectInitiated = true;
-            console.log('Registration complete detected at ' + new Date().toISOString());
+      // Check camera permission explicitly
+      async function checkCameraPermission() {
+          if (!navigator.permissions || !navigator.permissions.query) {
+              showPermissionStatus('prompt', 'Camera permission: checking (browser does not support permission API)');
+              return 'prompt';
+          }
+          try {
+              const result = await navigator.permissions.query({ name: 'camera' });
+              showPermissionStatus(result.state, 'Camera permission: ' + result.state);
+              result.addEventListener('change', function() {
+                  showPermissionStatus(this.state, 'Camera permission: ' + this.state);
+                  if (this.state === 'granted' && cameraClient && !cameraClient.stream) {
+                      statusElement.textContent = 'Permission granted — restarting camera...';
+                      cameraClient.stop();
+                      setTimeout(() => cameraClient.start().catch(console.error), 300);
+                  }
+              });
+              return result.state;
+          } catch (e) {
+              showPermissionStatus('prompt', 'Camera permission: checking...');
+              return 'prompt';
+          }
+      }
 
-            // Clear any timeouts
-            if (forcedCompletionTimeout) {
-                clearTimeout(forcedCompletionTimeout);
-            }
+      // Run permission check immediately
+      checkCameraPermission();
 
-            // Dispatch registration complete event
-            document.dispatchEvent(new CustomEvent('registration:complete', {
-                detail: { processId: registrationProcessId }
-            }));
+      // Dispatch registration start event when page loads
+      document.dispatchEvent(new CustomEvent('registration:start', {
+          detail: { processId: registrationProcessId }
+      }));
 
-            // Show success message
-            videoContainer.innerHTML = `
-                <div class="alert alert-success p-5 text-center" style="border-radius: var(--radius-sm);">
-                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
-                    <h4 class="font-weight-bold">Registration Complete!</h4>
-                    <p>Your face has been successfully registered.</p>
-                    <p class="text-muted">Redirecting to registration page...</p>
-                </div>
-            `;
+      // Function to handle registration completion
+      function completeRegistration() {
+          // Check if we've already initiated a redirect
+          if (registrationCompleteDetected || window.registrationRedirectInitiated) {
+              console.log('Registration already completed, ignoring duplicate call');
+              return; // Prevent multiple executions
+          }
 
-            // Stop the camera client
-            if (cameraClient) {
-                try {
-                    cameraClient.stop();
-                    console.log('Camera client stopped');
-                } catch (e) {
-                    console.error('Error stopping camera client:', e);
-                }
-            }
+          // Set flags to prevent multiple redirects
+          registrationCompleteDetected = true;
+          window.registrationRedirectInitiated = true;
+          console.log('Registration complete detected at ' + new Date().toISOString());
 
-            // Redirect after a short delay
-            setTimeout(function() {
-                console.log('Redirecting to registration page at ' + new Date().toISOString());
-                window.location.href = "{{ url_for('register') }}?success=true";
-            }, 1500);
-        }
+          // Clear any timeouts
+          if (forcedCompletionTimeout) {
+              clearTimeout(forcedCompletionTimeout);
+          }
 
-        // Check if camera access is available
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.error('MediaDevices API not supported in this browser');
+          // Dispatch registration complete event
+          document.dispatchEvent(new CustomEvent('registration:complete', {
+              detail: { processId: registrationProcessId }
+          }));
 
-            // Show a user-friendly error message
-            videoContainer.innerHTML = `
-                <div class="text-center">
-                    <div class="alert alert-danger p-4" style="border-radius: var(--radius-sm);">
-                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
-                        <h4 class="font-weight-bold">Browser Not Supported</h4>
-                        <p>Your browser does not support camera access required for face registration.</p>
-                        <p>Please use a modern browser like Chrome, Firefox, Edge, or Safari.</p>
-                    </div>
-                    <a href="{{ url_for('register') }}" class="gradient-button mt-3 text-decoration-none">
-                        <i class="fas fa-arrow-left"></i> Back to Registration
-                    </a>
-                </div>
-            `;
-            return;
-        }
+          // Show success message
+          videoContainer.innerHTML = `
+              <div class="alert alert-success p-5 text-center" style="border-radius: var(--radius-sm);">
+                  <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                  <h4 class="font-weight-bold">Registration Complete!</h4>
+                  <p>Your face has been successfully registered.</p>
+                  <p class="text-muted">Redirecting to registration page...</p>
+              </div>
+          `;
 
-        // Detect browser and OS for camera client selection
-        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-        const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-        const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+          // Stop the camera client
+          if (cameraClient) {
+              try {
+                  cameraClient.stop();
+                  console.log('Camera client stopped');
+              } catch (e) {
+                  console.error('Error stopping camera client:', e);
+              }
+          }
 
-        console.log('Browser detection for camera client:', {
-            isMac,
-            isChrome,
-            isSafari,
-            userAgent: navigator.userAgent,
-            platform: navigator.platform
-        });
+          // Redirect after a short delay
+          setTimeout(function() {
+              console.log('Redirecting to registration page at ' + new Date().toISOString());
+              window.location.href = "{{ url_for('register') }}?success=true";
+          }, 1500);
+      }
 
-        // Configure camera client options
-        const cameraOptions = {
-            videoElement: videoElement,
-            statusElement: statusElement,
-            mode: 'registration',
-            studentId: {{ student_id }},
-            onStatusChange: function(status, message) {
-                console.log('Status changed:', status, message);
+      // Check if camera access is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          console.error('MediaDevices API not supported in this browser');
 
-                // Update status message
-                statusElement.textContent = message;
-                statusElement.className = 'mt-3 alert';
+          // Show a user-friendly error message
+          videoContainer.innerHTML = `
+              <div class="text-center">
+                  <div class="alert alert-danger p-4" style="border-radius: var(--radius-sm);">
+                      <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                      <h4 class="font-weight-bold">Browser Not Supported</h4>
+                      <p>Your browser does not support camera access required for face registration.</p>
+                      <p>Please use a modern browser like Chrome, Firefox, Edge, or Safari.</p>
+                  </div>
+                  <a href="{{ url_for('register') }}" class="gradient-button mt-3 text-decoration-none">
+                      <i class="fas fa-arrow-left"></i> Back to Registration
+                  </a>
+              </div>
+          `;
+          return;
+      }
 
-                if (status === 'connected') {
-                    statusElement.classList.add('alert-success');
+      // Detect browser and OS for camera client selection
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+      const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
 
-                    // Set a forced completion timeout as a fallback
-                    forcedCompletionTimeout = setTimeout(function() {
-                        console.log('Forcing registration completion after timeout');
-                        completeRegistration();
-                    }, 20000); // Force completion after 20 seconds
+      console.log('Browser detection for camera client:', {
+          isMac,
+          isChrome,
+          isSafari,
+          userAgent: navigator.userAgent,
+          platform: navigator.platform
+      });
 
-                } else if (status === 'error') {
-                    statusElement.classList.add('alert-danger');
-                } else {
-                    statusElement.classList.add('alert-info');
-                }
-            },
-            onFaceDetected: function(data) {
-                console.log('Face detected:', data);
+      // Configure camera client options
+      const cameraOptions = {
+          videoElement: videoElement,
+          statusElement: statusElement,
+          mode: 'registration',
+          studentId: {{ student_id }},
+          onStatusChange: function(status, message) {
+              console.log('Status changed:', status, message);
 
-                // Check if this is a capture count update
-                if (data.capture_count) {
-                    // Update the status message to show progress
-                    statusElement.textContent = `Capturing face images: ${data.capture_count}/5`;
-                }
-            },
-            onRegistrationComplete: function(data) {
-                console.log('Registration complete event received:', data);
-                completeRegistration();
-            }
-        };
+              // Update status message
+              statusElement.textContent = message || status;
+              statusElement.className = 'mt-3 alert';
 
-        // Choose appropriate camera client based on browser and platform
-        if (isMac && (isChrome || isSafari)) {
-            console.log('Using MacCameraClient for Mac ' + (isChrome ? 'Chrome' : 'Safari'));
-            cameraClient = new MacCameraClient(cameraOptions);
-        } else {
-            console.log('Using SimpleReliableCamera for standard browsers');
-            cameraClient = new SimpleReliableCamera(cameraOptions);
-        }
+              if (status === 'connected') {
+                  statusElement.classList.add('alert-success');
 
-        // Start the client
-        cameraClient.start().catch(function(error) {
-            console.error('Failed to start camera client:', error);
+                  // Show progress container
+                  document.getElementById('progress-container').style.display = 'block';
 
-            // Update status message
-            statusElement.textContent = 'Failed to connect to camera: ' + error.message;
-            statusElement.className = 'mt-3 alert alert-danger';
+                  // Set a forced completion timeout as a fallback
+                  forcedCompletionTimeout = setTimeout(function() {
+                      console.log('Forcing registration completion after timeout');
+                      completeRegistration();
+                  }, 20000); // Force completion after 20 seconds
 
-            // Show a more detailed error in the video container
-            let errorHTML = `
-                <div class="text-center">
-                    <div class="alert alert-danger p-4" style="border-radius: var(--radius-sm);">
-                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
-                        <h4 class="font-weight-bold">Camera Access Error</h4>
-                        <p>${error.message}</p>`;
+              } else if (status === 'error') {
+                  statusElement.classList.add('alert-danger');
+                  // If permission was denied, show extra help
+                  if (message && (message.includes('Permission') || message.includes('denied') || message.includes('NotAllowed'))) {
+                      showPermissionStatus('denied', 'Camera permission denied — click the lock icon in the address bar to allow camera access, then reload the page.');
+                  }
+              } else if (status === 'starting') {
+                  statusElement.classList.add('alert-info');
+                  statusElement.textContent = 'Requesting camera access... please allow when prompted';
+              } else {
+                  statusElement.classList.add('alert-info');
+              }
+          },
+          onFaceDetected: function(data) {
+              console.log('Face detected:', data);
 
-            // Add error details if available
-            if (error.errorDetails) {
-                errorHTML += `<p class="mt-2">${error.errorDetails}</p>`;
-            }
+              const progressContainer = document.getElementById('progress-container');
+              const progressFill = document.getElementById('progress-fill');
+              const progressPercent = document.getElementById('progress-percent');
+              const progressLabel = document.getElementById('progress-label');
 
-            errorHTML += `
-                        <p class="mt-3">Please try using a different browser or device.</p>
-                    </div>
-                    <a href="{{ url_for('register') }}" class="gradient-button mt-3 text-decoration-none">
-                        <i class="fas fa-arrow-left"></i> Back to Registration
-                    </a>
-                </div>
-            `;
+              if (data.capture_count !== undefined) {
+                  progressContainer.style.display = 'block';
+                  const totalCaptures = 5;
+                  const pct = Math.min(100, Math.round((data.capture_count / totalCaptures) * 100));
+                  progressFill.style.width = pct + '%';
+                  progressPercent.textContent = pct + '%';
+                  progressLabel.textContent = `Capturing face images: ${data.capture_count}/${totalCaptures}`;
 
-            videoContainer.innerHTML = errorHTML;
-        });
+                  if (pct >= 100) {
+                      progressFill.style.background = 'linear-gradient(90deg, #059669, #10b981)';
+                      progressLabel.textContent = 'Face capture complete — saving...';
+                      progressPercent.style.color = '#059669';
+                  }
+              }
+          },
+          onRegistrationComplete: function(data) {
+              console.log('Registration complete event received:', data);
+              completeRegistration();
+          }
+      };
 
-        // Clean up when leaving the page
-        window.addEventListener('beforeunload', function() {
-            if (cameraClient) {
-                cameraClient.stop();
-            }
-            // Dispatch registration complete event if not already completed
-            if (!registrationCompleteDetected) {
-                document.dispatchEvent(new CustomEvent('registration:complete', {
-                    detail: { processId: registrationProcessId }
-                }));
-            }
-        });
+      // Choose appropriate camera client based on browser and platform
+      if (isMac && (isChrome || isSafari)) {
+          console.log('Using MacCameraClient for Mac ' + (isChrome ? 'Chrome' : 'Safari'));
+          cameraClient = new MacCameraClient(cameraOptions);
+      } else {
+          console.log('Using SimpleReliableCamera for standard browsers');
+          cameraClient = new SimpleReliableCamera(cameraOptions);
+      }
 
-        // Handle back button click
-        document.getElementById('back-button').addEventListener('click', function(e) {
-            if (cameraClient) {
-                cameraClient.stop();
-            }
-            // Dispatch registration complete event if not already completed
-            if (!registrationCompleteDetected) {
-                document.dispatchEvent(new CustomEvent('registration:complete', {
-                    detail: { processId: registrationProcessId }
-                }));
-            }
-        });
-    });
+      // Start the client
+      cameraClient.start().catch(function(error) {
+          console.error('Failed to start camera client:', error);
+
+          // Update status message
+          statusElement.textContent = 'Failed to connect to camera: ' + error.message;
+          statusElement.className = 'mt-3 alert alert-danger';
+
+          // Show a more detailed error in the video container
+          let errorHTML = `
+              <div class="text-center">
+                  <div class="alert alert-danger p-4" style="border-radius: var(--radius-sm);">
+                      <i class="fas fa-exclamation-triangle fa-3x mb-3 text-danger"></i>
+                      <h4 class="font-weight-bold">Camera Access Error</h4>
+                      <p>${error.message}</p>`;
+
+          // Add error details if available
+          if (error.errorDetails) {
+              errorHTML += `<p class="mt-2">${error.errorDetails}</p>`;
+          }
+
+          errorHTML += `
+                      <p class="mt-3">Please try using a different browser or device.</p>
+                  </div>
+                  <a href="{{ url_for('register') }}" class="gradient-button mt-3 text-decoration-none">
+                      <i class="fas fa-arrow-left"></i> Back to Registration
+                  </a>
+              </div>
+          `;
+
+          videoContainer.innerHTML = errorHTML;
+      });
+
+      // Clean up when leaving the page
+      window.addEventListener('beforeunload', function() {
+          if (cameraClient) {
+              cameraClient.stop();
+          }
+          // Dispatch registration complete event if not already completed
+          if (!registrationCompleteDetected) {
+              document.dispatchEvent(new CustomEvent('registration:complete', {
+                  detail: { processId: registrationProcessId }
+              }));
+          }
+      });
+
+      // Handle back button click
+      document.getElementById('back-button').addEventListener('click', function(e) {
+          if (cameraClient) {
+              cameraClient.stop();
+          }
+          // Dispatch registration complete event if not already completed
+          if (!registrationCompleteDetected) {
+              document.dispatchEvent(new CustomEvent('registration:complete', {
+                  detail: { processId: registrationProcessId }
+              }));
+          }
+      });
+  });
 </script>
 {% endblock %}

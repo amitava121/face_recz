@@ -34,9 +34,30 @@ os.environ["PYTHONUTF8"] = "1"
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
-DEFAULT_PORT = 5000
 PYTHON_BIN = sys.executable
 _ACTIVE_PYTHON_BIN = PYTHON_BIN
+
+
+def _parse_port_from_argv():
+    """Extract --port N from sys.argv before we launch child processes."""
+    args = sys.argv[1:]
+    port = 5000
+    filtered = []
+    i = 0
+    while i < len(args):
+        if args[i] == "--port" and i + 1 < len(args):
+            try:
+                port = int(args[i + 1])
+            except ValueError:
+                pass
+            i += 2
+            continue
+        filtered.append(args[i])
+        i += 1
+    return port, filtered
+
+
+DEFAULT_PORT, _EXTRA_ARGS = _parse_port_from_argv()
 
 REQUIRED_MODULES = {
     "fastapi": "fastapi",
@@ -45,18 +66,13 @@ REQUIRED_MODULES = {
     "opencv-contrib-python": "cv2",
     "numpy": "numpy",
     "insightface": "insightface",
-    "mediapipe": "mediapipe",
     "aiortc": "aiortc",
-    "asyncpg": "asyncpg",
     "SQLAlchemy": "sqlalchemy",
     "pandas": "pandas",
-    "openpyxl": "openpyxl",
-    "cryptography": "cryptography",
-    "PyJWT": "jwt",
-    "bcrypt": "bcrypt",
     "psutil": "psutil",
     "loguru": "loguru",
     "onnxruntime": "onnxruntime",
+    "pydantic": "pydantic",
 }
 
 
@@ -80,7 +96,10 @@ def get_python_candidates():
     unique_candidates = []
     seen = set()
     for candidate in candidates:
-        candidate = candidate.resolve() if candidate.exists() else candidate
+        # NOTE: do NOT .resolve() here — on macOS .venv/bin/python is a
+        # symlink to the system interpreter; resolving it drops the venv
+        # context and makes all packages appear missing.
+        candidate = candidate.absolute() if candidate.exists() else candidate
         candidate_str = str(candidate)
         if candidate_str in seen:
             continue
@@ -192,32 +211,39 @@ def kill_process_on_port(port):
     if not pids:
         return False
 
-    signals = [signal.SIGTERM]
-    if hasattr(signal, "SIGKILL"):
-        signals.append(signal.SIGKILL)
+    # Try polite SIGTERM first
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+    time.sleep(2.0)
+    if not is_port_in_use(port):
+        return True
 
-    for sig in signals:
-        for pid in pids:
-            try:
-                if platform.system() == "Windows":
-                    subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
-                else:
-                    os.kill(pid, sig)
-            except ProcessLookupError:
-                continue
-            except PermissionError:
-                if platform.system() == "Windows":
-                    try:
-                        subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
-                    except Exception:
-                        pass
-                continue
-            except Exception:
-                continue
-        time.sleep(0.5)
-        if not is_port_in_use(port):
-            return True
+    # Force-kill via subprocess (handles multiple PIDs and permission edge cases)
+    for pid in pids:
+        try:
+            if platform.system() == "Windows":
+                subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+            else:
+                subprocess.run(["kill", "-9", str(pid)], capture_output=True)
+        except Exception:
+            pass
+    time.sleep(3.0)
     return not is_port_in_use(port)
+
+
+def find_free_port(start=9493, end=65535):
+    """Find a free port. Prefer a fixed fallback so browser permissions persist."""
+    # Try the fixed fallback first so Chrome remembers permission across restarts
+    if not is_port_in_use(start):
+        return start
+    # Only if busy, scan sequentially upward
+    for port in range(start + 1, min(start + 20, end + 1)):
+        if not is_port_in_use(port):
+            return port
+    return None
 
 
 def print_colored(text, color):
@@ -385,15 +411,26 @@ def start_servers():
     if not preload_models(_ACTIVE_PYTHON_BIN):
         print_colored("Warning: model preloading failed, continuing with startup.", "yellow")
 
-    if is_port_in_use(DEFAULT_PORT):
-        print_colored(f"Port {DEFAULT_PORT} is busy. Clearing it before startup...", "yellow")
-        if not kill_process_on_port(DEFAULT_PORT):
-            print_colored(f"Unable to free port {DEFAULT_PORT}. Stop the existing process and retry.", "red")
-            return 1
-    time.sleep(0.5)
+    active_port = DEFAULT_PORT
+    if is_port_in_use(active_port):
+        print_colored(f"Port {active_port} is busy. Attempting to clear it...", "yellow")
+        if kill_process_on_port(active_port):
+            print_colored(f"Port {active_port} freed.", "green")
+        else:
+            fallback = find_free_port()
+            if fallback:
+                print_colored(f"Unable to free port {active_port}. Falling back to port {fallback}.", "yellow")
+                active_port = fallback
+            else:
+                print_colored(f"Unable to free port {active_port} and no free ports found. Stop the existing process and retry.", "red")
+                return 1
+    time.sleep(1.5)
+
+    env = os.environ.copy()
+    env["APP_API_URL"] = f"http://127.0.0.1:{active_port}"
 
     process = subprocess.Popen(
-        build_app_command(DEFAULT_PORT),
+        build_app_command(active_port),
         cwd=PROJECT_DIR,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -401,21 +438,22 @@ def start_servers():
         universal_newlines=True,
         encoding="utf-8",
         errors="replace",
+        env=env,
     )
 
     print_colored("FASTAPI SERVICE IS STARTING", "green")
-    print_colored(f"Web Interface: {build_browser_url(DEFAULT_PORT, '/')}", "cyan")
-    print_colored(f"Attendance Camera: {build_browser_url(DEFAULT_PORT, '/attendance')}", "cyan")
-    print_colored(f"WebRTC endpoints: http://127.0.0.1:{DEFAULT_PORT}/webrtc/offer", "cyan")
+    print_colored(f"Web Interface: {build_browser_url(active_port, '/')}", "cyan")
+    print_colored(f"Attendance Camera: {build_browser_url(active_port, '/attendance')}", "cyan")
+    print_colored(f"WebRTC endpoints: http://127.0.0.1:{active_port}/webrtc/offer", "cyan")
     print_colored("Press Ctrl+C to stop the server", "yellow")
     output_thread = threading.Thread(target=stream_process_output, args=(process,), daemon=True)
     output_thread.start()
     startup_timeout = int(os.environ.get("SERVER_STARTUP_TIMEOUT_SECONDS", "120"))
-    if wait_for_server(DEFAULT_PORT, timeout_seconds=startup_timeout):
-        maybe_open_browser(DEFAULT_PORT)
+    if wait_for_server(active_port, timeout_seconds=startup_timeout):
+        maybe_open_browser(active_port)
     else:
         print_colored(
-            f"Server did not bind to port {DEFAULT_PORT} within {startup_timeout} seconds.",
+            f"Server did not bind to port {active_port} within {startup_timeout} seconds.",
             "yellow",
         )
 

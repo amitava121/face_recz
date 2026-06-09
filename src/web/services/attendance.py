@@ -15,8 +15,25 @@ from src.web.timezone_utils import local_day_bounds, today_local
 
 
 CHALLENGE_EXPIRY_SECONDS = 15
+
+# Simple in-memory cache for enrolled students to avoid repeated DB queries
+_students_cache = None
+_students_cache_time = 0
+_STUDENTS_CACHE_TTL = 30  # seconds
+
+
 POSE_CHALLENGE_DELTA = 0.12
 DEPTH_CHALLENGE_RATIO = 0.18
+
+
+def _get_enrolled_students():
+    """Return students with face embeddings, using a short-lived cache."""
+    global _students_cache, _students_cache_time
+    now = datetime.now(timezone.utc).timestamp()
+    if _students_cache is None or (now - _students_cache_time) > _STUDENTS_CACHE_TTL:
+        _students_cache = Student.query.filter(Student.face_embedding_array.isnot(None)).all()
+        _students_cache_time = now
+    return _students_cache
 
 
 def decode_image_bytes(image_data: bytes):
@@ -38,6 +55,7 @@ def process_registration_image(img, student_id: int, registration_complete: dict
             "success": True,
             "message": "Registration complete",
             "student_id": student_id,
+            "capture_count": existing_images,
             "images_collected": existing_images,
             "accepted_samples": existing_images,
             "rejected_samples": 0,
@@ -140,6 +158,7 @@ def process_registration_image(img, student_id: int, registration_complete: dict
         "success": True,
         "message": "Registration complete" if is_complete else "Face captured",
         "student_id": student_id,
+        "capture_count": new_count,
         "images_collected": new_count,
         "accepted_samples": new_count,
         "rejected_samples": 0,
@@ -247,7 +266,7 @@ def process_attendance_image(img, attendance_running: bool, active_challenges: d
         return {"error": "Attendance not running"}, 400
 
     service = get_inference_service()
-    students = Student.query.filter(Student.face_embedding_array.isnot(None)).all()
+    students = _get_enrolled_students()
     _, envelope = service.analyze_faces(
         img,
         students=students,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from fastapi import APIRouter, Form, Query, Request
+from loguru import logger
 from fastapi.responses import JSONResponse, RedirectResponse
 from werkzeug.security import generate_password_hash
 
@@ -99,9 +100,13 @@ async def register_submit(
         created_student_id = await asyncio.to_thread(
             _register_student, student_id, name, department, phone_number, password
         )
+        logger.info(f"Registration created student_id={created_student_id}, session before set: {dict(request.session)}")
         request.session["registering_student_id"] = created_student_id
+        logger.info(f"Session after set: {dict(request.session)}")
         request.app.state.registration_complete.pop(created_student_id, None)
-        return RedirectResponse(url="/capture_face", status_code=302)
+        response = RedirectResponse(url="/capture_face", status_code=302)
+        logger.info(f"Redirecting to /capture_face with session: {dict(request.session)}")
+        return response
     except Exception as exc:
         db.session.rollback()
         flash(request, f"Registration error: {exc}", "error")
@@ -110,9 +115,11 @@ async def register_submit(
 
 @router.get("/capture_face", name="capture_face")
 async def capture_face(request: Request):
+    logger.info(f"capture_face called, session contents: {dict(request.session)}")
     if request.session.get("viewer_logged_in"):
         return RedirectResponse(url="/viewer_dashboard", status_code=302)
     student_id = request.session.get("registering_student_id")
+    logger.info(f"capture_face student_id from session: {student_id}")
     if not student_id:
         flash(request, "Please register student details first.", "error")
         return RedirectResponse(url="/register", status_code=302)

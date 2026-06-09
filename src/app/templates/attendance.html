@@ -1,1467 +1,1711 @@
-{% extends "base.html" %}
-
-{% block page_header %}
+{% extends "base.html" %} {% block page_header %}
 <div class="page-header" data-aos="fade-down">
-    <a href="javascript:void(0)" onclick="window.history.back()" class="page-back-button" title="Go Back">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-    <div class="page-title-wrap">
-        <h1 class="page-title">Take Attendance</h1>
-        <p class="page-description">Mark live student attendance using secure real-time face recognition</p>
-    </div>
+  <a
+    href="javascript:void(0)"
+    onclick="window.history.back()"
+    class="page-back-button"
+    title="Go Back"
+  >
+    <i class="fas fa-arrow-left"></i>
+  </a>
+  <div class="page-title-wrap">
+    <h1 class="page-title">Take Attendance</h1>
+    <p class="page-description">
+      Mark live student attendance using secure real-time face recognition
+    </p>
+  </div>
 </div>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <style>
-    /* ── Attendance Camera Stability ── P2 Issue #3 ── */
-    /* Prevent ANY hover effect on the glass card that wraps the camera */
-    #videoContainer,
-    #videoContainer:hover,
-    #videoContainer *,
-    .video-container,
-    .video-container:hover {
-        transform: none !important;
-        transition: none !important;
-        animation-play-state: paused !important;
-        will-change: auto !important;
-    }
-    /* Re-enable spinner animation on the loading state only */
-    #loading .loading-spinner {
-        animation-play-state: running !important;
-    }
-    /* The glass-card wrapping the camera: suppress hover lift */
-    .attendance-camera-glass:hover {
-        transform: none !important;
-        box-shadow: var(--shadow-md) !important;
-    }
+  /* ── Attendance Camera Stability ── P2 Issue #3 ── */
+  /* Prevent ANY hover effect on the glass card that wraps the camera */
+  #videoContainer,
+  #videoContainer:hover,
+  #videoContainer *,
+  .video-container,
+  .video-container:hover {
+    transform: none !important;
+    transition: none !important;
+    animation-play-state: paused !important;
+    will-change: auto !important;
+  }
+  /* Re-enable spinner animation on the loading state only */
+  #loading .loading-spinner {
+    animation-play-state: running !important;
+  }
+  /* The glass-card wrapping the camera: suppress hover lift */
+  .attendance-camera-glass:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-md) !important;
+  }
 </style>
 <div class="attendance-page-layout animate-fade-in-up">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 text-center">
-            
-            <div class="attendance-instructions-badge mb-4">
-                <i class="fas fa-info-circle me-2"></i>
-                Position face inside the camera view area to automatically register today's attendance
-            </div>
-            
-            <div class="status-header-wrap mb-4">
-                <div class="status-header animate-pulse" id="cameraStatusHeader">
-                    <i class="fas fa-circle-notch me-2 animate-spin"></i>
-                    Waiting for Face Detection...
-                </div>
-            </div>
+  <div class="row justify-content-center">
+    <div class="col-lg-8 text-center">
+      <div class="attendance-instructions-badge mb-4">
+        <i class="fas fa-info-circle me-2"></i>
+        Position face inside the camera view area to automatically register
+        today's attendance
+      </div>
 
-            <div class="glass-card p-4 attendance-camera-glass">
-                <div class="video-container" id="videoContainer">
-                    <img id="localVideo" alt="Camera feed" />
-
-                    <div id="loading" class="loading-overlay">
-                        <div class="loading-spinner"></div>
-                        <div class="loading-text" id="loadingText">Starting camera...</div>
-                        <button id="retryBtn" class="retry-btn">
-                            <i class="fas fa-redo me-2"></i> Retry
-                        </button>
-                    </div>
-
-                    <div id="attendanceOverlay" class="attendance-overlay">
-                        <div class="checkmark-circle">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <div class="student-name-overlay" id="studentNameOverlay"></div>
-                    </div>
-                </div>
-
-                <div class="controls mt-4">
-                    <button id="startBtn" class="gradient-button control-btn">
-                        <i class="fas fa-play"></i>
-                        <span>Start Camera Feed</span>
-                    </button>
-                    <button id="stopBtn" class="btn btn-danger control-btn" style="display: none;">
-                        <i class="fas fa-stop"></i>
-                        <span>Stop Camera Feed</span>
-                    </button>
-                </div>
-            </div>
+      <div class="status-header-wrap mb-4">
+        <div class="status-header animate-pulse" id="cameraStatusHeader">
+          <i class="fas fa-video me-2"></i>
+          Click on Start Camera Feed
         </div>
+      </div>
+
+      <div class="glass-card p-4 attendance-camera-glass">
+        <div class="video-container" id="videoContainer">
+          <img
+            id="localVideo"
+            src="{{ url_for('static', filename='img/camera-placeholder.jpg') }}"
+            alt="Camera feed"
+          />
+
+          <div id="loading" class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Starting camera...</div>
+            <button id="retryBtn" class="retry-btn">
+              <i class="fas fa-redo me-2"></i> Retry
+            </button>
+          </div>
+
+          <div id="attendanceOverlay" class="attendance-overlay">
+            <div class="checkmark-circle">
+              <i class="fas fa-check"></i>
+            </div>
+            <div class="student-name-overlay" id="studentNameOverlay"></div>
+          </div>
+        </div>
+
+        <div class="controls mt-4">
+          <button id="startBtn" class="gradient-button control-btn">
+            <i class="fas fa-play"></i>
+            <span>Start Camera Feed</span>
+          </button>
+          <button
+            id="stopBtn"
+            class="btn btn-danger control-btn"
+            style="display: none"
+          >
+            <i class="fas fa-stop"></i>
+            <span>Stop Camera Feed</span>
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <style>
-    .attendance-instructions-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.5rem 1.25rem;
-        background: var(--glass-bg-strong);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-pill);
-        color: var(--color-text-secondary);
-        font-size: 0.8rem;
-        font-weight: 500;
-        box-shadow: var(--shadow-xs);
-    }
-    
-    .status-header-wrap {
-        display: flex;
-        justify-content: center;
-    }
-    
-    .status-header {
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: var(--color-primary);
-        padding: 0.5rem 1.25rem;
-        background: var(--brand-gradient-subtle);
-        border-radius: var(--radius-sm);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        box-shadow: var(--shadow-sm);
-        border: 1.5px solid var(--glass-border);
-    }
-    
-    .attendance-card-main {
-        max-width: 650px;
-        margin: 0 auto;
-    }
-    
-    .video-container {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 4/3;
-        height: 380px;
-        border-radius: var(--radius-md);
-        overflow: hidden;
-        background: #1e293b;
-        border: 1.5px solid var(--color-border);
-        box-shadow: var(--shadow-sm);
-        margin: 0 auto;
-    }
-    
-    #localVideo {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    
-    .controls {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-    }
-    
-    .control-btn {
-        min-width: 200px;
-        height: 46px;
-    }
-    
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(15,23,42,0.85);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        z-index: 20;
-    }
-    
-    .loading-spinner {
-        width: 48px;
-        height: 48px;
-        border: 4px solid rgba(255,255,255,0.1);
-        border-top-color: #8B5CF6;
-        border-radius: 50%;
-        animation: spin 0.8s linear infinite;
-        margin-bottom: 1rem;
-    }
-    
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-    
-    .loading-text {
-        font-size: 0.95rem;
-        font-weight: 500;
-        margin-bottom: 1rem;
-    }
-    
-    .retry-btn {
-        background: var(--brand-gradient);
-        color: white;
-        border: none;
-        padding: 0.5rem 1.25rem;
-        border-radius: var(--radius-sm);
-        font-weight: 600;
-        cursor: pointer;
-    }
-    
-    .attendance-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(15,23,42,0.7);
-        backdrop-filter: blur(4px);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        z-index: 30;
-    }
-    
-    .attendance-overlay.active {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .checkmark-circle {
-        width: 72px;
-        height: 72px;
-        background: #10B981;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 2rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 0 20px rgba(16,185,129,0.4);
-    }
-    
-    .student-name-overlay {
-        color: white;
-        font-size: 1.25rem;
-        font-weight: 700;
-        background: rgba(16,185,129,0.9);
-        padding: 0.5rem 1.5rem;
-        border-radius: var(--radius-pill);
-    }
-</style>
-{% endblock %}
+  .attendance-instructions-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1.25rem;
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-xs);
+  }
 
-{% block extra_js %}
+  .status-header-wrap {
+    display: flex;
+    justify-content: center;
+  }
+
+  .status-header {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-primary);
+    padding: 0.5rem 1.25rem;
+    background: var(--brand-gradient-subtle);
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1.5px solid var(--glass-border);
+  }
+
+  .attendance-card-main {
+    max-width: 650px;
+    margin: 0 auto;
+  }
+
+  .video-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    height: 380px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: #1e293b;
+    border: 1.5px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    margin: 0 auto;
+  }
+
+  #localVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .control-btn {
+    min-width: 200px;
+    height: 46px;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.85);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    z-index: 20;
+  }
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #8b5cf6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .retry-btn {
+    background: var(--brand-gradient);
+    color: white;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .attendance-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 30;
+  }
+
+  .attendance-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .checkmark-circle {
+    width: 72px;
+    height: 72px;
+    background: #10b981;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .student-name-overlay {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.9);
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--radius-pill);
+  }
+</style>
+{% endblock %} {% block extra_js %}
 <!-- Camera client scripts -->
 <script src="{{ url_for('static', filename='js/unified-webrtc-client.js') }}"></script>
 <script src="{{ url_for('static', filename='js/mac-camera-client.js') }}"></script>
 <script src="{{ url_for('static', filename='js/simple-reliable-camera.js') }}"></script>
-    <script>
-    AOS.init({
-        duration: 250,
-        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        once: true,
-        offset: 30,
-        delay: 0,
-        disable: 'mobile'
-    });
+<script>
+  AOS.init({
+    duration: 250,
+    easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+    once: true,
+    offset: 30,
+    delay: 0,
+    disable: "mobile",
+  });
 
-    let isStreaming = false;
-    let startBtn = document.getElementById('startBtn');
-    let stopBtn = document.getElementById('stopBtn');
-    const statusHeader = document.getElementById('cameraStatusHeader');
-    let popupTimeout = null;
-    let lastMarkedStudentId = null;
-    let greenBoxShown = false;
-    let isCooldown = false;
-    let lastFaceId = null;
+  let isStreaming = false;
+  let startBtn = document.getElementById("startBtn");
+  let stopBtn = document.getElementById("stopBtn");
+  const statusHeader = document.getElementById("cameraStatusHeader");
+  let popupTimeout = null;
+  let lastMarkedStudentId = null;
+  let greenBoxShown = false;
+  let isCooldown = false;
+  let lastFaceId = null;
 
-    function showLoading() {
-        document.getElementById('loading').style.display = 'flex';
-        document.getElementById('retryBtn').style.display = 'none';
-        document.getElementById('loadingText').textContent = 'Starting camera...';
+  function showLoading() {
+    document.getElementById("loading").style.display = "flex";
+    document.getElementById("retryBtn").style.display = "none";
+    document.getElementById("loadingText").textContent = "Starting camera...";
+  }
+
+  function hideLoading() {
+    document.getElementById("loading").style.display = "none";
+  }
+
+  function showError(message) {
+    document.getElementById("loading").style.display = "flex";
+    document.getElementById("loadingText").textContent = message;
+    document.getElementById("retryBtn").style.display = "block";
+  }
+
+  const ATTENDANCE_DASHBOARD_EVENT_KEY = "attendance-dashboard-refresh";
+
+  function notifyDashboardAttendanceUpdate(payload = {}) {
+    const eventPayload = {
+      ...payload,
+      emitted_at: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem(
+        ATTENDANCE_DASHBOARD_EVENT_KEY,
+        JSON.stringify(eventPayload),
+      );
+    } catch (error) {
+      console.warn("Failed to notify dashboard via localStorage:", error);
     }
 
-    function hideLoading() {
-        document.getElementById('loading').style.display = 'none';
+    if ("BroadcastChannel" in window) {
+      try {
+        const channel = new BroadcastChannel("attendance-dashboard");
+        channel.postMessage(eventPayload);
+        channel.close();
+      } catch (error) {
+        console.warn("Failed to notify dashboard via BroadcastChannel:", error);
+      }
+    }
+  }
+
+  // Enhanced diagnostic function to check system status
+  async function checkSystemStatus() {
+    console.log("🔍 === ENHANCED SYSTEM DIAGNOSTIC ===");
+    console.log("📅 Timestamp:", new Date().toISOString());
+    console.log("🌐 URL:", window.location.href);
+    console.log("🔒 Secure context:", window.isSecureContext);
+    console.log("📱 User agent:", navigator.userAgent);
+
+    // Check script availability
+    console.log("📜 Script availability:");
+    console.log(
+      "  - SimpleReliableCamera:",
+      typeof SimpleReliableCamera !== "undefined",
+    );
+    console.log(
+      "  - SimpleCameraClient:",
+      typeof SimpleCameraClient !== "undefined",
+    );
+    console.log("  - MacCameraClient:", typeof MacCameraClient !== "undefined");
+
+    // Check DOM elements
+    console.log("🎯 DOM elements:");
+    console.log("  - Start button:", !!startBtn, startBtn?.style.display);
+    console.log("  - Stop button:", !!stopBtn, stopBtn?.style.display);
+    console.log("  - Video element:", !!document.getElementById("video-feed"));
+    console.log("  - Local video:", !!document.getElementById("localVideo"));
+    console.log(
+      "  - Video container:",
+      !!document.getElementById("videoContainer"),
+    );
+    console.log(
+      "  - Overlay canvas:",
+      !!document.getElementById("multi-face-overlay"),
+    );
+    console.log("  - Status header:", !!statusHeader);
+
+    // Check application state
+    console.log("📊 Application state:");
+    console.log("  - Is streaming:", isStreaming);
+    console.log("  - Is cooldown:", isCooldown);
+    console.log("  - Camera client exists:", !!window.cameraClient);
+    console.log("  - Socket exists:", !!window.socket);
+
+    // Check camera API availability (without requesting permission)
+    console.log("🎥 Camera system check:");
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      console.log("  - Camera API: AVAILABLE");
+      console.log("  - Secure context:", window.isSecureContext);
+      console.log("  - Protocol:", location.protocol);
+      console.log("  - Hostname:", location.hostname);
+    } else {
+      console.log("  - Camera API: NOT AVAILABLE");
     }
 
-    function showError(message) {
-        document.getElementById('loading').style.display = 'flex';
-        document.getElementById('loadingText').textContent = message;
-        document.getElementById('retryBtn').style.display = 'block';
+    // Check network connectivity
+    console.log("🌐 Network check:");
+    try {
+      const response = await fetch("/get_sleep_timer", { method: "GET" });
+      console.log("  - Server connectivity:", response.ok ? "OK" : "FAILED");
+    } catch (err) {
+      console.log("  - Server connectivity: ERROR -", err.message);
     }
 
-    const ATTENDANCE_DASHBOARD_EVENT_KEY = 'attendance-dashboard-refresh';
+    console.log("✅ === DIAGNOSTIC COMPLETE ===");
 
-    function notifyDashboardAttendanceUpdate(payload = {}) {
-        const eventPayload = {
-            ...payload,
-            emitted_at: new Date().toISOString()
-        };
+    // Return summary for programmatic use
+    return {
+      scriptsLoaded: typeof SimpleReliableCamera !== "undefined",
+      domReady: !!startBtn && !!stopBtn,
+      isStreaming: isStreaming,
+      cameraClientExists: !!window.cameraClient,
+      secureContext: window.isSecureContext,
+    };
+  }
 
-        try {
-            localStorage.setItem(ATTENDANCE_DASHBOARD_EVENT_KEY, JSON.stringify(eventPayload));
-        } catch (error) {
-            console.warn('Failed to notify dashboard via localStorage:', error);
-        }
+  // Add diagnostic functions to window for console access
+  window.checkSystemStatus = checkSystemStatus;
+  window.testCameraAccess = checkCameraPermission;
 
-        if ('BroadcastChannel' in window) {
-            try {
-                const channel = new BroadcastChannel('attendance-dashboard');
-                channel.postMessage(eventPayload);
-                channel.close();
-            } catch (error) {
-                console.warn('Failed to notify dashboard via BroadcastChannel:', error);
-            }
-        }
+  // Note: Camera permission is only checked when explicitly starting attendance
+  // This prevents the camera from turning on when just loading the page
+
+  function showAttendanceOverlay(name, type = "success") {
+    const overlay = document.getElementById("attendanceOverlay");
+    const nameDiv = document.getElementById("studentNameOverlay");
+    const checkmarkCircle = document.querySelector(".checkmark-circle");
+
+    // Reset styles
+    checkmarkCircle.style.backgroundColor = "#4ade80"; // Default green
+    nameDiv.style.color = "#111827"; // Default text color
+
+    // Apply different styles based on type
+    if (type === "error") {
+      checkmarkCircle.style.backgroundColor = "#ef4444"; // Red for error
+      nameDiv.style.color = "#ef4444"; // Red text for error
+      // Change checkmark to X
+      const icon = checkmarkCircle.querySelector("i");
+      icon.className = "fas fa-times";
+    } else {
+      // Reset to checkmark
+      const icon = checkmarkCircle.querySelector("i");
+      icon.className = "fas fa-check";
     }
 
-    // Enhanced diagnostic function to check system status
-    async function checkSystemStatus() {
-        console.log('🔍 === ENHANCED SYSTEM DIAGNOSTIC ===');
-        console.log('📅 Timestamp:', new Date().toISOString());
-        console.log('🌐 URL:', window.location.href);
-        console.log('🔒 Secure context:', window.isSecureContext);
-        console.log('📱 User agent:', navigator.userAgent);
+    nameDiv.textContent = name + " attendance marked";
+    overlay.style.display = "flex";
+    clearTimeout(popupTimeout);
+    popupTimeout = setTimeout(() => {
+      overlay.style.display = "none";
+    }, 1500); // 1.5 seconds
+  }
 
-        // Check script availability
-        console.log('📜 Script availability:');
-        console.log('  - SimpleReliableCamera:', typeof SimpleReliableCamera !== 'undefined');
-        console.log('  - SimpleCameraClient:', typeof SimpleCameraClient !== 'undefined');
-        console.log('  - MacCameraClient:', typeof MacCameraClient !== 'undefined');
+  async function checkCameraPermission() {
+    try {
+      console.log("🎥 Checking camera permissions...");
+      console.log("🌐 Browser:", navigator.userAgent);
 
-        // Check DOM elements
-        console.log('🎯 DOM elements:');
-        console.log('  - Start button:', !!startBtn, startBtn?.style.display);
-        console.log('  - Stop button:', !!stopBtn, stopBtn?.style.display);
-        console.log('  - Video element:', !!document.getElementById('video-feed'));
-        console.log('  - Local video:', !!document.getElementById('localVideo'));
-        console.log('  - Video container:', !!document.getElementById('videoContainer'));
-        console.log('  - Overlay canvas:', !!document.getElementById('multi-face-overlay'));
-        console.log('  - Status header:', !!statusHeader);
+      // Check if we're on a secure context (HTTPS or localhost)
+      const isSecureContext =
+        window.isSecureContext ||
+        location.protocol === "https:" ||
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1" ||
+        location.hostname === "0.0.0.0";
+      console.log("🔒 Secure context:", isSecureContext);
 
-        // Check application state
-        console.log('📊 Application state:');
-        console.log('  - Is streaming:', isStreaming);
-        console.log('  - Is cooldown:', isCooldown);
-        console.log('  - Camera client exists:', !!window.cameraClient);
-        console.log('  - Socket exists:', !!window.socket);
-
-        // Check camera API availability (without requesting permission)
-        console.log('🎥 Camera system check:');
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            console.log('  - Camera API: AVAILABLE');
-            console.log('  - Secure context:', window.isSecureContext);
-            console.log('  - Protocol:', location.protocol);
-            console.log('  - Hostname:', location.hostname);
-        } else {
-            console.log('  - Camera API: NOT AVAILABLE');
-        }
-
-        // Check network connectivity
-        console.log('🌐 Network check:');
-        try {
-            const response = await fetch('/get_sleep_timer', { method: 'GET' });
-            console.log('  - Server connectivity:', response.ok ? 'OK' : 'FAILED');
-        } catch (err) {
-            console.log('  - Server connectivity: ERROR -', err.message);
-        }
-
-        console.log('✅ === DIAGNOSTIC COMPLETE ===');
-
-        // Return summary for programmatic use
+      if (!isSecureContext) {
         return {
-            scriptsLoaded: typeof SimpleReliableCamera !== 'undefined',
-            domReady: !!startBtn && !!stopBtn,
-            isStreaming: isStreaming,
-            cameraClientExists: !!window.cameraClient,
-            secureContext: window.isSecureContext
+          granted: false,
+          error: "Camera access requires a secure connection (HTTPS).",
+          errorDetails: "Please access the application via HTTPS or localhost.",
+          errorName: "InsecureContext",
         };
-    }
+      }
 
-    // Add diagnostic functions to window for console access
-    window.checkSystemStatus = checkSystemStatus;
-    window.testCameraAccess = checkCameraPermission;
+      // More permissive browser detection for modern browsers
+      const isChrome =
+        /Chrome/.test(navigator.userAgent) &&
+        /Google Inc/.test(navigator.vendor);
+      const isSafari =
+        /Safari/.test(navigator.userAgent) &&
+        /Apple Computer/.test(navigator.vendor);
+      const isFirefox = /Firefox/.test(navigator.userAgent);
+      const isEdge = /Edg/.test(navigator.userAgent);
+      const isModernBrowser = isChrome || isSafari || isFirefox || isEdge;
 
-    // Note: Camera permission is only checked when explicitly starting attendance
-    // This prevents the camera from turning on when just loading the page
+      console.log("🔍 Browser detection:", {
+        isChrome,
+        isSafari,
+        isFirefox,
+        isEdge,
+      });
 
-    function showAttendanceOverlay(name, type = 'success') {
-        const overlay = document.getElementById('attendanceOverlay');
-        const nameDiv = document.getElementById('studentNameOverlay');
-        const checkmarkCircle = document.querySelector('.checkmark-circle');
+      // First check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error("❌ MediaDevices API not supported in this browser");
 
-        // Reset styles
-        checkmarkCircle.style.backgroundColor = '#4ade80'; // Default green
-        nameDiv.style.color = '#111827'; // Default text color
+        // For modern browsers, try to work around the issue
+        if (isModernBrowser) {
+          console.warn(
+            "⚠️ Modern browser detected but MediaDevices API not found. Attempting polyfill...",
+          );
 
-        // Apply different styles based on type
-        if (type === 'error') {
-            checkmarkCircle.style.backgroundColor = '#ef4444'; // Red for error
-            nameDiv.style.color = '#ef4444'; // Red text for error
-            // Change checkmark to X
-            const icon = checkmarkCircle.querySelector('i');
-            icon.className = 'fas fa-times';
-        } else {
-            // Reset to checkmark
-            const icon = checkmarkCircle.querySelector('i');
-            icon.className = 'fas fa-check';
-        }
+          // Create a placeholder if needed
+          if (!window.navigator.mediaDevices) {
+            window.navigator.mediaDevices = {};
+          }
 
-        nameDiv.textContent = name;
-        overlay.style.display = 'flex';
-        clearTimeout(popupTimeout);
-        popupTimeout = setTimeout(() => {
-            overlay.style.display = 'none';
-        }, 1500); // 1.5 seconds
-    }
-
-    async function checkCameraPermission() {
-        try {
-            console.log('🎥 Checking camera permissions...');
-            console.log('🌐 Browser:', navigator.userAgent);
-
-            // Check if we're on a secure context (HTTPS or localhost)
-            const isSecureContext = window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '0.0.0.0';
-            console.log('🔒 Secure context:', isSecureContext);
-
-            if (!isSecureContext) {
-                return {
-                    granted: false,
-                    error: 'Camera access requires a secure connection (HTTPS).',
-                    errorDetails: 'Please access the application via HTTPS or localhost.',
-                    errorName: 'InsecureContext'
-                };
-            }
-
-            // More permissive browser detection for modern browsers
-            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-            const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
-            const isFirefox = /Firefox/.test(navigator.userAgent);
-            const isEdge = /Edg/.test(navigator.userAgent);
-            const isModernBrowser = isChrome || isSafari || isFirefox || isEdge;
-
-            console.log('🔍 Browser detection:', { isChrome, isSafari, isFirefox, isEdge });
-
-            // First check if mediaDevices is supported
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                console.error('❌ MediaDevices API not supported in this browser');
-
-                // For modern browsers, try to work around the issue
-                if (isModernBrowser) {
-                    console.warn('⚠️ Modern browser detected but MediaDevices API not found. Attempting polyfill...');
-
-                    // Create a placeholder if needed
-                    if (!window.navigator.mediaDevices) {
-                        window.navigator.mediaDevices = {};
-                    }
-
-                    // Polyfill getUserMedia
-                    if (!navigator.mediaDevices.getUserMedia) {
-                        const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-                        if (!getUserMedia) {
-                            return {
-                                granted: false,
-                                error: 'Your browser does not support camera access. Please try a different browser like Chrome or Firefox.',
-                                errorName: 'MediaDevicesNotSupported'
-                            };
-                        }
-
-                        navigator.mediaDevices.getUserMedia = function(constraints) {
-                            console.warn('🔧 Using polyfill for getUserMedia');
-                            return new Promise(function(resolve, reject) {
-                                getUserMedia.call(navigator, constraints, resolve, reject);
-                            });
-                        };
-                    }
-                } else {
-                    return {
-                        granted: false,
-                        error: 'Your browser does not support camera access. Please try a different browser like Chrome or Firefox.',
-                        errorName: 'MediaDevicesNotSupported'
-                    };
-                }
-            }
-
-            // Try to get camera permission with multiple constraint sets
-            let stream = null;
-            const constraintSets = [
-                // Basic constraints
-                { video: true },
-                // More specific constraints
-                { video: { width: 320, height: 240 } },
-                // Fallback constraints
-                { video: { facingMode: 'user' } }
-            ];
-
-            for (let i = 0; i < constraintSets.length; i++) {
-                try {
-                    console.log(`🎯 Trying constraint set ${i + 1}:`, constraintSets[i]);
-                    stream = await navigator.mediaDevices.getUserMedia(constraintSets[i]);
-                    console.log('✅ Camera permission granted with constraint set', i + 1);
-                    break;
-                } catch (constraintError) {
-                    console.warn(`❌ Constraint set ${i + 1} failed:`, constraintError);
-                    if (i === constraintSets.length - 1) {
-                        throw constraintError; // Re-throw the last error
-                    }
-                }
-            }
-
-            if (!stream) {
-                throw new Error('Failed to get camera stream with any constraint set');
-            }
-
-            // If we get here, permission was granted
-            // Stop all tracks to release the camera
-            stream.getTracks().forEach(track => {
-                track.stop();
-                console.log('🛑 Stopped track:', track.kind);
-            });
-
-            console.log('✅ Camera permission check successful');
-            return { granted: true };
-        } catch (error) {
-            console.error('❌ Camera permission check failed:', error);
-
-            let errorMessage = 'Could not access camera. ';
-            let errorDetails = '';
-
-            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                errorMessage += 'Camera access was denied.';
-                errorDetails = 'Please click "Allow" when prompted for camera access, or check your browser settings to enable camera access for this site.';
-            } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                errorMessage += 'No camera was found on your device.';
-                errorDetails = 'Please connect a camera and reload the page.';
-            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                errorMessage += 'Your camera may be in use by another application.';
-                errorDetails = 'Please close other applications that might be using your camera (like Zoom, Teams, or other video apps) and try again.';
-            } else if (error.name === 'AbortError') {
-                errorMessage += 'Camera access request was aborted.';
-                errorDetails = 'Please try again or use a different browser.';
-            } else if (error.name === 'SecurityError') {
-                errorMessage += 'Camera access was blocked due to security restrictions.';
-                errorDetails = 'Please use a secure connection (HTTPS) or try a different browser.';
-            } else if (error.name === 'OverconstrainedError') {
-                errorMessage += 'Camera constraints could not be satisfied.';
-                errorDetails = 'Your camera may not support the required settings. Please try a different camera or browser.';
-            } else {
-                errorMessage += 'An unknown error occurred.';
-                errorDetails = 'Please try refreshing the page or using a different browser like Chrome or Firefox.';
-            }
-
-            return {
+          // Polyfill getUserMedia
+          if (!navigator.mediaDevices.getUserMedia) {
+            const getUserMedia =
+              navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+            if (!getUserMedia) {
+              return {
                 granted: false,
-                error: errorMessage,
-                errorDetails: errorDetails,
-                errorName: error.name || 'UnknownError'
+                error:
+                  "Your browser does not support camera access. Please try a different browser like Chrome or Firefox.",
+                errorName: "MediaDevicesNotSupported",
+              };
+            }
+
+            navigator.mediaDevices.getUserMedia = function (constraints) {
+              console.warn("🔧 Using polyfill for getUserMedia");
+              return new Promise(function (resolve, reject) {
+                getUserMedia.call(navigator, constraints, resolve, reject);
+              });
             };
+          }
+        } else {
+          return {
+            granted: false,
+            error:
+              "Your browser does not support camera access. Please try a different browser like Chrome or Firefox.",
+            errorName: "MediaDevicesNotSupported",
+          };
         }
-    }
+      }
 
-    async function startAttendance() {
-        console.log('🎬 Starting attendance function...');
-        console.log('📊 System status check:');
-        console.log('  - isStreaming:', isStreaming);
-        console.log('  - startBtn.disabled:', startBtn.disabled);
-        console.log('  - SimpleReliableCamera available:', typeof SimpleReliableCamera !== 'undefined');
+      // Try to get camera permission with multiple constraint sets
+      let stream = null;
+      const constraintSets = [
+        // Basic constraints
+        { video: true },
+        // More specific constraints
+        { video: { width: 320, height: 240 } },
+        // Fallback constraints
+        { video: { facingMode: "user" } },
+      ];
 
-        showLoading();
-        const localVideo = document.getElementById('localVideo');
-        const videoContainer = document.getElementById('videoContainer');
-
-        // Dispatch attendance start event
-        document.dispatchEvent(new CustomEvent('attendance:start', {
-            detail: { processId: 'attendance-' + Date.now() }
-        }));
-
+      for (let i = 0; i < constraintSets.length; i++) {
         try {
-            console.log('🖼️ Setting placeholder image...');
-            // Set a placeholder image while loading
-            localVideo.src = '/static/img/camera-placeholder.jpg';
-
-            // NOTE: We do NOT call checkCameraPermission() here because it acquires
-            // the camera and then immediately releases it, which causes a race condition
-            // on Windows where the driver cannot be re-acquired immediately.
-            // SimpleReliableCamera will handle camera access and error reporting directly.
-
-            // Verify camera API is available before proceeding
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error('Camera API not available. Please use a modern browser (Chrome, Firefox, Edge) and ensure you are on localhost or HTTPS.');
-            }
-
-            // Verify we are in a secure context
-            const isLoopback = ['localhost', '127.0.0.1', '0.0.0.0'].includes(location.hostname);
-            if (!window.isSecureContext && location.protocol !== 'https:' && !isLoopback) {
-                throw new Error('Camera access requires HTTPS or localhost. Please access this application via localhost or a secure HTTPS connection.');
-            }
-
-            // Call the application backend to start attendance
-            console.log('🌐 Calling backend /start_attendance...');
-            const response = await fetch('/start_attendance', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-
-            console.log('📡 Response status:', response.status);
-            console.log('📡 Response ok:', response.ok);
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            console.log('✅ Start attendance response:', data);
-
-            if (data.success) {
-                isStreaming = true;
-                startBtn.style.display = 'none';
-                stopBtn.style.display = 'flex';
-                // Reset button state
-                startBtn.disabled = false;
-                startBtn.style.opacity = '1';
-
-                // Create a video element for camera
-                const videoElement = document.createElement('video');
-                videoElement.id = 'video-feed';
-                videoElement.autoplay = true;
-                videoElement.playsInline = true;
-                videoElement.style.width = '100%';
-                videoElement.style.height = '100%';
-                videoElement.style.objectFit = 'cover';
-                videoElement.style.display = 'block';
-                videoElement.style.borderRadius = '1.5rem';
-                videoElement.muted = true;
-                videoElement.setAttribute('muted', '');
-
-                // Create the overlay canvas for face detection boxes
-                const overlayCanvas = document.createElement('canvas');
-                overlayCanvas.id = 'multi-face-overlay';
-                overlayCanvas.style.position = 'absolute';
-                overlayCanvas.style.top = '0';
-                overlayCanvas.style.left = '0';
-                overlayCanvas.style.width = '100%';
-                overlayCanvas.style.height = '100%';
-                overlayCanvas.style.pointerEvents = 'none';
-                overlayCanvas.style.zIndex = '10';
-                overlayCanvas.style.borderRadius = '1.5rem';
-
-                // Replace the image with the video element and add the overlay canvas
-                localVideo.style.display = 'none';
-                videoContainer.appendChild(videoElement);
-                videoContainer.appendChild(overlayCanvas);
-
-                console.log('Video element and overlay canvas created');
-
-                // Check if SimpleReliableCamera is available
-                if (typeof SimpleReliableCamera === 'undefined') {
-                    throw new Error('SimpleReliableCamera class not found. Please check if the script is loaded.');
-                }
-
-                console.log('Using SimpleReliableCamera for all browsers');
-
-                // Create the camera client
-                const cameraClient = new SimpleReliableCamera({
-                    videoElement: videoElement,
-                    mode: 'attendance',
-                    onStatusChange: function(status, message) {
-                        console.log('Camera status changed:', status, message);
-                        if (statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
-                            statusHeader.textContent = "Waiting for Face Detection...";
-                            statusHeader.style.color = "#2563eb";
-                        }
-                    },
-                    onAttendanceMarked: function(data) {
-                        console.log('Attendance marked:', data);
-                        handleAttendanceResponse(data);
-                    },
-                    onFaceDetected: function(data) {
-                        console.log('Face detected callback:', data);
-
-                        if (isCooldown) {
-                            return;
-                        }
-
-                        // Update status header
-                        if (statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
-                            statusHeader.textContent = "Detecting Face...";
-                            statusHeader.style.color = "#2563eb";
-                        }
-
-                        console.log('Face detection data received:', data);
-
-                        // Check if there are any faces detected
-                        const hasFaces = (data && data.faces && Array.isArray(data.faces) && data.faces.length > 0) ||
-                                        (data && data.face_rect);
-
-                        // Update the last face detection time if faces are detected
-                        if (hasFaces) {
-                            lastFaceDetectionTime = Date.now();
-                        }
-
-                        // If no faces are detected, update the status header
-                        if (!hasFaces && statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
-                            drawMultipleFaceResults([]);
-                            statusHeader.textContent = "Waiting for Face Detection...";
-                            statusHeader.style.color = "#2563eb";
-                            console.log('No faces detected, cleared canvas');
-                            return; // Exit early if no faces detected
-                        }
-
-                        // Handle multiple faces if available
-                        if (data && data.faces && Array.isArray(data.faces) && data.faces.length > 0) {
-                            console.log('Multiple faces detected:', data.faces.length);
-
-                            // Use the drawMultipleFaceResults function to draw all faces
-                            drawMultipleFaceResults(data.faces);
-
-                            // Check if any face has a student_id for cooldown
-                            const recognizedFace = data.faces.find(face => face.student_id !== undefined);
-                            if (recognizedFace && lastFaceId !== null && recognizedFace.student_id === lastFaceId) {
-                                return;
-                            }
-                        }
-                        // Handle single face in the response
-                        else if (data && data.face_rect) {
-                            console.log('Single face detected:', data.face_rect);
-
-                            // Create a faces array with the single face
-                            const faces = [{
-                                x: data.face_rect.x,
-                                y: data.face_rect.y,
-                                width: data.face_rect.width,
-                                height: data.face_rect.height,
-                                label: 'Face Detected',
-                                type: 'detected'
-                            }];
-                            drawMultipleFaceResults(faces);
-                        }
-                    },
-                    onError: function(error) {
-                        console.log('Error in camera client:', error);
-
-                        if (typeof error === 'string' && (error.includes('duplicate key value') || error.includes('already exists'))) {
-                            console.log('Duplicate attendance detected');
-
-                            // Create a face box for the duplicate attendance
-                            const videoElement = document.getElementById('video-feed');
-                            if (videoElement) {
-                                const canvasId = 'multi-face-overlay';
-                                let overlayCanvas = document.getElementById(canvasId);
-                                if (overlayCanvas) {
-                                    // If we have the last face rect from the camera client, use it
-                                    if (window.cameraClient && window.cameraClient.lastFaceRect) {
-                                        const { x, y, width, height } = window.cameraClient.lastFaceRect;
-                                        const faces = [{
-                                            x: x,
-                                            y: y,
-                                            width: width,
-                                            height: height,
-                                            label: 'Already Marked Today',
-                                            type: 'already_marked_today'
-                                        }];
-                                        drawMultipleFaceResults(faces);
-                                    }
-                                }
-                            }
-
-                            // Update status header
-                            statusHeader.textContent = "Already Marked Today";
-                            statusHeader.style.color = "#b91c1c";
-                            clearTimeout(popupTimeout);
-                            statusHeader.dataset.locked = "true";
-                            isCooldown = true;
-                            popupTimeout = setTimeout(() => {
-                                statusHeader.textContent = "Waiting for Face Detection...";
-                                statusHeader.style.color = "#2563eb";
-                                statusHeader.dataset.locked = "false";
-                                isCooldown = false;
-                            }, 2000);
-                        }
-                    }
-                });
-
-                console.log('Camera client created, attempting to start...');
-
-                // Start camera client with timeout and retry logic
-                let cameraStarted = false;
-                let attempts = 0;
-                const maxAttempts = 3;
-
-                while (!cameraStarted && attempts < maxAttempts) {
-                    attempts++;
-                    console.log(`🎥 Camera start attempt ${attempts}/${maxAttempts}`);
-
-                    try {
-                        await cameraClient.start();
-                        cameraStarted = true;
-                        console.log('✅ Camera client started successfully');
-                    } catch (cameraError) {
-                        console.warn(`❌ Camera start attempt ${attempts} failed:`, cameraError);
-
-                        if (attempts < maxAttempts) {
-                            console.log('⏳ Waiting 1 second before retry...');
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                        } else {
-                            throw new Error(`Camera failed to start after ${maxAttempts} attempts: ${cameraError.message}`);
-                        }
-                    }
-                }
-
-                // Store the camera client globally
-                window.cameraClient = cameraClient;
-
-                // Hide loading overlay
-                hideLoading();
-
-                // Set up a socket connection to receive attendance events
-                setupSocketConnection();
-
-                console.log('🎉 Attendance system started successfully');
-            } else {
-                throw new Error(data.message || 'Failed to start attendance');
-            }
-        } catch (err) {
-            console.error('❌ Error starting attendance:', err);
-            // Dispatch attendance stop event on error
-            document.dispatchEvent(new CustomEvent('attendance:stop', {
-                detail: { processId: 'attendance-' + Date.now() }
-            }));
-
-            let errorMessage = 'Failed to start camera: ' + err.message;
-            if (err.errorDetails) {
-                errorMessage += '\n\n' + err.errorDetails;
-            }
-
-            // Add specific error handling for common camera issues
-            if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
-                errorMessage = 'Camera access denied. Please allow camera access in your browser and try again.';
-            } else if (err.message.includes('NotFoundError') || err.message.includes('No camera')) {
-                errorMessage = 'No camera found. Please connect a camera and try again.';
-            } else if (err.message.includes('NotReadableError') || err.message.includes('in use')) {
-                errorMessage = 'Camera is in use by another application. Please close other apps using the camera and try again.';
-            }
-
-            showError(errorMessage);
-            isStreaming = false;
-            startBtn.style.display = 'flex';
-            stopBtn.style.display = 'none';
-            // Reset button state on error
-            startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-            startBtn.style.transform = 'scale(1)';
+          console.log(`🎯 Trying constraint set ${i + 1}:`, constraintSets[i]);
+          stream = await navigator.mediaDevices.getUserMedia(constraintSets[i]);
+          console.log(
+            "✅ Camera permission granted with constraint set",
+            i + 1,
+          );
+          break;
+        } catch (constraintError) {
+          console.warn(`❌ Constraint set ${i + 1} failed:`, constraintError);
+          if (i === constraintSets.length - 1) {
+            throw constraintError; // Re-throw the last error
+          }
         }
+      }
+
+      if (!stream) {
+        throw new Error("Failed to get camera stream with any constraint set");
+      }
+
+      // If we get here, permission was granted
+      // Stop all tracks to release the camera
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        console.log("🛑 Stopped track:", track.kind);
+      });
+
+      console.log("✅ Camera permission check successful");
+      return { granted: true };
+    } catch (error) {
+      console.error("❌ Camera permission check failed:", error);
+
+      let errorMessage = "Could not access camera. ";
+      let errorDetails = "";
+
+      if (
+        error.name === "NotAllowedError" ||
+        error.name === "PermissionDeniedError"
+      ) {
+        errorMessage += "Camera access was denied.";
+        errorDetails =
+          'Please click "Allow" when prompted for camera access, or check your browser settings to enable camera access for this site.';
+      } else if (
+        error.name === "NotFoundError" ||
+        error.name === "DevicesNotFoundError"
+      ) {
+        errorMessage += "No camera was found on your device.";
+        errorDetails = "Please connect a camera and reload the page.";
+      } else if (
+        error.name === "NotReadableError" ||
+        error.name === "TrackStartError"
+      ) {
+        errorMessage += "Your camera may be in use by another application.";
+        errorDetails =
+          "Please close other applications that might be using your camera (like Zoom, Teams, or other video apps) and try again.";
+      } else if (error.name === "AbortError") {
+        errorMessage += "Camera access request was aborted.";
+        errorDetails = "Please try again or use a different browser.";
+      } else if (error.name === "SecurityError") {
+        errorMessage +=
+          "Camera access was blocked due to security restrictions.";
+        errorDetails =
+          "Please use a secure connection (HTTPS) or try a different browser.";
+      } else if (error.name === "OverconstrainedError") {
+        errorMessage += "Camera constraints could not be satisfied.";
+        errorDetails =
+          "Your camera may not support the required settings. Please try a different camera or browser.";
+      } else {
+        errorMessage += "An unknown error occurred.";
+        errorDetails =
+          "Please try refreshing the page or using a different browser like Chrome or Firefox.";
+      }
+
+      return {
+        granted: false,
+        error: errorMessage,
+        errorDetails: errorDetails,
+        errorName: error.name || "UnknownError",
+      };
     }
+  }
 
-    async function stopAttendance() {
-        console.log('Stop Attendance button clicked');
+  async function startAttendance() {
+    console.log("🎬 Starting attendance function...");
+    console.log("📊 System status check:");
+    console.log("  - isStreaming:", isStreaming);
+    console.log("  - startBtn.disabled:", startBtn.disabled);
+    console.log(
+      "  - SimpleReliableCamera available:",
+      typeof SimpleReliableCamera !== "undefined",
+    );
 
-        // Dispatch attendance stop event
-        document.dispatchEvent(new CustomEvent('attendance:stop', {
-            detail: { processId: 'attendance-' + Date.now() }
-        }));
+    showLoading();
+    const localVideo = document.getElementById("localVideo");
+    const videoContainer = document.getElementById("videoContainer");
 
-        try {
-            // Show loading overlay while stopping
-            const overlay = document.getElementById('loading');
-            const loadingText = document.getElementById('loadingText');
-            loadingText.textContent = 'Stopping camera...';
-            overlay.style.display = 'flex';
+    // Dispatch attendance start event
+    document.dispatchEvent(
+      new CustomEvent("attendance:start", {
+        detail: { processId: "attendance-" + Date.now() },
+      }),
+    );
 
-            // Stop camera client if it exists
-            if (window.cameraClient) {
-                try {
-                    console.log('Stopping camera client');
-                    window.cameraClient.stop();
-                    console.log('Camera client stopped successfully');
-                    window.cameraClient = null;
-                } catch (stopError) {
-                    console.error('Error stopping camera client:', stopError);
-                }
+    try {
+      console.log("🖼️ Setting placeholder image...");
+      // Set a placeholder image while loading
+      localVideo.src = "/static/img/camera-placeholder.jpg";
+
+      // NOTE: We do NOT call checkCameraPermission() here because it acquires
+      // the camera and then immediately releases it, which causes a race condition
+      // on Windows where the driver cannot be re-acquired immediately.
+      // SimpleReliableCamera will handle camera access and error reporting directly.
+
+      // Verify camera API is available before proceeding
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error(
+          "Camera API not available. Please use a modern browser (Chrome, Firefox, Edge) and ensure you are on localhost or HTTPS.",
+        );
+      }
+
+      // Verify we are in a secure context
+      const isLoopback = ["localhost", "127.0.0.1", "0.0.0.0"].includes(
+        location.hostname,
+      );
+      if (
+        !window.isSecureContext &&
+        location.protocol !== "https:" &&
+        !isLoopback
+      ) {
+        throw new Error(
+          "Camera access requires HTTPS or localhost. Please access this application via localhost or a secure HTTPS connection.",
+        );
+      }
+
+      // Call the application backend to start attendance
+      console.log("🌐 Calling backend /start_attendance...");
+      const response = await fetch("/start_attendance", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+      console.log("📡 Response status:", response.status);
+      console.log("📡 Response ok:", response.ok);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Start attendance response:", data);
+
+      if (data.success) {
+        isStreaming = true;
+        startBtn.style.display = "none";
+        stopBtn.style.display = "flex";
+        // Reset button state
+        startBtn.disabled = false;
+        startBtn.style.opacity = "1";
+
+        // Create a video element for camera
+        const videoElement = document.createElement("video");
+        videoElement.id = "video-feed";
+        videoElement.autoplay = true;
+        videoElement.playsInline = true;
+        videoElement.style.width = "100%";
+        videoElement.style.height = "100%";
+        videoElement.style.objectFit = "cover";
+        videoElement.style.display = "block";
+        videoElement.style.borderRadius = "1.5rem";
+        videoElement.muted = true;
+        videoElement.setAttribute("muted", "");
+
+        // Create the overlay canvas for face detection boxes
+        const overlayCanvas = document.createElement("canvas");
+        overlayCanvas.id = "multi-face-overlay";
+        overlayCanvas.style.position = "absolute";
+        overlayCanvas.style.top = "0";
+        overlayCanvas.style.left = "0";
+        overlayCanvas.style.width = "100%";
+        overlayCanvas.style.height = "100%";
+        overlayCanvas.style.pointerEvents = "none";
+        overlayCanvas.style.zIndex = "10";
+        overlayCanvas.style.borderRadius = "1.5rem";
+
+        // Replace the image with the video element and add the overlay canvas
+        localVideo.style.display = "none";
+        videoContainer.appendChild(videoElement);
+        videoContainer.appendChild(overlayCanvas);
+
+        console.log("Video element and overlay canvas created");
+
+        // Check if SimpleReliableCamera is available
+        if (typeof SimpleReliableCamera === "undefined") {
+          throw new Error(
+            "SimpleReliableCamera class not found. Please check if the script is loaded.",
+          );
+        }
+
+        console.log("Using SimpleReliableCamera for all browsers");
+
+        // Create the camera client
+        const cameraClient = new SimpleReliableCamera({
+          videoElement: videoElement,
+          mode: "attendance",
+          onStatusChange: function (status, message) {
+            console.log("Camera status changed:", status, message);
+            if (
+              statusHeader &&
+              (!statusHeader.dataset.locked ||
+                statusHeader.dataset.locked === "false")
+            ) {
+              statusHeader.textContent = "Waiting for Face Detection...";
+              statusHeader.style.color = "#2563eb";
+            }
+          },
+          onAttendanceMarked: function (data) {
+            console.log("Attendance marked:", data);
+            handleAttendanceResponse(data);
+          },
+          onFaceDetected: function (data) {
+            console.log("Face detected callback:", data);
+
+            if (isCooldown) {
+              return;
             }
 
-            // Call the application backend to stop attendance
-            console.log('Calling server to stop attendance');
-            const response = await fetch('/stop_attendance', {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            const data = await response.json();
-            console.log('Server response for stop attendance:', data);
-
-            // Reset the video display
-            const localVideo = document.getElementById('localVideo');
-            localVideo.style.display = 'block';
-            localVideo.src = '/static/img/camera-placeholder.jpg';
-
-            // Remove the video element if it exists
-            const videoElement = document.getElementById('video-feed');
-            if (videoElement) {
-                try {
-                    videoElement.srcObject = null;
-                    videoElement.parentNode.removeChild(videoElement);
-                    console.log('Removed video element');
-                } catch (removeError) {
-                    console.warn('Error removing video element:', removeError);
-                }
+            // Update status header
+            if (
+              statusHeader &&
+              (!statusHeader.dataset.locked ||
+                statusHeader.dataset.locked === "false")
+            ) {
+              statusHeader.textContent = "Detecting Face...";
+              statusHeader.style.color = "#2563eb";
             }
 
-            isStreaming = false;
-            startBtn.style.display = 'flex';
-            stopBtn.style.display = 'none';
+            console.log("Face detection data received:", data);
 
-            // Disconnect socket if connected
-            if (window.socket) {
-                try {
-                    window.socket.disconnect();
-                    window.socket = null;
-                } catch (socketError) {
-                    console.warn('Error disconnecting socket:', socketError);
-                }
+            // Check if there are any faces detected
+            const hasFaces =
+              (data &&
+                data.faces &&
+                Array.isArray(data.faces) &&
+                data.faces.length > 0) ||
+              (data && data.face_rect);
+
+            // Update the last face detection time if faces are detected
+            if (hasFaces) {
+              lastFaceDetectionTime = Date.now();
             }
 
-            // Clear face detection canvas and status
-            const canvasId = 'multi-face-overlay';
-            const overlayCanvas = document.getElementById(canvasId);
-            if (overlayCanvas) {
-                const ctx = overlayCanvas.getContext('2d');
-                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                console.log('Cleared face detection canvas');
+            // If no faces are detected, update the status header
+            if (
+              !hasFaces &&
+              statusHeader &&
+              (!statusHeader.dataset.locked ||
+                statusHeader.dataset.locked === "false")
+            ) {
+              drawMultipleFaceResults([]);
+              statusHeader.textContent = "Waiting for Face Detection...";
+              statusHeader.style.color = "#2563eb";
+              console.log("No faces detected, cleared canvas");
+              return; // Exit early if no faces detected
             }
 
-            // Reset status header to default state
-            const statusHeader = document.getElementById('status-header');
-            if (statusHeader) {
-                statusHeader.textContent = 'Position your face in front of the camera for automatic attendance marking';
-                statusHeader.style.color = '#1f2937';
-                statusHeader.dataset.locked = 'false';
-                console.log('Reset status header');
+            // Handle multiple faces if available
+            if (
+              data &&
+              data.faces &&
+              Array.isArray(data.faces) &&
+              data.faces.length > 0
+            ) {
+              console.log("Multiple faces detected:", data.faces.length);
+
+              // Use the drawMultipleFaceResults function to draw all faces
+              drawMultipleFaceResults(data.faces);
+
+              // Check if already marked today
+              const alreadyMarkedFace = data.faces.find(
+                (f) => f.type === "already_marked_today",
+              );
+              if (alreadyMarkedFace && statusHeader) {
+                const alreadyName =
+                  alreadyMarkedFace.name || alreadyMarkedFace.label || "";
+                statusHeader.textContent = alreadyName
+                  ? alreadyName + " already marked today"
+                  : "Already Marked Today";
+                statusHeader.style.color = "#b91c1c";
+                statusHeader.dataset.locked = "true";
+                isCooldown = true;
+                setTimeout(() => {
+                  isCooldown = false;
+                  if (statusHeader) {
+                    statusHeader.dataset.locked = "false";
+                  }
+                }, 3000);
+                return;
+              }
+
+              // Check if attendance was just marked
+              const markedFace = data.faces.find(
+                (f) => f.type === "attendance_marked",
+              );
+              if (markedFace && statusHeader) {
+                const markedName = markedFace.name || markedFace.label || "";
+                statusHeader.textContent = markedName
+                  ? markedName + " attendance marked"
+                  : "Attendance Marked";
+                statusHeader.style.color = "#059669";
+                statusHeader.dataset.locked = "true";
+                isCooldown = true;
+                setTimeout(() => {
+                  isCooldown = false;
+                  if (statusHeader) {
+                    statusHeader.dataset.locked = "false";
+                  }
+                }, 3000);
+                return;
+              }
+
+              // Check if any face has a student_id for cooldown
+              const recognizedFace = data.faces.find(
+                (face) => face.student_id !== undefined,
+              );
+              if (
+                recognizedFace &&
+                lastFaceId !== null &&
+                recognizedFace.student_id === lastFaceId
+              ) {
+                return;
+              }
             }
+            // Handle single face in the response
+            else if (data && data.face_rect) {
+              console.log("Single face detected:", data.face_rect);
 
-            // Clear any pending canvas clear timeouts
-            if (clearCanvasTimeout) {
-                clearTimeout(clearCanvasTimeout);
-                clearCanvasTimeout = null;
+              // Create a faces array with the single face
+              const faces = [
+                {
+                  x: data.face_rect.x,
+                  y: data.face_rect.y,
+                  width: data.face_rect.width,
+                  height: data.face_rect.height,
+                  label: "Face Detected",
+                  type: "detected",
+                },
+              ];
+              drawMultipleFaceResults(faces);
             }
+          },
+          onError: function (error) {
+            console.log("Error in camera client:", error);
 
-            // Update message and hide loading overlay
-            loadingText.textContent = 'Attendance stopped successfully';
+            if (
+              typeof error === "string" &&
+              (error.includes("duplicate key value") ||
+                error.includes("already exists"))
+            ) {
+              console.log("Duplicate attendance detected");
 
-            // Hide loading overlay after a short delay
-            setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 1000);
-        } catch (err) {
-            console.error('Error stopping attendance:', err);
-
-            // Show error message and hide loading overlay
-            const overlay = document.getElementById('loading');
-            const loadingText = document.getElementById('loadingText');
-            loadingText.textContent = 'Error stopping attendance';
-
-            // Hide loading overlay after showing error
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                showError('Error stopping attendance: ' + err.message);
-            }, 1500);
-        }
-    }
-
-    function setupSocketConnection() {
-        // Load Socket.IO script dynamically
-        if (!window.io) {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js';
-            script.onload = connectSocket;
-            document.head.appendChild(script);
-        } else {
-            connectSocket();
-        }
-    }
-
-    function connectSocket() {
-        // Connect to the Socket.IO server
-        window.socket = io();
-
-        // Listen for attendance events
-        window.socket.on('attendance_result', function(data) {
-            console.log('Attendance result received:', data);
-            if (data.status === 'present') {
-                showAttendanceOverlay(data.name);
-            }
-        });
-
-        // Listen for video frames
-        // Create an image element to preload frames
-        const frameImage = new Image();
-        let isFrameLoading = false;
-
-        window.socket.on('video_frame', function(data) {
-            if (data.frame && !isFrameLoading) {
-                isFrameLoading = true;
-
-                // Preload the image
-                frameImage.onload = function() {
-                    // Update the video element with the received frame
-                    const localVideo = document.getElementById('localVideo');
-                    localVideo.src = frameImage.src;
-                    isFrameLoading = false;
-                };
-
-                frameImage.onerror = function() {
-                    isFrameLoading = false;
-                };
-
-                // Set the source to load the image
-                frameImage.src = 'data:image/jpeg;base64,' + data.frame;
-            }
-        });
-
-        window.socket.on('connect', function() {
-            console.log('Socket connected');
-        });
-
-        window.socket.on('disconnect', function() {
-            console.log('Socket disconnected');
-        });
-    }
-
-    // Add event listeners with better error handling
-    startBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('🚀 Start button clicked - Event triggered');
-
-        // Check if already processing
-        if (startBtn.disabled || isStreaming) {
-            console.log('⚠️ Button already processing or streaming active');
-            return;
-        }
-
-        // Immediate visual feedback
-        startBtn.style.opacity = '0.7';
-        startBtn.style.transform = 'scale(0.95)';
-        startBtn.disabled = true;
-
-        console.log('🎯 Calling startAttendance function...');
-
-        // Call start function with timeout
-        Promise.race([
-            startAttendance(),
-            new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Start attendance timeout')), 30000)
-            )
-        ]).catch(error => {
-            console.error('❌ Start attendance failed:', error);
-            // Reset button state on error
-            startBtn.style.opacity = '1';
-            startBtn.style.transform = 'scale(1)';
-            startBtn.disabled = false;
-            showError('Failed to start: ' + error.message);
-        });
-    });
-
-    stopBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log('Stop button clicked');
-
-        // Immediate visual feedback
-        stopBtn.style.opacity = '0.7';
-        stopBtn.style.transform = 'scale(0.95)';
-
-        stopAttendance();
-    });
-
-    document.getElementById('retryBtn').addEventListener('click', function(e) {
-        e.preventDefault();
-        startAttendance();
-    });
-
-    // Add event listener for page unload
-    window.addEventListener('beforeunload', function() {
-        if (isStreaming) {
-            document.dispatchEvent(new CustomEvent('attendance:stop', {
-                detail: { processId: 'attendance-' + Date.now() }
-            }));
-        }
-    });
-
-    // Variable to track if we need to clear the canvas
-    let clearCanvasTimeout = null;
-    let overlayAnimationFrame = null;
-    let animatedFaces = [];
-    let targetFaces = [];
-
-    function animateFaceOverlay() {
-        const videoElement = document.getElementById('video-feed');
-        const overlayCanvas = document.getElementById('multi-face-overlay');
-        if (!videoElement || !overlayCanvas) {
-            overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
-            return;
-        }
-
-        if (animatedFaces.length !== targetFaces.length) {
-            animatedFaces = targetFaces.map(face => ({ ...face }));
-        } else {
-            animatedFaces = targetFaces.map((targetFace, index) => {
-                const currentFace = animatedFaces[index] || targetFace;
-                const ease = 0.38;
-                return {
-                    ...targetFace,
-                    x: currentFace.x + ((targetFace.x ?? 0) - (currentFace.x ?? 0)) * ease,
-                    y: currentFace.y + ((targetFace.y ?? 0) - (currentFace.y ?? 0)) * ease,
-                    width: currentFace.width + ((targetFace.width ?? 0) - (currentFace.width ?? 0)) * ease,
-                    height: currentFace.height + ((targetFace.height ?? 0) - (currentFace.height ?? 0)) * ease,
-                };
-            });
-        }
-
-        renderFaceOverlay(animatedFaces, videoElement, overlayCanvas);
-        overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
-    }
-
-    function renderFaceOverlay(faceResults, videoElement, overlayCanvas) {
-        if (overlayCanvas.width !== videoElement.clientWidth ||
-            overlayCanvas.height !== videoElement.clientHeight) {
-            overlayCanvas.width = videoElement.clientWidth;
-            overlayCanvas.height = videoElement.clientHeight;
-        }
-
-        const ctx = overlayCanvas.getContext('2d');
-        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-        if (!faceResults || faceResults.length === 0) {
-            return;
-        }
-
-        // ── Coordinate-space fix ────────────────────────────────────────────────────
-        // The server receives the DOWNSCALED processing canvas image (e.g. 320×240),
-        // NOT the raw camera frame (e.g. 640×480).  Face bounding boxes returned by
-        // the server are therefore in processing-canvas space, NOT in video space.
-        //
-        // Using videoElement.videoWidth here caused boxes to appear at exactly half
-        // the correct position (they landed on the wall/background instead of the face).
-        //
-        // Fix: read the processing canvas dimensions from the camera client.
-        // Fall back to videoWidth only when the camera client has not started yet.
-        const cameraClient = window.cameraClient;
-        const srcWidth  = (cameraClient && cameraClient.canvas && cameraClient.canvas.width  > 0)
-                            ? cameraClient.canvas.width
-                            : (videoElement.videoWidth  || 320);
-        const srcHeight = (cameraClient && cameraClient.canvas && cameraClient.canvas.height > 0)
-                            ? cameraClient.canvas.height
-                            : (videoElement.videoHeight || 240);
-
-        const displayWidth  = videoElement.clientWidth;
-        const displayHeight = videoElement.clientHeight;
-
-        // Handle object-fit:cover offset so boxes stay inside the visible crop area.
-        // If the video stream aspect ratio and the display element aspect ratio match,
-        // offset is zero.  When they differ (e.g. container is wider than the stream),
-        // cover will crop the top/bottom (or left/right) and we compensate.
-        const streamAspect  = srcWidth  / srcHeight;
-        const displayAspect = displayWidth / displayHeight;
-        let offsetX = 0;
-        let offsetY = 0;
-        let scaleX, scaleY;
-
-        if (Math.abs(streamAspect - displayAspect) < 0.05) {
-            // Aspect ratios are close enough – no crop, simple scale.
-            scaleX = displayWidth  / srcWidth;
-            scaleY = displayHeight / srcHeight;
-        } else if (displayAspect > streamAspect) {
-            // Display is wider than stream → video is scaled to fill width,
-            // top and bottom are cropped.
-            scaleX = displayWidth / srcWidth;
-            scaleY = scaleX;                            // uniform scale
-            offsetY = (srcHeight * scaleY - displayHeight) / 2;
-        } else {
-            // Display is taller than stream → video is scaled to fill height,
-            // left and right are cropped.
-            scaleY = displayHeight / srcHeight;
-            scaleX = scaleY;                            // uniform scale
-            offsetX = (srcWidth * scaleX - displayWidth) / 2;
-        }
-
-        faceResults.forEach(face => {
-            const x = (face.x || 0) * scaleX - offsetX;
-            const y = (face.y || 0) * scaleY - offsetY;
-            const width  = (face.width  || 0) * scaleX;
-            const height = (face.height || 0) * scaleY;
-
-            let strokeColor = '#00FF00';
-            if (face.type === 'spoofing_detected') {
-                strokeColor = '#ef4444';
-            } else if (face.type === 'multiple_faces_blocked') {
-                strokeColor = '#f59e0b';
-            } else if (face.type === 'uncertain_match') {
-                strokeColor = '#eab308';
-            } else if (face.type === 'challenge_required') {
-                strokeColor = '#f97316';
-            } else if (face.type === 'already_marked_today') {
-                strokeColor = '#dc2626';
-            }
-
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x, y, width, height);
-
-            ctx.font = 'bold 10px Arial';
-            let labelColor = 'rgba(34,197,94,0.85)';
-            let textColor = 'white';
-            let labelText = face.label || 'Face Detected';
-
-            if (face.type === 'spoofing_detected') {
-                labelColor = 'rgba(239,68,68,0.90)';
-            } else if (face.type === 'multiple_faces_blocked') {
-                labelColor = 'rgba(245,158,11,0.92)';
-            } else if (face.type === 'uncertain_match') {
-                labelColor = 'rgba(234,179,8,0.90)';
-                textColor = '#111827';
-            } else if (labelText === 'Already Marked Today') {
-                labelColor = 'rgba(220,38,38,0.85)';
-                labelText = 'Already Marked';
-            } else if (face.type === 'challenge_required') {
-                labelColor = 'rgba(217,119,6,0.90)';
-            } else if (labelText === 'Unknown Face') {
-                labelColor = 'rgba(234,179,8,0.85)';
-            }
-
-            const labelWidth = ctx.measureText(labelText).width + 8;
-            ctx.fillStyle = labelColor;
-            ctx.fillRect(x, y - 16, labelWidth, 16);
-            ctx.fillStyle = textColor;
-            ctx.fillText(labelText, x + 4, y - 4);
-        });
-    }
-
-    // Page load optimization
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Page loaded - Optimizing performance...');
-
-        // Preload critical resources
-        const preloadImage = new Image();
-        preloadImage.src = '/static/img/camera-placeholder.jpg';
-
-        // Add performance monitoring
-        if (window.performance && window.performance.mark) {
-            window.performance.mark('attendance-page-ready');
-        }
-
-        // Initialize button states
-        if (startBtn) {
-            startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-            startBtn.style.transform = 'scale(1)';
-            console.log('✅ Start button initialized');
-        }
-
-        // Check system readiness
-        setTimeout(checkSystemStatus, 1000);
-
-        // Scroll to ensure the Start Attendance button is visible
-        setTimeout(() => {
-            const startButton = document.getElementById('startBtn');
-            if (startButton) {
-                startButton.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                    inline: 'center'
-                });
-                console.log('📍 Scrolled to Start Attendance button');
-            }
-        }, 800); // Small delay to ensure page is fully loaded and AOS animations complete
-
-        if (!overlayAnimationFrame) {
-            overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
-        }
-    });
-
-    // Add this helper to draw multiple face boxes and labels
-    function drawMultipleFaceResults(faceResults) {
-        const videoElement = document.getElementById('video-feed');
-        if (!videoElement) {
-            console.warn('Video element not found for drawing face boxes');
-            return;
-        }
-
-        // Get the overlay canvas
-        const canvasId = 'multi-face-overlay';
-        let overlayCanvas = document.getElementById(canvasId);
-        if (!overlayCanvas) {
-            console.warn('Overlay canvas not found, face boxes will not be drawn');
-            return;
-        }
-
-        // If no faces, set a timeout to clear the canvas after a short delay
-        // This ensures boxes disappear when faces leave the frame
-        if (!faceResults || faceResults.length === 0) {
-            // Clear any existing timeout
-            if (clearCanvasTimeout) {
-                clearTimeout(clearCanvasTimeout);
-            }
-
-            // Clear quickly so the overlay does not trail far behind the live preview.
-            clearCanvasTimeout = setTimeout(() => {
-                if (overlayCanvas) {
-                    targetFaces = [];
-                }
-            }, 180);
-
-            return;
-        }
-
-        // If we have faces, clear any pending timeout and update the last detection time
-        if (clearCanvasTimeout) {
-            clearTimeout(clearCanvasTimeout);
-            clearCanvasTimeout = null;
-        }
-
-        // Update the last time faces were detected
-        lastFaceDetectionTime = Date.now();
-        targetFaces = faceResults.map(face => ({ ...face }));
-    }
-
-    // Make the function available globally
-    window.drawMultipleFaceResults = drawMultipleFaceResults;
-
-    // Variable to track the last time faces were detected
-    let lastFaceDetectionTime = 0;
-
-    // Function to periodically check and clear the canvas if no faces have been detected for a while
-    function checkAndClearCanvas() {
-        const now = Date.now();
-
-        // Clear stale overlays aggressively so boxes don't drift long after the face moves.
-        if (now - lastFaceDetectionTime > 800) {
-            const videoElement = document.getElementById('video-feed');
-            if (videoElement) {
-                const canvasId = 'multi-face-overlay';
+              // Create a face box for the duplicate attendance
+              const videoElement = document.getElementById("video-feed");
+              if (videoElement) {
+                const canvasId = "multi-face-overlay";
                 let overlayCanvas = document.getElementById(canvasId);
                 if (overlayCanvas) {
-                    // Make sure canvas dimensions match the video element
-                    if (overlayCanvas.width !== videoElement.clientWidth ||
-                        overlayCanvas.height !== videoElement.clientHeight) {
-                        overlayCanvas.width = videoElement.clientWidth;
-                        overlayCanvas.height = videoElement.clientHeight;
-                    }
-
-                    const ctx = overlayCanvas.getContext('2d');
-                    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                    console.log('Auto-cleared canvas due to inactivity');
-
-                    // Update status header if not locked
-                    if (statusHeader && (!statusHeader.dataset.locked || statusHeader.dataset.locked === "false")) {
-                        statusHeader.textContent = "Waiting for Face Detection...";
-                        statusHeader.style.color = "#2563eb";
-                    }
+                  // If we have the last face rect from the camera client, use it
+                  if (window.cameraClient && window.cameraClient.lastFaceRect) {
+                    const { x, y, width, height } =
+                      window.cameraClient.lastFaceRect;
+                    const faces = [
+                      {
+                        x: x,
+                        y: y,
+                        width: width,
+                        height: height,
+                        label: "Already Marked Today",
+                        type: "already_marked_today",
+                      },
+                    ];
+                    drawMultipleFaceResults(faces);
+                  }
                 }
+              }
+
+              // Update status header
+              statusHeader.textContent = "Already Marked Today";
+              statusHeader.style.color = "#b91c1c";
+              clearTimeout(popupTimeout);
+              statusHeader.dataset.locked = "true";
+              isCooldown = true;
+              popupTimeout = setTimeout(() => {
+                statusHeader.textContent = "Waiting for Face Detection...";
+                statusHeader.style.color = "#2563eb";
+                statusHeader.dataset.locked = "false";
+                isCooldown = false;
+              }, 2000);
             }
+          },
+        });
+
+        console.log("Camera client created, attempting to start...");
+
+        // Start camera client with timeout and retry logic
+        let cameraStarted = false;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (!cameraStarted && attempts < maxAttempts) {
+          attempts++;
+          console.log(`🎥 Camera start attempt ${attempts}/${maxAttempts}`);
+
+          try {
+            await cameraClient.start();
+            cameraStarted = true;
+            console.log("✅ Camera client started successfully");
+          } catch (cameraError) {
+            console.warn(
+              `❌ Camera start attempt ${attempts} failed:`,
+              cameraError,
+            );
+
+            if (attempts < maxAttempts) {
+              console.log("⏳ Waiting 1 second before retry...");
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            } else {
+              throw new Error(
+                `Camera failed to start after ${maxAttempts} attempts: ${cameraError.message}`,
+              );
+            }
+          }
         }
 
-        // Check again in 1 second
-        setTimeout(checkAndClearCanvas, 1000);
+        // Store the camera client globally
+        window.cameraClient = cameraClient;
+
+        // Hide loading overlay
+        hideLoading();
+
+        // Set up a socket connection to receive attendance events
+        setupSocketConnection();
+
+        console.log("🎉 Attendance system started successfully");
+      } else {
+        throw new Error(data.message || "Failed to start attendance");
+      }
+    } catch (err) {
+      console.error("❌ Error starting attendance:", err);
+      // Dispatch attendance stop event on error
+      document.dispatchEvent(
+        new CustomEvent("attendance:stop", {
+          detail: { processId: "attendance-" + Date.now() },
+        }),
+      );
+
+      let errorMessage = "Failed to start camera: " + err.message;
+      if (err.errorDetails) {
+        errorMessage += "\n\n" + err.errorDetails;
+      }
+
+      // Add specific error handling for common camera issues
+      if (
+        err.message.includes("Permission denied") ||
+        err.message.includes("NotAllowedError")
+      ) {
+        errorMessage =
+          "Camera access denied. Please allow camera access in your browser and try again.";
+      } else if (
+        err.message.includes("NotFoundError") ||
+        err.message.includes("No camera")
+      ) {
+        errorMessage =
+          "No camera found. Please connect a camera and try again.";
+      } else if (
+        err.message.includes("NotReadableError") ||
+        err.message.includes("in use")
+      ) {
+        errorMessage =
+          "Camera is in use by another application. Please close other apps using the camera and try again.";
+      }
+
+      showError(errorMessage);
+      isStreaming = false;
+      startBtn.style.display = "flex";
+      stopBtn.style.display = "none";
+      // Reset button state on error
+      startBtn.disabled = false;
+      startBtn.style.opacity = "1";
+      startBtn.style.transform = "scale(1)";
+      // Reset status header since camera is still off
+      if (statusHeader) {
+        statusHeader.innerHTML =
+          '<i class="fas fa-video me-2"></i> Click on Start Camera Feed';
+        statusHeader.style.color = "var(--color-primary)";
+        statusHeader.dataset.locked = "false";
+      }
+    }
+  }
+
+  async function stopAttendance() {
+    console.log("Stop Attendance button clicked");
+
+    // Dispatch attendance stop event
+    document.dispatchEvent(
+      new CustomEvent("attendance:stop", {
+        detail: { processId: "attendance-" + Date.now() },
+      }),
+    );
+
+    try {
+      // Show loading overlay while stopping
+      const overlay = document.getElementById("loading");
+      const loadingText = document.getElementById("loadingText");
+      loadingText.textContent = "Stopping camera...";
+      overlay.style.display = "flex";
+
+      // Stop camera client if it exists
+      if (window.cameraClient) {
+        try {
+          console.log("Stopping camera client");
+          window.cameraClient.stop();
+          console.log("Camera client stopped successfully");
+          window.cameraClient = null;
+        } catch (stopError) {
+          console.error("Error stopping camera client:", stopError);
+        }
+      }
+
+      // Call the application backend to stop attendance
+      console.log("Calling server to stop attendance");
+      const response = await fetch("/stop_attendance", {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      const data = await response.json();
+      console.log("Server response for stop attendance:", data);
+
+      // Reset the video display
+      const localVideo = document.getElementById("localVideo");
+      localVideo.style.display = "block";
+      localVideo.src = "/static/img/camera-placeholder.jpg";
+
+      // Remove the video element if it exists
+      const videoElement = document.getElementById("video-feed");
+      if (videoElement) {
+        try {
+          videoElement.srcObject = null;
+          videoElement.parentNode.removeChild(videoElement);
+          console.log("Removed video element");
+        } catch (removeError) {
+          console.warn("Error removing video element:", removeError);
+        }
+      }
+
+      isStreaming = false;
+      startBtn.style.display = "flex";
+      stopBtn.style.display = "none";
+
+      // Disconnect socket if connected
+      if (window.socket) {
+        try {
+          window.socket.disconnect();
+          window.socket = null;
+        } catch (socketError) {
+          console.warn("Error disconnecting socket:", socketError);
+        }
+      }
+
+      // Clear face detection canvas and status
+      const canvasId = "multi-face-overlay";
+      const overlayCanvas = document.getElementById(canvasId);
+      if (overlayCanvas) {
+        const ctx = overlayCanvas.getContext("2d");
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        console.log("Cleared face detection canvas");
+      }
+
+      // Reset status header to default state
+      const statusHeader = document.getElementById("cameraStatusHeader");
+      if (statusHeader) {
+        statusHeader.innerHTML =
+          '<i class="fas fa-video me-2"></i> Click on Start Camera Feed';
+        statusHeader.style.color = "var(--color-primary)";
+        statusHeader.dataset.locked = "false";
+        console.log("Reset status header");
+      }
+
+      // Clear any pending canvas clear timeouts
+      if (clearCanvasTimeout) {
+        clearTimeout(clearCanvasTimeout);
+        clearCanvasTimeout = null;
+      }
+
+      // Update message and hide loading overlay
+      loadingText.textContent = "Attendance stopped successfully";
+
+      // Hide loading overlay after a short delay
+      setTimeout(() => {
+        overlay.style.display = "none";
+      }, 1000);
+    } catch (err) {
+      console.error("Error stopping attendance:", err);
+
+      // Show error message and hide loading overlay
+      const overlay = document.getElementById("loading");
+      const loadingText = document.getElementById("loadingText");
+      loadingText.textContent = "Error stopping attendance";
+
+      // Hide loading overlay after showing error
+      setTimeout(() => {
+        overlay.style.display = "none";
+        showError("Error stopping attendance: " + err.message);
+      }, 1500);
+    }
+  }
+
+  function setupSocketConnection() {
+    // Load Socket.IO script dynamically
+    if (!window.io) {
+      const script = document.createElement("script");
+      script.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js";
+      script.onload = connectSocket;
+      document.head.appendChild(script);
+    } else {
+      connectSocket();
+    }
+  }
+
+  function connectSocket() {
+    // Connect to the Socket.IO server
+    window.socket = io();
+
+    // Listen for attendance events
+    window.socket.on("attendance_result", function (data) {
+      console.log("Attendance result received:", data);
+      if (data.status === "present") {
+        showAttendanceOverlay(data.name);
+      }
+    });
+
+    // Listen for video frames
+    // Create an image element to preload frames
+    const frameImage = new Image();
+    let isFrameLoading = false;
+
+    window.socket.on("video_frame", function (data) {
+      if (data.frame && !isFrameLoading) {
+        isFrameLoading = true;
+
+        // Preload the image
+        frameImage.onload = function () {
+          // Update the video element with the received frame
+          const localVideo = document.getElementById("localVideo");
+          localVideo.src = frameImage.src;
+          isFrameLoading = false;
+        };
+
+        frameImage.onerror = function () {
+          isFrameLoading = false;
+        };
+
+        // Set the source to load the image
+        frameImage.src = "data:image/jpeg;base64," + data.frame;
+      }
+    });
+
+    window.socket.on("connect", function () {
+      console.log("Socket connected");
+    });
+
+    window.socket.on("disconnect", function () {
+      console.log("Socket disconnected");
+    });
+  }
+
+  // Add event listeners with better error handling
+  startBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("🚀 Start button clicked - Event triggered");
+
+    // Check if already processing
+    if (startBtn.disabled || isStreaming) {
+      console.log("⚠️ Button already processing or streaming active");
+      return;
     }
 
-    // Start the periodic check when the page loads
-    setTimeout(checkAndClearCanvas, 1000);
+    // Immediate visual feedback
+    startBtn.style.opacity = "0.7";
+    startBtn.style.transform = "scale(0.95)";
+    startBtn.disabled = true;
 
-    // Update handleAttendanceResponse to ensure boxes are drawn
-    function handleAttendanceResponse(data) {
-        console.log('Handling attendance response:', data);
+    console.log("🎯 Calling startAttendance function...");
 
-        // Check if we have faces data in the response
-        if (data && data.faces && Array.isArray(data.faces) && data.faces.length > 0) {
-            console.log('Drawing faces from attendance response:', data.faces);
-            drawMultipleFaceResults(data.faces);
+    // Call start function with timeout
+    Promise.race([
+      startAttendance(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Start attendance timeout")), 30000),
+      ),
+    ]).catch((error) => {
+      console.error("❌ Start attendance failed:", error);
+      // Reset button state on error
+      startBtn.style.opacity = "1";
+      startBtn.style.transform = "scale(1)";
+      startBtn.disabled = false;
+      showError("Failed to start: " + error.message);
+    });
+  });
 
-            // Update header status based on face types
-            if (data.faces.some(f => f.type === 'attendance_marked')) {
-                statusHeader.textContent = 'Attendance Marked';
-                statusHeader.style.color = '#059669';
+  stopBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    console.log("Stop button clicked");
 
-                // Show attendance overlay for the marked student
-                const markedFace = data.faces.find(f => f.type === 'attendance_marked');
-                notifyDashboardAttendanceUpdate({
-                    student_id: markedFace?.student_id || null,
-                    student_name: markedFace?.name || markedFace?.label || null,
-                    source: 'attendance_faces'
-                });
-                if (markedFace && markedFace.name) {
-                    showAttendanceOverlay(markedFace.name);
-                }
-            } else if (data.faces.some(f => f.type === 'already_marked_today')) {
-                statusHeader.textContent = 'Already Marked Today';
-                statusHeader.style.color = '#b91c1c';
-            } else if (data.faces.some(f => f.type === 'challenge_required')) {
-                const challengeFace = data.faces.find(f => f.type === 'challenge_required');
-                const progressPercent = Math.round((challengeFace.challenge_progress || 0) * 100);
-                statusHeader.textContent = `${challengeFace.challenge_message || 'Turn your face slightly left or right'} (${progressPercent}%)`;
-                statusHeader.style.color = '#d97706';
-            } else if (data.faces.some(f => f.type === 'unknown_face')) {
-                statusHeader.textContent = 'Unknown Face';
-                statusHeader.style.color = '#dc2626';
-            } else {
-                statusHeader.textContent = 'Waiting for Face Detection...';
-                statusHeader.style.color = '#2563eb';
-            }
+    // Immediate visual feedback
+    stopBtn.style.opacity = "0.7";
+    stopBtn.style.transform = "scale(0.95)";
+
+    stopAttendance();
+  });
+
+  document.getElementById("retryBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    startAttendance();
+  });
+
+  // Add event listener for page unload
+  window.addEventListener("beforeunload", function () {
+    if (isStreaming) {
+      document.dispatchEvent(
+        new CustomEvent("attendance:stop", {
+          detail: { processId: "attendance-" + Date.now() },
+        }),
+      );
+    }
+  });
+
+  // Variable to track if we need to clear the canvas
+  let clearCanvasTimeout = null;
+  let overlayAnimationFrame = null;
+  let animatedFaces = [];
+  let targetFaces = [];
+
+  function animateFaceOverlay() {
+    const videoElement = document.getElementById("video-feed");
+    const overlayCanvas = document.getElementById("multi-face-overlay");
+    if (!videoElement || !overlayCanvas) {
+      overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
+      return;
+    }
+
+    if (animatedFaces.length !== targetFaces.length) {
+      animatedFaces = targetFaces.map((face) => ({ ...face }));
+    } else {
+      animatedFaces = targetFaces.map((targetFace, index) => {
+        const currentFace = animatedFaces[index] || targetFace;
+        // Position snaps instantly (server data is already stale, no need to lag more)
+        // Size eases slightly for visual smoothness
+        const sizeEase = 0.6;
+        return {
+          ...targetFace,
+          x: targetFace.x ?? 0,
+          y: targetFace.y ?? 0,
+          width:
+            currentFace.width +
+            ((targetFace.width ?? 0) - (currentFace.width ?? 0)) * sizeEase,
+          height:
+            currentFace.height +
+            ((targetFace.height ?? 0) - (currentFace.height ?? 0)) * sizeEase,
+        };
+      });
+    }
+
+    renderFaceOverlay(animatedFaces, videoElement, overlayCanvas);
+    overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
+  }
+
+  function renderFaceOverlay(faceResults, videoElement, overlayCanvas) {
+    if (
+      overlayCanvas.width !== videoElement.clientWidth ||
+      overlayCanvas.height !== videoElement.clientHeight
+    ) {
+      overlayCanvas.width = videoElement.clientWidth;
+      overlayCanvas.height = videoElement.clientHeight;
+    }
+
+    const ctx = overlayCanvas.getContext("2d");
+    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+    if (!faceResults || faceResults.length === 0) {
+      return;
+    }
+
+    // ── Coordinate-space fix ────────────────────────────────────────────────────
+    // The server receives the DOWNSCALED processing canvas image (e.g. 320×240),
+    // NOT the raw camera frame (e.g. 640×480).  Face bounding boxes returned by
+    // the server are therefore in processing-canvas space, NOT in video space.
+    //
+    // Using videoElement.videoWidth here caused boxes to appear at exactly half
+    // the correct position (they landed on the wall/background instead of the face).
+    //
+    // Fix: read the processing canvas dimensions from the camera client.
+    // Fall back to videoWidth only when the camera client has not started yet.
+    const cameraClient = window.cameraClient;
+    const srcWidth =
+      cameraClient && cameraClient.canvas && cameraClient.canvas.width > 0
+        ? cameraClient.canvas.width
+        : videoElement.videoWidth || 320;
+    const srcHeight =
+      cameraClient && cameraClient.canvas && cameraClient.canvas.height > 0
+        ? cameraClient.canvas.height
+        : videoElement.videoHeight || 240;
+
+    const displayWidth = videoElement.clientWidth;
+    const displayHeight = videoElement.clientHeight;
+
+    // Handle object-fit:cover offset so boxes stay inside the visible crop area.
+    // If the video stream aspect ratio and the display element aspect ratio match,
+    // offset is zero.  When they differ (e.g. container is wider than the stream),
+    // cover will crop the top/bottom (or left/right) and we compensate.
+    const streamAspect = srcWidth / srcHeight;
+    const displayAspect = displayWidth / displayHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+    let scaleX, scaleY;
+
+    if (Math.abs(streamAspect - displayAspect) < 0.05) {
+      // Aspect ratios are close enough – no crop, simple scale.
+      scaleX = displayWidth / srcWidth;
+      scaleY = displayHeight / srcHeight;
+    } else if (displayAspect > streamAspect) {
+      // Display is wider than stream → video is scaled to fill width,
+      // top and bottom are cropped.
+      scaleX = displayWidth / srcWidth;
+      scaleY = scaleX; // uniform scale
+      offsetY = (srcHeight * scaleY - displayHeight) / 2;
+    } else {
+      // Display is taller than stream → video is scaled to fill height,
+      // left and right are cropped.
+      scaleY = displayHeight / srcHeight;
+      scaleX = scaleY; // uniform scale
+      offsetX = (srcWidth * scaleX - displayWidth) / 2;
+    }
+
+    faceResults.forEach((face) => {
+      const x = (face.x || 0) * scaleX - offsetX;
+      const y = (face.y || 0) * scaleY - offsetY;
+      const width = (face.width || 0) * scaleX;
+      const height = (face.height || 0) * scaleY;
+
+      let strokeColor = "#00FF00";
+      if (face.type === "spoofing_detected") {
+        strokeColor = "#ef4444";
+      } else if (face.type === "multiple_faces_blocked") {
+        strokeColor = "#f59e0b";
+      } else if (face.type === "uncertain_match") {
+        strokeColor = "#eab308";
+      } else if (face.type === "challenge_required") {
+        strokeColor = "#f97316";
+      } else if (face.type === "already_marked_today") {
+        strokeColor = "#dc2626";
+      }
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, width, height);
+
+      ctx.font = "bold 10px Arial";
+      let labelColor = "rgba(34,197,94,0.85)";
+      let textColor = "white";
+      let labelText = face.label || "Face Detected";
+
+      if (face.type === "spoofing_detected") {
+        labelColor = "rgba(239,68,68,0.90)";
+      } else if (face.type === "multiple_faces_blocked") {
+        labelColor = "rgba(245,158,11,0.92)";
+      } else if (face.type === "uncertain_match") {
+        labelColor = "rgba(234,179,8,0.90)";
+        textColor = "#111827";
+      } else if (labelText === "Already Marked Today") {
+        labelColor = "rgba(220,38,38,0.85)";
+        labelText = "Already Marked";
+      } else if (face.type === "challenge_required") {
+        labelColor = "rgba(217,119,6,0.90)";
+      } else if (labelText === "Unknown Face") {
+        labelColor = "rgba(234,179,8,0.85)";
+      }
+
+      const labelWidth = ctx.measureText(labelText).width + 8;
+      ctx.fillStyle = labelColor;
+      ctx.fillRect(x, y - 16, labelWidth, 16);
+      ctx.fillStyle = textColor;
+      ctx.fillText(labelText, x + 4, y - 4);
+    });
+  }
+
+  // Page load optimization
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🚀 Page loaded - Optimizing performance...");
+
+    // Preload critical resources
+    const preloadImage = new Image();
+    preloadImage.src = "/static/img/camera-placeholder.jpg";
+
+    // Add performance monitoring
+    if (window.performance && window.performance.mark) {
+      window.performance.mark("attendance-page-ready");
+    }
+
+    // Initialize button states
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.style.opacity = "1";
+      startBtn.style.transform = "scale(1)";
+      console.log("✅ Start button initialized");
+    }
+
+    // Check system readiness
+    setTimeout(checkSystemStatus, 1000);
+
+    // Scroll to ensure the Start Attendance button is visible
+    setTimeout(() => {
+      const startButton = document.getElementById("startBtn");
+      if (startButton) {
+        startButton.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+        console.log("📍 Scrolled to Start Attendance button");
+      }
+    }, 800); // Small delay to ensure page is fully loaded and AOS animations complete
+
+    if (!overlayAnimationFrame) {
+      overlayAnimationFrame = requestAnimationFrame(animateFaceOverlay);
+    }
+  });
+
+  // Add this helper to draw multiple face boxes and labels
+  function drawMultipleFaceResults(faceResults) {
+    const videoElement = document.getElementById("video-feed");
+    if (!videoElement) {
+      console.warn("Video element not found for drawing face boxes");
+      return;
+    }
+
+    // Get the overlay canvas
+    const canvasId = "multi-face-overlay";
+    let overlayCanvas = document.getElementById(canvasId);
+    if (!overlayCanvas) {
+      console.warn("Overlay canvas not found, face boxes will not be drawn");
+      return;
+    }
+
+    // If no faces, set a timeout to clear the canvas after a short delay
+    // This ensures boxes disappear when faces leave the frame
+    if (!faceResults || faceResults.length === 0) {
+      // Clear any existing timeout
+      if (clearCanvasTimeout) {
+        clearTimeout(clearCanvasTimeout);
+      }
+
+      // Clear quickly so the overlay does not trail far behind the live preview.
+      clearCanvasTimeout = setTimeout(() => {
+        if (overlayCanvas) {
+          targetFaces = [];
         }
-        // Legacy support for old response format
-        else if (data && data.type) {
-            console.log('Legacy attendance response format:', data.type);
+      }, 180);
 
-            if (data.type === 'attendance_marked') {
-                statusHeader.textContent = `Attendance Marked: ${data.name || ''}`;
-                statusHeader.style.color = '#059669';
-                statusHeader.dataset.locked = 'true';
-                notifyDashboardAttendanceUpdate({
-                    student_id: data.student_id || null,
-                    student_name: data.name || null,
-                    source: 'attendance_legacy'
-                });
+      return;
+    }
 
-                // Show attendance overlay
-                if (data.name) {
-                    showAttendanceOverlay(data.name);
-                }
+    // If we have faces, clear any pending timeout and update the last detection time
+    if (clearCanvasTimeout) {
+      clearTimeout(clearCanvasTimeout);
+      clearCanvasTimeout = null;
+    }
 
-                // Add to attendance list if it exists
-                const attendanceList = document.getElementById('attendanceList');
-                if (attendanceList) {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'attendance-item';
-                    listItem.innerHTML = `
-                        <div class="attendance-name">${data.name || 'Unknown'}</div>
+    // Update the last time faces were detected
+    lastFaceDetectionTime = Date.now();
+    targetFaces = faceResults.map((face) => ({ ...face }));
+  }
+
+  // Make the function available globally
+  window.drawMultipleFaceResults = drawMultipleFaceResults;
+
+  // Variable to track the last time faces were detected
+  let lastFaceDetectionTime = 0;
+
+  // Function to periodically check and clear the canvas if no faces have been detected for a while
+  function checkAndClearCanvas() {
+    const now = Date.now();
+
+    // Clear stale overlays aggressively so boxes don't drift long after the face moves.
+    if (now - lastFaceDetectionTime > 800) {
+      const videoElement = document.getElementById("video-feed");
+      if (videoElement) {
+        const canvasId = "multi-face-overlay";
+        let overlayCanvas = document.getElementById(canvasId);
+        if (overlayCanvas) {
+          // Make sure canvas dimensions match the video element
+          if (
+            overlayCanvas.width !== videoElement.clientWidth ||
+            overlayCanvas.height !== videoElement.clientHeight
+          ) {
+            overlayCanvas.width = videoElement.clientWidth;
+            overlayCanvas.height = videoElement.clientHeight;
+          }
+
+          const ctx = overlayCanvas.getContext("2d");
+          ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+          console.log("Auto-cleared canvas due to inactivity");
+
+          // Update status header if not locked
+          if (
+            statusHeader &&
+            (!statusHeader.dataset.locked ||
+              statusHeader.dataset.locked === "false")
+          ) {
+            statusHeader.textContent = "Waiting for Face Detection...";
+            statusHeader.style.color = "#2563eb";
+          }
+        }
+      }
+    }
+
+    // Check again in 1 second
+    setTimeout(checkAndClearCanvas, 1000);
+  }
+
+  // Start the periodic check when the page loads
+  setTimeout(checkAndClearCanvas, 1000);
+
+  // Update handleAttendanceResponse to ensure boxes are drawn
+  function handleAttendanceResponse(data) {
+    console.log("Handling attendance response:", data);
+
+    // Check if we have faces data in the response
+    if (
+      data &&
+      data.faces &&
+      Array.isArray(data.faces) &&
+      data.faces.length > 0
+    ) {
+      console.log("Drawing faces from attendance response:", data.faces);
+      drawMultipleFaceResults(data.faces);
+
+      // Update header status based on face types
+      if (data.faces.some((f) => f.type === "attendance_marked")) {
+        const markedFace = data.faces.find(
+          (f) => f.type === "attendance_marked",
+        );
+        const markedName = markedFace?.name || markedFace?.label || "";
+        statusHeader.textContent = markedName
+          ? markedName + " attendance marked"
+          : "Attendance Marked";
+        statusHeader.style.color = "#059669";
+
+        // Show attendance overlay for the marked student
+        notifyDashboardAttendanceUpdate({
+          student_id: markedFace?.student_id || null,
+          student_name: markedName || null,
+          source: "attendance_faces",
+        });
+        if (markedFace && markedFace.name) {
+          showAttendanceOverlay(markedFace.name);
+        }
+      } else if (data.faces.some((f) => f.type === "already_marked_today")) {
+        const alreadyMarkedFace = data.faces.find(
+          (f) => f.type === "already_marked_today",
+        );
+        const alreadyName =
+          alreadyMarkedFace?.name || alreadyMarkedFace?.label || "";
+        statusHeader.textContent = alreadyName
+          ? alreadyName + " already marked today"
+          : "Already Marked Today";
+        statusHeader.style.color = "#b91c1c";
+      } else if (data.faces.some((f) => f.type === "challenge_required")) {
+        const challengeFace = data.faces.find(
+          (f) => f.type === "challenge_required",
+        );
+        const progressPercent = Math.round(
+          (challengeFace.challenge_progress || 0) * 100,
+        );
+        statusHeader.textContent = `${challengeFace.challenge_message || "Turn your face slightly left or right"} (${progressPercent}%)`;
+        statusHeader.style.color = "#d97706";
+      } else if (data.faces.some((f) => f.type === "unknown_face")) {
+        statusHeader.textContent = "Unknown Face";
+        statusHeader.style.color = "#dc2626";
+      } else {
+        statusHeader.textContent = "Waiting for Face Detection...";
+        statusHeader.style.color = "#2563eb";
+      }
+    }
+    // Legacy support for old response format
+    else if (data && data.type) {
+      console.log("Legacy attendance response format:", data.type);
+
+      if (data.type === "attendance_marked") {
+        statusHeader.textContent = data.name
+          ? `${data.name} attendance marked`
+          : "Attendance Marked";
+        statusHeader.style.color = "#059669";
+        statusHeader.dataset.locked = "true";
+        notifyDashboardAttendanceUpdate({
+          student_id: data.student_id || null,
+          student_name: data.name || null,
+          source: "attendance_legacy",
+        });
+
+        // Show attendance overlay
+        if (data.name) {
+          showAttendanceOverlay(data.name);
+        }
+
+        // Add to attendance list if it exists
+        const attendanceList = document.getElementById("attendanceList");
+        if (attendanceList) {
+          const listItem = document.createElement("li");
+          listItem.className = "attendance-item";
+          listItem.innerHTML = `
+                        <div class="attendance-name">${data.name || "Unknown"}</div>
                         <div class="attendance-time">${new Date().toLocaleTimeString()}</div>
                     `;
-                    attendanceList.appendChild(listItem);
+          attendanceList.appendChild(listItem);
 
-                    // Scroll to bottom
-                    attendanceList.scrollTop = attendanceList.scrollHeight;
-                }
-
-                // Set cooldown
-                isCooldown = true;
-                lastFaceId = data.student_id;
-                setTimeout(() => {
-                    isCooldown = false;
-                    if (statusHeader) {
-                        statusHeader.dataset.locked = 'false';
-                    }
-                }, 3000);
-            }
-        } else {
-            // No faces data, clear overlay
-            console.log('No faces data in response, clearing overlay');
-            drawMultipleFaceResults([]);
-
-            // Reset status header
-            statusHeader.textContent = 'Waiting for Face Detection...';
-            statusHeader.style.color = '#2563eb';
+          // Scroll to bottom
+          attendanceList.scrollTop = attendanceList.scrollHeight;
         }
+
+        // Set cooldown
+        isCooldown = true;
+        lastFaceId = data.student_id;
+        setTimeout(() => {
+          isCooldown = false;
+          if (statusHeader) {
+            statusHeader.dataset.locked = "false";
+          }
+        }, 3000);
+      } else if (data.type === "already_marked_today") {
+        statusHeader.textContent = data.name
+          ? `${data.name} already marked today`
+          : "Already Marked Today";
+        statusHeader.style.color = "#b91c1c";
+        statusHeader.dataset.locked = "true";
+        isCooldown = true;
+        setTimeout(() => {
+          isCooldown = false;
+          if (statusHeader) {
+            statusHeader.dataset.locked = "false";
+          }
+        }, 3000);
+      }
+    } else {
+      // No faces data, clear overlay
+      console.log("No faces data in response, clearing overlay");
+      drawMultipleFaceResults([]);
+
+      // Reset status header
+      statusHeader.textContent = "Waiting for Face Detection...";
+      statusHeader.style.color = "#2563eb";
     }
-    </script>
+  }
+</script>
 {% endblock %}

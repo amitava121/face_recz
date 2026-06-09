@@ -79,7 +79,7 @@ def initialize_insightface():
         model_pack = runtime_model_registry.current_profile().model_pack
 
         # Initialize FaceAnalysis with the appropriate providers
-        app = FaceAnalysis(name=model_pack, root=str(model_root), providers=providers)
+        app = FaceAnalysis(name=model_pack, root=str(model_root.parent), providers=providers)
         app.prepare(ctx_id=0, det_size=(640, 640))
 
         # Log which provider is being used
@@ -533,16 +533,16 @@ def recognize_face(frame, students):
 
             # Get the largest face
             largest_face = max(faces, key=lambda face: (face.bbox[2] - face.bbox[0]) * (face.bbox[3] - face.bbox[1]))
-            
+
             # Convert bbox to [x, y, w, h] format for liveness check
             bbox = largest_face.bbox.astype(int)
             x1, y1, x2, y2 = bbox
             face_bbox = [x1, y1, x2-x1, y2-y1]
-            
+
             # Perform liveness check BEFORE face recognition
             from src.services.anti_spoofing import check_liveness_balanced
             liveness_result = check_liveness_balanced(processed_frame, face_bbox, frame_history=None)
-            
+
             # If liveness check fails, return early
             if not liveness_result['is_live']:
                 logger.warning(f"Liveness check failed during recognition: {liveness_result['reason']}")
@@ -680,27 +680,3 @@ def register_student_with_embedding(session, student, images):
         if 'avg_embedding' in locals():
             del avg_embedding
         gc.collect()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

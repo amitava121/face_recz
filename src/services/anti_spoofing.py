@@ -30,10 +30,24 @@ def get_insightface_model():
     with model_lock:
         if insightface_app is None:
             try:
-                # Initialize InsightFace
-                insightface_app = FaceAnalysis(name='buffalo_l', root=MODELS_DIR)
+                import onnxruntime as ort
+                import platform
+
+                available_providers = ort.get_available_providers()
+                if platform.system() == 'Darwin' and platform.processor() == 'arm':
+                    if 'CoreMLExecutionProvider' in available_providers:
+                        providers = ['CoreMLExecutionProvider', 'CPUExecutionProvider']
+                        logger.info("🍎 Using CoreML GPU for anti-spoofing on Mac M1/M2")
+                    else:
+                        providers = ['CPUExecutionProvider']
+                elif 'CUDAExecutionProvider' in available_providers:
+                    providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
+                else:
+                    providers = ['CPUExecutionProvider']
+
+                insightface_app = FaceAnalysis(name='buffalo_l', root=MODELS_DIR, providers=providers)
                 insightface_app.prepare(ctx_id=0, det_size=(640, 640))
-                logger.info("✅ InsightFace model loaded successfully")
+                logger.info(f"✅ InsightFace model loaded with providers: {providers}")
             except Exception as e:
                 logger.error(f"❌ Error loading InsightFace model: {e}")
                 insightface_app = None
@@ -49,11 +63,11 @@ class SimpleAntiSpoofingDetector:
         """Initialize the enhanced anti-spoofing detector with configurable strictness and AI capabilities"""
         # Initialize InsightFace model
         self.insightface_model = get_insightface_model()
-        
+
         # Initialize anti-spoofing parameters
         self.use_ai_model = os.environ.get('USE_AI_ANTI_SPOOFING', 'True').lower() in ('true', '1', 't')
         self.ai_confidence_threshold = float(os.environ.get('AI_CONFIDENCE_THRESHOLD', '0.8'))
-        
+
         logger.info(f"🤖 AI Anti-spoofing enabled: {self.use_ai_model}")
         if self.use_ai_model and self.insightface_model is None:
             logger.warning("⚠️ AI model not available, falling back to traditional methods")
@@ -267,18 +281,18 @@ class SimpleAntiSpoofingDetector:
 
             # Process with InsightFace
             faces = self.insightface_model.get(image)
-            
+
             if not faces:
                 return None
 
             # Find the face that best matches our bbox
             best_match = None
             best_iou = 0
-            
+
             for face in faces:
                 bbox = face.bbox.astype(int)
                 iou = self.calculate_iou(det_bbox, bbox)
-                
+
                 if iou > best_iou:
                     best_iou = iou
                     best_match = face
@@ -288,12 +302,12 @@ class SimpleAntiSpoofingDetector:
 
             # Get anti-spoofing score
             anti_spoofing_score = best_match.get('anti_spoofing', None)
-            
+
             if anti_spoofing_score is None:
                 return None
 
             is_live = anti_spoofing_score >= self.ai_confidence_threshold
-            
+
             return {
                 'is_live': is_live,
                 'confidence': float(anti_spoofing_score),
@@ -451,12 +465,12 @@ class SimpleAntiSpoofingDetector:
 
             # Calculate overall confidence from traditional methods
             traditional_confidence = sum(confidence_factors)
-            
+
             # Get AI-based detection result if enabled
             ai_result = None
             if self.use_ai_model and self.insightface_model is not None:
                 ai_result = self.detect_spoofing_ai(image, face_bbox)
-            
+
             # Combine traditional and AI confidence scores
             if ai_result is not None:
                 ai_confidence = ai_result['confidence']
@@ -472,7 +486,7 @@ class SimpleAntiSpoofingDetector:
             advanced_quality_ok = edge_density_ok and texture_ok and gradient_ok
             no_screen_detected = screen_indicators < 2
             no_photo_detected = photo_indicators < 2
-            
+
             # If AI detection is available, it gets a strong vote
             if is_live_ai is not None:
                 if not is_live_ai:
@@ -522,7 +536,7 @@ class SimpleAntiSpoofingDetector:
                 issues.append(f"photo_detected({photo_indicators})")
             if self.consecutive_passes < self.required_consecutive_frames:
                 issues.append(f"consecutive_frames={self.consecutive_passes}/{self.required_consecutive_frames}")
-            
+
             # Add AI result to reason if available
             ai_status = ""
             if ai_result is not None:

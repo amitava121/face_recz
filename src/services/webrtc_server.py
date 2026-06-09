@@ -76,7 +76,7 @@ def setup_webrtc_logging():
 setup_webrtc_logging()
 
 # Configuration
-APP_API_URL = "http://127.0.0.1:5000"
+APP_API_URL = os.environ.get("APP_API_URL", "http://127.0.0.1:5000")
 logger.info(f"APP_API_URL at startup: {APP_API_URL}")
 FRAME_SKIP = int(os.getenv('FRAME_SKIP', '3'))  # Reduced to process more frames for smoother video
 USE_GPU = os.getenv('USE_GPU', 'True').lower() in ('true', '1', 't')
@@ -373,12 +373,12 @@ def process_frame_for_recognition(frame: np.ndarray, connection_id: str = None) 
             face = largest_face
         else:
             face = faces[0]
-            
+
         # Convert bbox to [x, y, w, h] format for liveness check
         bbox = face.bbox.astype(int)
         x1, y1, x2, y2 = bbox
         face_bbox = [x1, y1, x2-x1, y2-y1]
-        
+
         # Get frame history for motion analysis
         frame_history = None
         if connection_id in active_connections:
@@ -394,11 +394,11 @@ def process_frame_for_recognition(frame: np.ndarray, connection_id: str = None) 
             frame_history.append(processed_frame.copy())
             if len(frame_history) > 10:
                 frame_history.pop(0)
-        
+
         # Perform liveness check BEFORE face recognition
         from src.services.anti_spoofing import check_liveness_balanced
         liveness_result = check_liveness_balanced(processed_frame, face_bbox, frame_history)
-        
+
         # If liveness check fails, return early
         if not liveness_result['is_live']:
             logger.warning(f"Liveness check failed during recognition: {liveness_result['reason']}")
